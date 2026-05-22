@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>GymSmart — Prototipos · Navegación</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@500;600&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #F4F2EC; --surface: #FFFFFF; --surface-2: #F8F6F1;
+    --ink: #0B0B0B; --ink-2: #5C5C5C; --ink-3: #767676;
+    --border: #E6E2D8; --accent: #D2FF3A; --accent-ink: #0B0B0B;
+    --font-display: "Bricolage Grotesque", ui-sans-serif, system-ui;
+    --font-body: "Geist", "Plus Jakarta Sans", ui-sans-serif, system-ui;
+    --font-mono: "Geist Mono", ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh;
+    background:
+      radial-gradient(900px 480px at 12% -5%, color-mix(in oklab, var(--accent) 16%, transparent), transparent 60%),
+      radial-gradient(700px 520px at 100% 105%, rgba(0,0,0,.04), transparent 60%),
+      var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 56px 24px 40px;
+  }
+  :focus-visible { outline: 2px solid #0066FF; outline-offset: 2px; border-radius: 6px; }
+
+  .wrap { width: 100%; max-width: 940px; }
+
+  /* Header */
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand .dot {
+    width: 13px; height: 13px; background: var(--accent); border-radius: 5px;
+    box-shadow: 0 0 0 4px color-mix(in oklab, var(--accent) 22%, transparent);
+  }
+  .brand .wm { font-family: var(--font-display); font-weight: 800; font-size: 22px; letter-spacing: -0.02em; }
+  .brand .wm em { color: color-mix(in oklab, var(--accent) 60%, var(--ink)); font-style: normal; }
+  .kicker {
+    font: 600 11px var(--font-mono); letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-3); margin: 22px 0 8px;
+  }
+  h1 { font: 800 34px/1.1 var(--font-display); letter-spacing: -0.03em; margin: 0; max-width: 620px; }
+  .lead { font: 500 15px/1.5 var(--font-body); color: var(--ink-2); margin: 12px 0 0; max-width: 580px; }
+
+  /* Cards */
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 34px; }
+  .card {
+    display: flex; flex-direction: column;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 22px; padding: 22px;
+    box-shadow: 0 1px 2px rgba(20,20,15,.05);
+    text-decoration: none; color: inherit;
+    transition: transform .14s ease, box-shadow .14s ease, border-color .14s ease;
+  }
+  .card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 18px 40px -20px rgba(20,18,10,.32);
+    border-color: var(--ink);
+  }
+  .card .ic {
+    width: 52px; height: 52px; border-radius: 14px;
+    background: var(--ink); color: var(--accent);
+    display: grid; place-items: center; margin-bottom: 16px;
+  }
+  .card .ct { font: 700 19px var(--font-display); letter-spacing: -0.02em; }
+  .card .cpath { font: 500 12px var(--font-mono); color: var(--ink-3); margin-top: 3px; }
+  .card .cd { font: 500 13.5px/1.5 var(--font-body); color: var(--ink-2); margin-top: 12px; flex: 1; }
+  .roles { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+  .chip {
+    font: 600 11.5px var(--font-body); padding: 4px 9px; border-radius: 999px;
+    background: var(--surface-2); border: 1px solid var(--border); color: var(--ink-2);
+  }
+  .cgo {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border);
+    font: 700 13.5px var(--font-body);
+  }
+  .cgo .count { font: 500 12px var(--font-mono); color: var(--ink-3); }
+  .cgo .arrow {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--accent); color: var(--accent-ink);
+    display: grid; place-items: center;
+  }
+
+  /* Docs */
+  .docs-label {
+    font: 600 11px var(--font-mono); letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-3); margin: 34px 0 12px;
+  }
+  .docs { display: flex; flex-wrap: wrap; gap: 10px; }
+  .doc {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 9px 13px;
+    font: 600 13px var(--font-body); color: var(--ink); text-decoration: none;
+  }
+  .doc:hover { background: var(--surface-2); border-color: var(--ink); }
+  .doc .d { width: 7px; height: 7px; border-radius: 2px; background: var(--accent); }
+
+  footer { margin-top: 30px; font: 500 12px var(--font-mono); color: var(--ink-3); }
+
+  @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } body { padding-top: 36px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="brand">
+      <span class="dot"></span>
+      <span class="wm">Gym<em>Smart</em></span>
+    </div>
+    <div class="kicker">Prototipos · Panel de navegación</div>
+    <h1>Sistema de gestión de gimnasios</h1>
+    <p class="lead">
+      Punto de entrada a los dos prototipos hi-fi del producto. Elige una
+      superficie para explorar sus vistas por rol.
+    </p>
+  </header>
+
+  <main class="grid">
+
+    <!-- App Móvil -->
+    <a class="card" href="sas_Gym_high/index.html">
+      <span class="ic" aria-hidden="true">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="6" y="2" width="12" height="20" rx="3"/><path d="M10 18h4"/>
+        </svg>
+      </span>
+      <div class="ct">App Móvil</div>
+      <div class="cpath">sas_Gym_high/</div>
+      <div class="cd">
+        Prototipo hi-fi de la app móvil (PWA). Las cuatro experiencias de rol
+        se eligen con las pestañas superiores del lienzo de teléfono.
+      </div>
+      <div class="roles">
+        <span class="chip">Miembro</span>
+        <span class="chip">Entrenador</span>
+        <span class="chip">Caja</span>
+        <span class="chip">Admin</span>
+        <span class="chip">Super Admin</span>
+      </div>
+      <div class="cgo">
+        <span>Abrir app móvil</span>
+        <span class="count">5 roles · login</span>
+        <span class="arrow" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
+        </span>
+      </div>
+    </a>
+
+    <!-- Panel Web Admin -->
+    <a class="card" href="crosshero_web_high/index.html">
+      <span class="ic" aria-hidden="true">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>
+        </svg>
+      </span>
+      <div class="ct">Panel Web de Administración</div>
+      <div class="cpath">crosshero_web_high/</div>
+      <div class="cd">
+        Panel de escritorio (sidebar + contenido). El inicio de sesión permite
+        entrar como cualquiera de los cuatro roles, cada uno con su navegación.
+      </div>
+      <div class="roles">
+        <span class="chip">Super Admin</span>
+        <span class="chip">Admin</span>
+        <span class="chip">Caja</span>
+        <span class="chip">Entrenador</span>
+        <span class="chip">Miembro</span>
+      </div>
+      <div class="cgo">
+        <span>Abrir panel web</span>
+        <span class="count">5 roles · 22 vistas</span>
+        <span class="arrow" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
+        </span>
+      </div>
+    </a>
+
+  </main>
+
+  <div class="docs-label">Documentación</div>
+  <nav class="docs" aria-label="Documentación del proyecto">
+    <a class="doc" href="TRAZABILIDAD_VISTAS.md"><span class="d"></span>Trazabilidad — App móvil</a>
+    <a class="doc" href="TRAZABILIDAD_WEB.md"><span class="d"></span>Trazabilidad — Panel web</a>
+    <a class="doc" href="APP_CONTEXT.md"><span class="d"></span>Contexto del proyecto</a>
+  </nav>
+
+  <footer>GymSmart · CrossHero — prototipos hi-fi · navegación local</footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,18 @@
+services:
+  web:
+    image: nginx:alpine
+    container_name: sas_gym_frontend
+    ports:
+      - "8282:80"
+    volumes:
+      # El hub de navegación (index.html) se sirve en la raíz "/".
+      # Se montan SOLO el hub, los prototipos y la documentación —
+      # NO el resto del workspace (crosshero-gym con .env / credenciales /
+      # backups SQL, flutter_app, PDFs) para no exponerlo por Nginx.
+      - ./index.html:/usr/share/nginx/html/index.html:ro
+      - ./sas_Gym_high:/usr/share/nginx/html/sas_Gym_high:ro
+      - ./crosshero_web_high:/usr/share/nginx/html/crosshero_web_high:ro
+      - ./TRAZABILIDAD_VISTAS.md:/usr/share/nginx/html/TRAZABILIDAD_VISTAS.md:ro
+      - ./TRAZABILIDAD_WEB.md:/usr/share/nginx/html/TRAZABILIDAD_WEB.md:ro
+      - ./APP_CONTEXT.md:/usr/share/nginx/html/APP_CONTEXT.md:ro
+    restart: unless-stopped

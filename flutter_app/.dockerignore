@@ -1,0 +1,7 @@
+.dart_tool
+.idea
+.vscode
+build
+windows/flutter/ephemeral
+web/.dart_tool
+pubspec.lock
