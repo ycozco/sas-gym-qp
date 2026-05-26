@@ -9,7 +9,9 @@ import '../../../data/gym_seed.dart';
 import '../../../data/gym_state.dart';
 import '../../../models/gym_models.dart';
 import '../../../widgets/app_shell.dart';
-import '../../../widgets/shared_widgets.dart';
+import '../../../widgets/exercise_anim.dart';
+import '../widgets/log_effort_modal.dart';
+import '../widgets/timer_ring.dart';
 
 MemberRecord _getLoggedMember(GymState state) {
   final user = state.currentUser;
