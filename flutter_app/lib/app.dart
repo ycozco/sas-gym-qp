@@ -19,6 +19,13 @@ class SasGymApp extends StatefulWidget {
   State<SasGymApp> createState() => _SasGymAppState();
 }
 
+// Orden de gate aplicado por _SasGymAppState.build:
+//   1. authLoading -> splash de carga.
+//   2. currentUser == null -> LoginScreen.
+//   3. tenant SaaS inactivo (no superadmin) -> GymSuspendedBarrier.
+//   4. autenticado + tenant activo -> _RoleScreenHost segun rol.
+// Cualquier cambio al gate debe mantener este orden o actualizar los
+// smoke tests en test/smoke/role_routing_test.dart.
 class _SasGymAppState extends State<SasGymApp> {
   @override
   Widget build(BuildContext context) {
