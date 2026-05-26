@@ -1887,7 +1887,7 @@ class _PayMembershipViewState extends State<_PayMembershipView> {
           const Text('2. Método de Pago', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
           const SizedBox(height: 10),
           DropdownButtonFormField<String>(
-            value: _selectedMethod,
+            initialValue: _selectedMethod,
             decoration: InputDecoration(
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               filled: true,
@@ -2306,7 +2306,7 @@ class _ReportObservationViewState extends State<ReportObservationView> {
             const Text('Categoría', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
-              value: _category,
+              initialValue: _category,
               decoration: InputDecoration(
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 filled: true,
