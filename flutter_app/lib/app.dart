@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'data/gym_seed.dart';
 import 'data/gym_state.dart';
 import 'features/auth/login_screen.dart';
-import 'features/roles/admin_screen.dart';
+import 'features/admin/screens/admin_screen.dart';
 import 'features/cashier/screens/cashier_screen.dart';
 import 'features/member/screens/member_screen.dart';
 import 'features/roles/superadmin_screen.dart';

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:otp/otp.dart';
 
-import '../data/gym_seed.dart';
-import '../data/gym_state.dart';
-import '../models/gym_models.dart';
-import '../widgets/app_shell.dart';
-import '../core/network/api_client.dart';
+import '../../../data/gym_seed.dart';
+import '../../../data/gym_state.dart';
+import '../../../models/gym_models.dart';
+import '../../../widgets/app_shell.dart';
+import '../../../core/network/api_client.dart';
 
 class AdminScreen extends StatefulWidget {
   const AdminScreen({super.key});
