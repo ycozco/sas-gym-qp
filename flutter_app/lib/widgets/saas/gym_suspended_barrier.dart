@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 /// Blocks app interaction with a premium "Suspended SaaS Instance" display.
 /// Transversal: lo consume directamente `app.dart` cuando el tenant
-/// queda inactivo, asi que vive en `core/saas/` y no en una feature.
+/// queda inactivo, asi que vive en `widgets/saas/` y no en una feature.
 class GymSuspendedBarrier extends StatelessWidget {
   const GymSuspendedBarrier({super.key, required this.onContactAdmin});
 

@@ -8,6 +8,11 @@ import '../models/gym_models.dart';
 import '../core/network/api_client.dart';
 import '../core/storage/secure_storage.dart';
 
+// TODO(arch-future): este ChangeNotifier global concentra sesion,
+// catalogos, red, websockets y caches offline. Una iteracion posterior
+// puede partirlo en notifiers por feature (auth, member, payments,
+// saas) usando Riverpod/Bloc. No es alcance del plan de migracion
+// arquitectonica actual.
 class GymState extends ChangeNotifier {
   GymState({bool startBackground = true}) {
     _initializeData();

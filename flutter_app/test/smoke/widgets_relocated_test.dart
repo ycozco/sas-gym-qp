@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_app/core/saas/gym_suspended_barrier.dart';
+import 'package:flutter_app/widgets/saas/gym_suspended_barrier.dart';
 import 'package:flutter_app/features/member/widgets/qr_pattern.dart';
 import 'package:flutter_app/features/member/widgets/timer_ring.dart';
 import 'package:flutter_app/widgets/exercise_anim.dart';

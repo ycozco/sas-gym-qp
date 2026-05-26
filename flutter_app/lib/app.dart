@@ -10,7 +10,7 @@ import 'features/trainer/screens/trainer_screen.dart';
 import 'models/gym_models.dart';
 import 'theme/app_theme.dart';
 import 'widgets/app_shell.dart';
-import 'core/saas/gym_suspended_barrier.dart';
+import 'widgets/saas/gym_suspended_barrier.dart';
 
 class SasGymApp extends StatefulWidget {
   const SasGymApp({super.key});

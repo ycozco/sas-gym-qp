@@ -1,3 +1,9 @@
+// TODO(arch-future): este archivo importa material.dart porque varios
+// modelos cargan tipos de UI (Color, IconData) directamente. Una
+// iteracion posterior puede separar los DTOs puros (LoggedInUser,
+// MemberRecord, PaymentRecord, etc.) en `models/` Dart-only y mover
+// los catalogos visuales (RolePalette, MetricItem, ExerciseItem)
+// a `theme/` o a la feature correspondiente.
 import 'package:flutter/material.dart';
 
 enum GymRole { member, trainer, cashier, admin, superadmin }
