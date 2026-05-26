@@ -4,7 +4,7 @@ import '../../../data/gym_state.dart';
 import '../../../models/gym_models.dart';
 import '../../../widgets/app_shell.dart';
 import '../../../widgets/exercise_anim.dart';
-import '../../member/screens/member_screen.dart';
+import '../../member/member.dart';
 
 class TrainerScreen extends StatefulWidget {
   const TrainerScreen({super.key});
