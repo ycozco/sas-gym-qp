@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../data/gym_seed.dart';
-import '../data/gym_state.dart';
-import '../models/gym_models.dart';
-import '../widgets/app_shell.dart';
+import '../../../data/gym_seed.dart';
+import '../../../data/gym_state.dart';
+import '../../../models/gym_models.dart';
+import '../../../widgets/app_shell.dart';
 
 class SuperAdminScreen extends StatelessWidget {
   const SuperAdminScreen({super.key});
