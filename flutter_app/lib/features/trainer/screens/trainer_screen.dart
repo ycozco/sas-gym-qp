@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import '../data/gym_seed.dart';
-import '../data/gym_state.dart';
-import '../models/gym_models.dart';
-import '../widgets/app_shell.dart';
-import '../widgets/shared_widgets.dart';
-import '../features/member/screens/member_screen.dart';
+import '../../../data/gym_seed.dart';
+import '../../../data/gym_state.dart';
+import '../../../models/gym_models.dart';
+import '../../../widgets/app_shell.dart';
+import '../../../widgets/shared_widgets.dart';
+import '../../member/screens/member_screen.dart';
 
 class TrainerScreen extends StatefulWidget {
   const TrainerScreen({super.key});

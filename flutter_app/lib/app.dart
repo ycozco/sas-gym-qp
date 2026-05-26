@@ -6,7 +6,7 @@ import 'features/roles/admin_screen.dart';
 import 'features/roles/cashier_screen.dart';
 import 'features/member/screens/member_screen.dart';
 import 'features/roles/superadmin_screen.dart';
-import 'features/roles/trainer_screen.dart';
+import 'features/trainer/screens/trainer_screen.dart';
 import 'models/gym_models.dart';
 import 'theme/app_theme.dart';
 import 'widgets/app_shell.dart';
