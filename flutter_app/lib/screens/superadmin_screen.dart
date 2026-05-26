@@ -28,28 +28,34 @@ class SuperAdminScreen extends StatelessWidget {
           // SaaS KPI Metrics row
           Row(
             children: [
-              MetricTile(
-                icon: Icons.business,
-                label: 'Gimnasios Totales',
-                value: '$totalGyms',
-                note: 'Clientes en red',
-                accent: palette.accent,
+              Expanded(
+                child: MetricTile(
+                  icon: Icons.business,
+                  label: 'Gimnasios Totales',
+                  value: '$totalGyms',
+                  note: 'Clientes en red',
+                  accent: palette.accent,
+                ),
               ),
               const SizedBox(width: 12),
-              MetricTile(
-                icon: Icons.check_circle_outline,
-                label: 'Sedes Activas',
-                value: '$activeGyms',
-                note: 'Operando normalmente',
-                accent: const Color(0xFF00B85C),
+              Expanded(
+                child: MetricTile(
+                  icon: Icons.check_circle_outline,
+                  label: 'Sedes Activas',
+                  value: '$activeGyms',
+                  note: 'Operando normalmente',
+                  accent: const Color(0xFF00B85C),
+                ),
               ),
               const SizedBox(width: 12),
-              MetricTile(
-                icon: Icons.lock_outline,
-                label: 'Suspendidos',
-                value: '$suspendedGyms',
-                note: 'Cortes por facturación',
-                accent: Colors.redAccent,
+              Expanded(
+                child: MetricTile(
+                  icon: Icons.lock_outline,
+                  label: 'Suspendidos',
+                  value: '$suspendedGyms',
+                  note: 'Cortes por facturación',
+                  accent: Colors.redAccent,
+                ),
               ),
             ],
           ),

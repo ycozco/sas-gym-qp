@@ -9,11 +9,39 @@ import '../core/network/api_client.dart';
 import '../core/storage/secure_storage.dart';
 
 class GymState extends ChangeNotifier {
-  GymState() {
+  GymState({bool startBackground = true}) {
     _initializeData();
     _initAuthListener();
-    checkAuth();
-    _initConnectivity();
+    if (startBackground) {
+      checkAuth();
+      _initConnectivity();
+    }
+  }
+
+  @visibleForTesting
+  void setCurrentUserForTest(LoggedInUser? user) {
+    _currentUser = user;
+    _authLoading = false;
+    notifyListeners();
+  }
+
+  @visibleForTesting
+  void setCurrentGymActiveForTest({required bool active}) {
+    final id = _selectedClientId.isEmpty ? 'gym_test' : _selectedClientId;
+    final index = _saClients.indexWhere((c) => c.id == id);
+    if (index == -1) {
+      _saClients.add(SaaSClient(
+        id: id,
+        name: 'Test Gym',
+        logo: '🧪',
+        location: 'Test',
+        membersCount: '0',
+        active: active,
+      ));
+    } else {
+      _saClients[index] = _saClients[index].copyWith(active: active);
+    }
+    notifyListeners();
   }
 
   // --- Auth State ---

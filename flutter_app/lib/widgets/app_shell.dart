@@ -237,49 +237,47 @@ class MetricTile extends StatelessWidget {
     final valueColor = isDark ? Colors.white : Colors.black;
     final noteColor = isDark ? Colors.white38 : const Color(0xFF858585);
 
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: cardColor,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: borderColor),
-          boxShadow: [
-            BoxShadow(
-              color: isDark ? Colors.black.withValues(alpha: 0.15) : const Color(0x11000000),
-              blurRadius: 18,
-              offset: const Offset(0, 10),
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: isDark ? Colors.black.withValues(alpha: 0.15) : const Color(0x11000000),
+            blurRadius: 18,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: accent.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
             ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: accent.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon, size: 20, color: accent),
+            child: Icon(icon, size: 20, color: accent),
+          ),
+          const SizedBox(height: 16),
+          Text(label, style: TextStyle(fontSize: 11.5, color: labelColor, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.4,
+              color: valueColor,
             ),
-            const SizedBox(height: 16),
-            Text(label, style: TextStyle(fontSize: 11.5, color: labelColor, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 6),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 22, 
-                fontWeight: FontWeight.w800, 
-                letterSpacing: -0.4,
-                color: valueColor,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(note, style: TextStyle(fontSize: 11, color: noteColor, fontWeight: FontWeight.w500)),
-          ],
-        ),
+          ),
+          const SizedBox(height: 6),
+          Text(note, style: TextStyle(fontSize: 11, color: noteColor, fontWeight: FontWeight.w500)),
+        ],
       ),
     );
   }
@@ -309,49 +307,47 @@ class ActionTile extends StatelessWidget {
     final labelColor = isDark ? Colors.white : Colors.black;
     final noteColor = isDark ? Colors.white54 : const Color(0xFF777777);
 
-    return Expanded(
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-          decoration: BoxDecoration(
-            color: cardColor,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: borderColor),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: accent.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(icon, size: 18, color: accent),
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: borderColor),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: accent.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
               ),
-              const SizedBox(height: 12),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12.5, 
-                  fontWeight: FontWeight.w700,
-                  color: labelColor,
-                ),
+              child: Icon(icon, size: 18, color: accent),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w700,
+                color: labelColor,
               ),
-              const SizedBox(height: 4),
-              Text(
-                note,
-                style: TextStyle(
-                  fontSize: 10.5, 
-                  color: noteColor, 
-                  fontWeight: FontWeight.w500,
-                ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              note,
+              style: TextStyle(
+                fontSize: 10.5,
+                color: noteColor,
+                fontWeight: FontWeight.w500,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

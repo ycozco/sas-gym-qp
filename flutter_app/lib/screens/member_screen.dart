@@ -229,28 +229,32 @@ class _MemberHomePage extends StatelessWidget {
         const SizedBox(height: 8),
         Row(
           children: [
-            MetricTile(
-              icon: Icons.calendar_month,
-              label: 'Esta semana',
-              value: '${mateo.sessions} asists.',
-              note: 'Racha activa',
-              accent: palette.accent,
+            Expanded(
+              child: MetricTile(
+                icon: Icons.calendar_month,
+                label: 'Esta semana',
+                value: '${mateo.sessions} asists.',
+                note: 'Racha activa',
+                accent: palette.accent,
+              ),
             ),
             const SizedBox(width: 12),
-            MetricTile(
-              icon: Icons.workspace_premium,
-              label: 'Estado',
-              value: mateo.state == 'active'
-                  ? 'Activo'
-                  : mateo.state == 'grace'
-                      ? 'Gracia'
-                      : 'Vencido',
-              note: mateo.state == 'active' ? 'Vence el 4 de jun' : 'Sin días restantes',
-              accent: mateo.state == 'active'
-                  ? const Color(0xFF00B85C)
-                  : mateo.state == 'grace'
-                      ? const Color(0xFFFFB300)
-                      : Colors.redAccent,
+            Expanded(
+              child: MetricTile(
+                icon: Icons.workspace_premium,
+                label: 'Estado',
+                value: mateo.state == 'active'
+                    ? 'Activo'
+                    : mateo.state == 'grace'
+                        ? 'Gracia'
+                        : 'Vencido',
+                note: mateo.state == 'active' ? 'Vence el 4 de jun' : 'Sin días restantes',
+                accent: mateo.state == 'active'
+                    ? const Color(0xFF00B85C)
+                    : mateo.state == 'grace'
+                        ? const Color(0xFFFFB300)
+                        : Colors.redAccent,
+              ),
             ),
           ],
         ),
@@ -260,20 +264,24 @@ class _MemberHomePage extends StatelessWidget {
         SectionHeader(title: 'Acciones Rápidas'),
         Row(
           children: [
-            ActionTile(
-              icon: Icons.groups_rounded,
-              label: 'Clases Grupales',
-              note: 'Reserva tu cupo',
-              accent: palette.accent,
-              onTap: () => onGo('classes'),
+            Expanded(
+              child: ActionTile(
+                icon: Icons.groups_rounded,
+                label: 'Clases Grupales',
+                note: 'Reserva tu cupo',
+                accent: palette.accent,
+                onTap: () => onGo('classes'),
+              ),
             ),
             const SizedBox(width: 12),
-            ActionTile(
-              icon: Icons.rate_review_rounded,
-              label: 'Sugerencias',
-              note: 'Enviar sugerencia',
-              accent: palette.accent,
-              onTap: () => onGo('observation'),
+            Expanded(
+              child: ActionTile(
+                icon: Icons.rate_review_rounded,
+                label: 'Sugerencias',
+                note: 'Enviar sugerencia',
+                accent: palette.accent,
+                onTap: () => onGo('observation'),
+              ),
             ),
           ],
         ),
