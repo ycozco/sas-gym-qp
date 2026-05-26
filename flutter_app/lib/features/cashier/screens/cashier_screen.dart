@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:otp/otp.dart';
 import 'package:dio/dio.dart';
-import '../data/gym_seed.dart';
-import '../data/gym_state.dart';
-import '../models/gym_models.dart';
-import '../widgets/app_shell.dart';
+import '../../../data/gym_seed.dart';
+import '../../../data/gym_state.dart';
+import '../../../models/gym_models.dart';
+import '../../../widgets/app_shell.dart';
 
 class CashierScreen extends StatefulWidget {
   const CashierScreen({super.key});
