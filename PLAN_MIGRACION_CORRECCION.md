@@ -81,44 +81,66 @@ Mezclar dominios (`auth`) con roles (`member`, `cashier`, ...) es intencional: s
 
 ---
 
-## 3. Estrategia de validación por fase
+## 3. Estrategia de validación por fase (contenerizada)
 
-Toda fase tiene **dos pistas de validación**: Flutter y Sistema. Una fase no se da por cerrada si ambas pistas no aprueban.
+Toda fase tiene **dos pistas de validación**, ambas ejecutadas dentro de contenedores Docker. Una fase no se da por cerrada si ambas pistas no aprueban.
 
-### 3.1 Validación Flutter (común a todas las fases)
+> Pre-requisitos garantizados al cierre del commit `fee4507`:
+> - `docker compose build api` produce imagen limpia (cliente Prisma regenerado).
+> - `docker compose --profile ci build flutter-ci` ejecuta `flutter analyze` + `flutter test` dentro del contenedor y termina en exit code 0.
+> - `docker compose build frontend-web` produce la imagen de release Flutter web sobre nginx.
 
-Comandos base:
+### 3.1 Validación Flutter (contenedor `flutter-ci`)
+
+Comando único:
 
 ```powershell
-cd flutter_app
-flutter pub get
-flutter analyze
-flutter test
+docker compose --profile ci build flutter-ci
 ```
+
+El build de la imagen falla si `flutter analyze` o `flutter test` no pasan. No se ejecuta nada en el host.
 
 Criterio común:
 
-- `flutter analyze` → `No issues found!`.
-- `flutter test` → 0 fallos. La cantidad de tests crece según la fase.
-- La app arranca sin excepciones en consola (`flutter run -d windows` o `flutter run -d chrome`).
+- `analyze` → `No issues found!` dentro del contenedor.
+- `test` → 0 fallos. La cantidad de tests crece por fase.
+- Imagen `sas_gym_flutter_ci:latest` queda construida.
 
-### 3.2 Validación Sistema / Backend (común a todas las fases)
-
-Comandos base:
+Para correr los tests sin reconstruir desde cero (cuando se quiere ver el output suelto):
 
 ```powershell
-cd backend
-npm run build
-docker compose up -d
+docker compose run --rm --build flutter-ci flutter test
+```
+
+### 3.2 Validación Sistema / Backend (contenedor `api`)
+
+Comandos:
+
+```powershell
+docker compose build api
+docker compose up -d db api
 docker compose ps
 ```
 
 Criterio común:
 
-- `npm run build` termina sin errores TypeScript.
-- Contenedores `backend-api` y `backend-db` en estado `Up`.
-- `GET /api/v1/health` (o el endpoint disponible más cercano) responde `200 OK`.
-- `POST /api/v1/auth/login` con seed credentials responde `200 OK` y devuelve `token`.
+- `docker compose build api` termina sin errores TS (el `Dockerfile` corre `nest build` dentro).
+- `db` (`gymsmart-postgres`) y `api` (`gymsmart-api`) ambos en estado `Up` / `healthy`.
+- `POST /api/v1/auth/login` con credenciales seed responde `200 OK` y devuelve `token`.
+
+Validación funcional desde **otro contenedor** (cumple la directiva "todo contenerizado"):
+
+```powershell
+docker compose exec api node -e "fetch('http://localhost:3000/api/v1/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:'admin@gymsmart.com',password:'<seed>'})}).then(r=>console.log(r.status))"
+```
+
+Resultado esperado: `200`.
+
+Para apagar entre fases sin perder datos:
+
+```powershell
+docker compose down
+```
 
 ### 3.3 Reglas de commit y rollback
 
@@ -150,32 +172,29 @@ Criterio común:
    - `app_boot_test.dart`: arranca `SasGymApp` y verifica que renderiza pantalla de login.
    - `role_routing_test.dart`: inyecta `GymState` con usuario por cada rol y verifica que la pantalla esperada se monta sin excepción.
 
-**Validación Flutter:**
+**Validación Flutter (contenedor):**
 
 ```powershell
-cd flutter_app
-flutter analyze
-flutter test test/smoke/
+docker compose --profile ci build flutter-ci
 ```
 
-Criterio: ambos smoke tests verdes.
+Criterio: build verde (incluye `flutter analyze` + `flutter test`, smoke tests entran en la suite).
 
-**Validación Sistema:**
+**Validación Sistema (contenedor):**
 
 ```powershell
-cd backend
-npm run build
-docker compose up -d
+docker compose build api
+docker compose up -d db api
 docker compose ps
 ```
 
-Criterio: contenedores `Up`, `npm run build` limpio.
+Criterio: contenedores `Up`, build limpio.
 
 **Criterio de salida:**
 
 - Existe `MIGRATION_INVENTORY.md` con los tres listados.
-- Existen 2 smoke tests verdes en `test/smoke/`.
-- Backend compila y corre.
+- Existen 2 smoke tests verdes ejecutados dentro de `flutter-ci`.
+- Imagen `api` reconstruida limpia.
 
 **Commit:** `chore(arch-migration): fase 0 - inventario y smoke tests`
 
@@ -196,29 +215,27 @@ Criterio: contenedores `Up`, `npm run build` limpio.
 3. Extraer `_TopBar` y `_RoleScreenHost` de `app.dart` a archivos propios en `lib/widgets/app_shell.dart` o `lib/core/shell/` si pesan más de lo razonable; si no, dejarlos privados.
 4. Documentar el orden de gate en `app.dart`: `authLoading → login → SaaS barrier → role host`.
 
-**Validación Flutter:**
+**Validación Flutter (contenedor):**
 
 ```powershell
-cd flutter_app
-flutter analyze
-flutter test
-flutter run -d windows  # o chrome — verificación manual de arranque
+docker compose --profile ci build flutter-ci
+docker compose build frontend-web
 ```
 
 Criterio:
 
-- Smoke tests siguen verdes.
-- App arranca, muestra login si no hay sesión, navega a home por rol con seed credentials.
+- `flutter-ci` verde (smoke tests pasan).
+- `frontend-web` buildea — implica que `flutter build web --release` compila sin errores.
 
-**Validación Sistema:**
+**Validación Sistema (contenedor):**
 
 ```powershell
-cd backend
+docker compose up -d db api
 docker compose ps
-curl -X POST http://localhost:3000/api/v1/auth/login -H "Content-Type: application/json" -d '{"email":"admin@gymsmart.com","password":"<seed>"}'
+docker compose exec api node -e "fetch('http://localhost:3000/api/v1/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:'admin@gymsmart.com',password:'<seed>'})}).then(r=>console.log(r.status))"
 ```
 
-Criterio: login responde `200 OK` con token y `tenantId`.
+Criterio: `200` (login válido) y contenedores `Up`.
 
 **Criterio de salida:**
 
@@ -258,25 +275,26 @@ Al final de la fase:
 - Eliminar carpeta `lib/screens/` (debe quedar vacía).
 - Eliminar carpeta `lib/features/roles/` (debe quedar vacía).
 
-**Validación Flutter (después de cada sub-commit):**
+**Validación Flutter (contenedor, después de cada sub-commit):**
 
 ```powershell
-cd flutter_app
-flutter analyze
-flutter test test/smoke/
+docker compose --profile ci build flutter-ci
 ```
 
-Criterio: ambos en verde tras cada sub-commit. Si un sub-commit rompe smoke tests, no continuar al siguiente rol hasta corregir.
+Criterio: build de la imagen `flutter-ci` verde tras cada sub-commit. Si un sub-commit rompe analyze o smoke tests, no continuar al siguiente rol hasta corregir.
 
-**Validación Sistema:**
+**Validación Sistema (contenedor):**
 
-Sin cambios respecto a Fase 1 (este movimiento es 100% frontend). Mantener `docker compose ps` con contenedores `Up` para validar manualmente login + 1 acción por rol al cierre de la fase.
+Sin cambios funcionales respecto a Fase 1 (este movimiento es 100% frontend). Al cierre de la fase, reconstruir el web release y validar contenedores:
 
-Criterio adicional manual:
+```powershell
+docker compose build frontend-web
+docker compose ps
+```
 
-- Login como `member` muestra QR.
-- Login como `admin` muestra dashboard.
-- Login como `cashier` permite abrir turno (o muestra error de turno si está fuera de horario — comportamiento esperado).
+Criterio: `frontend-web` buildea (confirma que `flutter build web --release` sigue compilando con la nueva estructura), `db` y `api` siguen `Up`.
+
+Verificación manual de UI (al cierre, no por sub-commit): levantar `frontend-web` en `localhost:8383` con `docker compose up -d frontend-web` y comprobar login + navegación por rol.
 
 **Criterio de salida:**
 
@@ -306,30 +324,27 @@ Criterio adicional manual:
 2. Partir `widgets/shared_widgets.dart` en archivos por widget si pasa los 500 LOC tras la limpieza.
 3. Actualizar imports en cada feature.
 
-**Validación Flutter:**
+**Validación Flutter (contenedor):**
 
 ```powershell
-cd flutter_app
-flutter analyze
-flutter test
+docker compose --profile ci build flutter-ci
 ```
 
 Criterio:
 
-- Sin imports rotos.
-- Sin warnings de imports sin uso (`unused_import`).
+- Sin imports rotos (analyze limpio dentro del contenedor).
+- Sin warnings `unused_import`.
 - Smoke tests siguen verdes.
 - Agregar 1 widget test por widget movido (verifica que monta sin error con datos mínimos).
 
-**Validación Sistema:**
-
-Sin cambios. Backend debe seguir `Up`. Validación adicional manual: la pantalla del socio sigue mostrando el QR con rotación TOTP (verificable porque [features/member/](flutter_app/lib/features/member/) consume el endpoint `/members/qr-code`).
+**Validación Sistema (contenedor):**
 
 ```powershell
-curl -H "Authorization: Bearer <token>" http://localhost:3000/api/v1/members/qr-code
+docker compose up -d db api
+docker compose exec api node -e "fetch('http://localhost:3000/api/v1/members/qr-code',{headers:{'Authorization':'Bearer <token>','X-Tenant-ID':'<tenant>'}}).then(r=>r.json()).then(j=>console.log(JSON.stringify(j)))"
 ```
 
-Criterio: responde `qrSecret` e `intervalSeconds`.
+Criterio: respuesta contiene `qrSecret` e `intervalSeconds`.
 
 **Criterio de salida:**
 
@@ -356,37 +371,33 @@ Criterio: responde `qrSecret` e `intervalSeconds`.
 4. Confirmar que [core/network/api_client.dart](flutter_app/lib/core/network/api_client.dart) y [core/storage/secure_storage.dart](flutter_app/lib/core/storage/secure_storage.dart) no importan pantallas ni widgets.
 5. Anotar `TODO(arch-future)` en `GymState` indicando dónde se partiría por feature en una iteración posterior.
 
-**Validación Flutter:**
+**Validación Flutter (contenedor):**
 
 ```powershell
-cd flutter_app
-flutter analyze
-flutter test
+docker compose --profile ci build flutter-ci
 ```
 
-Análisis adicional de dependencias (manual, grep):
+Análisis adicional de fronteras (host, sólo lectura):
 
 ```powershell
-cd flutter_app/lib
-Select-String -Path "core\**\*.dart","models\**\*.dart" -Pattern "package:flutter/material" -SimpleMatch
-Select-String -Path "data\**\*.dart" -Pattern "import '../features" -SimpleMatch
+Select-String -Path "flutter_app\lib\core\**\*.dart","flutter_app\lib\models\**\*.dart" -Pattern "package:flutter/material" -SimpleMatch
+Select-String -Path "flutter_app\lib\data\**\*.dart" -Pattern "import '../features" -SimpleMatch
 ```
 
-Criterio: ambos `Select-String` devuelven **sin resultados**.
+Criterio: ambos `Select-String` devuelven **sin resultados**. (Lectura estática, no requiere Flutter en host.)
 
-**Validación Sistema:**
+**Validación Sistema (contenedor):**
 
 ```powershell
-cd backend
-npm run build
-docker compose ps
-curl http://localhost:3000/api/v1/auth/me -H "Authorization: Bearer <token>"
+docker compose build api
+docker compose up -d db api
+docker compose exec api node -e "fetch('http://localhost:3000/api/v1/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:'admin@gymsmart.com',password:'<seed>'})}).then(r=>r.json()).then(j=>console.log(JSON.stringify(j.user)))"
 ```
 
 Criterio:
 
-- Build limpio.
-- `/auth/me` (o equivalente) responde el perfil. Si el endpoint no existe, validar con `POST /auth/login` que el `LoggedInUser` deserializa correctamente.
+- Build de `api` limpio.
+- Login devuelve `user` con `id`, `email`, `role`, `fullName` (valida que el shape del `LoggedInUser` consumido por Flutter siga intacto).
 
 **Criterio de salida:**
 
@@ -412,27 +423,33 @@ Criterio:
 3. Verificar ausencia de imports circulares.
 4. Verificar que no quedan referencias a `lib/screens/` o `lib/features/roles/`.
 
-**Validación Flutter:**
+**Validación Flutter (contenedor):**
 
 ```powershell
-cd flutter_app
-flutter analyze
-flutter test
-flutter pub deps --no-dev --style=compact
+docker compose --profile ci build flutter-ci
+docker compose build frontend-web
 ```
 
-Búsquedas obligatorias:
+Búsquedas obligatorias (host, sólo lectura estática):
 
 ```powershell
-Select-String -Path "lib\**\*.dart" -Pattern "screens/" -SimpleMatch
-Select-String -Path "lib\**\*.dart" -Pattern "features/roles/" -SimpleMatch
+Select-String -Path "flutter_app\lib\**\*.dart" -Pattern "screens/" -SimpleMatch
+Select-String -Path "flutter_app\lib\**\*.dart" -Pattern "features/roles/" -SimpleMatch
 ```
 
-Criterio: cero resultados en ambas búsquedas.
+Criterio: cero resultados en ambas búsquedas; ambos contenedores buildean.
 
-**Validación Sistema:**
+**Validación Sistema (contenedor):**
 
-Sin cambios respecto a fases previas. Repetir validación común (build + contenedores `Up` + login `200`).
+Sin cambios respecto a fases previas. Repetir:
+
+```powershell
+docker compose build api
+docker compose up -d db api
+docker compose ps
+```
+
+Criterio: ambos contenedores `Up` y build limpio.
 
 **Criterio de salida:**
 
@@ -461,41 +478,39 @@ Sin cambios respecto a fases previas. Repetir validación común (build + conten
    - `saas_barrier_test.dart`: con `isCurrentGymActive=false` la barrera SaaS aparece.
 2. Documentar resultados en `flutter_app/MIGRATION_VALIDATION.md` con fecha y comandos ejecutados.
 
-**Validación Flutter:**
+**Validación Flutter (contenedor + cobertura):**
 
 ```powershell
-cd flutter_app
-flutter analyze
-flutter test
-flutter test --coverage
-flutter run -d windows  # smoke manual final
+docker compose --profile ci build flutter-ci
+docker compose run --rm flutter-ci flutter test --coverage
+docker compose build frontend-web
+docker compose up -d frontend-web   # smoke visual en localhost:8383
 ```
 
 Criterio:
 
-- 0 fallos en suite completa.
-- Cobertura de los archivos en `features/*/screens/` ≥ 30 % (umbral mínimo, ajustable).
-- App arranca y permite navegar por los 5 roles con seed credentials.
+- 0 fallos en suite completa dentro del contenedor.
+- Cobertura ≥ 30 % en `features/*/screens/` (umbral mínimo, ajustable).
+- `frontend-web` sirve la app en `http://localhost:8383` y los 5 roles son navegables con seed credentials.
 
-**Validación Sistema:**
+**Validación Sistema (contenedor):**
 
-Ejecutar el set completo de endpoints críticos:
+Ejecutar el set completo de endpoints críticos desde dentro de `api`:
 
 ```powershell
-cd backend
-docker compose ps
+docker compose up -d db api
 
-# Login
-curl -X POST http://localhost:3000/api/v1/auth/login -H "Content-Type: application/json" -d '{"email":"admin@gymsmart.com","password":"<seed>"}'
+# Login (devuelve token + tenantId + user)
+docker compose exec api node -e "fetch('http://localhost:3000/api/v1/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:'admin@gymsmart.com',password:'<seed>'})}).then(r=>r.json()).then(j=>console.log(JSON.stringify(j)))"
 
 # QR seed (member)
-curl -H "Authorization: Bearer <member_token>" -H "X-Tenant-ID: <tenant>" http://localhost:3000/api/v1/members/qr-code
+docker compose exec api node -e "fetch('http://localhost:3000/api/v1/members/qr-code',{headers:{'Authorization':'Bearer <member_token>','X-Tenant-ID':'<tenant>'}}).then(r=>r.json()).then(j=>console.log(JSON.stringify(j)))"
 
 # Verify attendance (admin/cashier)
-curl -X POST http://localhost:3000/api/v1/attendance/verify -H "Authorization: Bearer <admin_token>" -H "X-Tenant-ID: <tenant>" -H "Content-Type: application/json" -d '{"dni":"12345678","otpToken":"<token>"}'
+docker compose exec api node -e "fetch('http://localhost:3000/api/v1/attendance/verify',{method:'POST',headers:{'Authorization':'Bearer <admin_token>','X-Tenant-ID':'<tenant>','Content-Type':'application/json'},body:JSON.stringify({dni:'12345678',otpToken:'<token>'})}).then(r=>r.json()).then(j=>console.log(JSON.stringify(j)))"
 
 # Pending payments (admin)
-curl -H "Authorization: Bearer <admin_token>" -H "X-Tenant-ID: <tenant>" http://localhost:3000/api/v1/admin/pending-payments
+docker compose exec api node -e "fetch('http://localhost:3000/api/v1/admin/pending-payments',{headers:{'Authorization':'Bearer <admin_token>','X-Tenant-ID':'<tenant>'}}).then(r=>r.json()).then(j=>console.log(JSON.stringify(j)))"
 ```
 
 Criterio: los 4 endpoints responden el shape documentado en [AVANCES_MIGRACION_FLUTTER.md](AVANCES_MIGRACION_FLUTTER.md) sección 2.
@@ -534,7 +549,7 @@ Total: ~5.5 días de trabajo enfocado.
 | Romper imports al mover archivos | `git mv` + smoke tests entre sub-commits |
 | Olvidar borrar shims tras migrar | Búsqueda forzosa en Fase 5: cero resultados de `screens/` o `features/roles/` |
 | Widgets de dominio quedan en `widgets/` | Mapeo cerrado en Fase 0 + revisión en Fase 3 |
-| Backend deja de compilar por cambio accidental | Validación sistema en cada fase incluye `npm run build` |
+| Backend deja de compilar por cambio accidental | Validación sistema en cada fase incluye `docker compose build api` |
 | `GymState` global crece descontrolado | TODO marcado en Fase 4; partir queda fuera de alcance |
 | Sin tests = regresiones invisibles | Suite mínima creada en Fase 0, ampliada hasta Fase 6 |
 
@@ -547,8 +562,8 @@ La migración se considera correcta cuando, de forma simultánea:
 - [lib/screens/](flutter_app/lib/screens/) y `lib/features/roles/` no existen.
 - Cada rol vive en `features/<rol>/screens/` con su propio export barril.
 - `widgets/` no contiene lógica específica de un rol.
-- `flutter analyze` y `flutter test` verdes.
-- Backend compila, contenedores levantan, login y endpoints críticos siguen respondiendo el contrato documentado.
+- `docker compose --profile ci build flutter-ci` verde (analyze + test dentro del contenedor).
+- `docker compose build api` y `docker compose build frontend-web` verdes; contenedores levantan, login y endpoints críticos siguen respondiendo el contrato documentado.
 - Existe `MIGRATION_VALIDATION.md` con evidencia de comandos y fechas.
 
 ---
