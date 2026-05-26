@@ -5,11 +5,11 @@ import 'package:otp/otp.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:image/image.dart' as img;
 import 'package:file_picker/file_picker.dart';
-import '../data/gym_seed.dart';
-import '../data/gym_state.dart';
-import '../models/gym_models.dart';
-import '../widgets/app_shell.dart';
-import '../widgets/shared_widgets.dart';
+import '../../../data/gym_seed.dart';
+import '../../../data/gym_state.dart';
+import '../../../models/gym_models.dart';
+import '../../../widgets/app_shell.dart';
+import '../../../widgets/shared_widgets.dart';
 
 MemberRecord _getLoggedMember(GymState state) {
   final user = state.currentUser;

@@ -4,7 +4,7 @@ import 'data/gym_state.dart';
 import 'features/auth/login_screen.dart';
 import 'features/roles/admin_screen.dart';
 import 'features/roles/cashier_screen.dart';
-import 'features/roles/member_screen.dart';
+import 'features/member/screens/member_screen.dart';
 import 'features/roles/superadmin_screen.dart';
 import 'features/roles/trainer_screen.dart';
 import 'models/gym_models.dart';
