@@ -4,6 +4,7 @@ import '../data/gym_state.dart';
 import '../models/gym_models.dart';
 import '../widgets/app_shell.dart';
 import '../widgets/shared_widgets.dart';
+import 'member_screen.dart';
 
 class TrainerScreen extends StatefulWidget {
   const TrainerScreen({super.key});
@@ -100,6 +101,11 @@ class _TrainerScreenState extends State<TrainerScreen> {
           templates: _routineTemplates,
           onBack: _back,
         );
+      } else if (screen == 'report-observation') {
+        activeView = ReportObservationView(
+          palette: palette,
+          onBack: _back,
+        );
       }
     }
 
@@ -178,7 +184,11 @@ class _TrainerScreenState extends State<TrainerScreen> {
       case 3:
         return _TrainerProgressTab(key: key, palette: palette);
       default:
-        return _TrainerProfileTab(key: key, palette: palette);
+        return _TrainerProfileTab(
+          key: key,
+          palette: palette,
+          onGo: _go,
+        );
     }
   }
 }
@@ -211,7 +221,7 @@ class _TrainerMembersTab extends StatelessWidget {
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             gradient: palette.gradient,
-            borderRadius: BorderRadius.circular(28),
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(color: palette.accent.withValues(alpha: 0.25)),
           ),
           child: Column(
@@ -288,7 +298,7 @@ class _TrainerMembersTab extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 12),
                 child: InkWell(
                   onTap: () => onGo('student-details', {'member': member}),
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(12),
                   child: Container(
                     padding: const EdgeInsets.all(16),
                     decoration: _cardDecoration(),
@@ -470,7 +480,7 @@ class _StudentDetailsViewState extends State<_StudentDetailsView> {
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: const Color(0xFFFFF7F7),
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(12),
               border: Border.all(color: const Color(0xFFFFCCCC)),
             ),
             child: Column(
@@ -560,7 +570,7 @@ class _StudentDetailsViewState extends State<_StudentDetailsView> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: widget.palette.accent,
                 foregroundColor: widget.palette.accentInk,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 elevation: 0,
               ),
@@ -797,7 +807,7 @@ class _AssignRoutineViewState extends State<_AssignRoutineView> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF111111),
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
               onPressed: () {
@@ -869,8 +879,8 @@ class _TrainerExerciseLibraryTabState extends State<_TrainerExerciseLibraryTab> 
           Container(
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFFE8E4D9)),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE2DDD5)),
             ),
             child: TextField(
               onChanged: (val) => setState(() => _searchQuery = val),
@@ -919,7 +929,7 @@ class _TrainerExerciseLibraryTabState extends State<_TrainerExerciseLibraryTab> 
             style: ElevatedButton.styleFrom(
               backgroundColor: widget.palette.accent.withValues(alpha: 0.12),
               foregroundColor: widget.palette.accent,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               padding: const EdgeInsets.symmetric(vertical: 14),
               elevation: 0,
             ),
@@ -1006,6 +1016,10 @@ class _TrainerExerciseLibraryTabState extends State<_TrainerExerciseLibraryTab> 
           builder: (context, setDlgState) {
             return AlertDialog(
               backgroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: const BorderSide(color: Color(0xFFE2DDD5)),
+              ),
               title: const Text('Nuevo Ejercicio', style: TextStyle(fontWeight: FontWeight.w900)),
               content: SingleChildScrollView(
                 child: Column(
@@ -1104,7 +1118,7 @@ class _TrainerTemplatesTab extends StatelessWidget {
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF111111),
             foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             padding: const EdgeInsets.symmetric(vertical: 14),
           ),
           icon: const Icon(Icons.create_new_folder_outlined),
@@ -1166,6 +1180,10 @@ class _TrainerTemplatesTab extends StatelessWidget {
       builder: (ctx) {
         return AlertDialog(
           backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: const BorderSide(color: Color(0xFFE2DDD5)),
+          ),
           title: const Text('Crear Plantilla', style: TextStyle(fontWeight: FontWeight.w900)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -1360,9 +1378,14 @@ class _ProgressMiniStat extends StatelessWidget {
 // TRAINER PROFILE TAB
 // ------------------------------------------
 class _TrainerProfileTab extends StatelessWidget {
-  const _TrainerProfileTab({super.key, required this.palette});
+  const _TrainerProfileTab({
+    super.key,
+    required this.palette,
+    required this.onGo,
+  });
 
   final RolePalette palette;
+  final Function(String, [Map<String, dynamic>?]) onGo;
 
   @override
   Widget build(BuildContext context) {
@@ -1417,6 +1440,29 @@ class _TrainerProfileTab extends StatelessWidget {
             ],
           ),
         ),
+        const SizedBox(height: 18),
+        Container(
+          padding: const EdgeInsets.all(18),
+          decoration: _cardDecoration(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Soporte e Incidencias', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
+              const SizedBox(height: 14),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: CircleAvatar(
+                  backgroundColor: palette.accent.withValues(alpha: 0.12),
+                  child: Icon(Icons.report_problem_rounded, color: palette.accent),
+                ),
+                title: const Text('Buzón de Incidencias', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                subtitle: const Text('Reporta daños en máquinas o áreas del local', style: TextStyle(fontSize: 12)),
+                trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
+                onTap: () => onGo('report-observation'),
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }
@@ -1442,8 +1488,7 @@ class _TrainerProfileTab extends StatelessWidget {
 BoxDecoration _cardDecoration() {
   return BoxDecoration(
     color: Colors.white,
-    borderRadius: BorderRadius.circular(24),
-    border: Border.all(color: const Color(0xFFE8E4D9)),
-    boxShadow: const [BoxShadow(color: Color(0x0F000000), blurRadius: 18, offset: Offset(0, 10))],
+    borderRadius: BorderRadius.circular(12),
+    border: Border.all(color: const Color(0xFFE2DDD5)),
   );
 }

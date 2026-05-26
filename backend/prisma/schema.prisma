@@ -30,6 +30,10 @@ model Tenant {
   schedules       Schedule[]
   announcements   Announcement[]
   observations    Observation[]
+  cajas           Caja[]
+  products        Product[]
+  product_sales   ProductSale[]
+  categories      ProductCategory[]
 }
 
 // ─── USUARIOS ────────────────────────────────────────────────────
@@ -46,6 +50,7 @@ model User {
   foto_url        String?
   estado          UserState @default(PENDING)
   refresh_token   String?
+  qr_secret       String?
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt
 
@@ -55,6 +60,18 @@ model User {
   memberships        Membership[]
   payments_registered Payment[] @relation("RegisteredBy")
   attendances        Attendance[]
+
+  // Nuevas relaciones para Caja, Ventas de Productos, Huellas y Puntos
+  cajas_registradas           Caja[]            @relation("CajeroSessions")
+  ventas_registradas          ProductSale[]     @relation("CajeroSales")
+  compras_realizadas          ProductSale[]     @relation("ClientPurchases")
+  huellas                     Fingerprint[]
+  asistencias_huella          FingerprintAttendance[]
+  points_balance              PointsBalance?
+  points_exchanges            PointsExchange[]  @relation("UserExchanges")
+  points_exchanges_processed  PointsExchange[]  @relation("ExchangesProcessed")
+  points_movements            PointsMovement[]
+  inventory_movements         InventoryMovement[]
 
   @@unique([tenant_id, email])
   @@unique([tenant_id, dni])
@@ -131,10 +148,31 @@ model Membership {
   payments        Payment[]
   created_at      DateTime        @default(now())
   updated_at      DateTime        @updatedAt
+
+  // Campos financieros de paridad
+  descuento_porcentaje        Float             @default(0)
+  descuento_monto             Float             @default(0)
+  precio_pagado               Float             @default(0)
+  monto_pendiente             Float             @default(0)
+  pago_completo               Boolean           @default(true)
+  
+  // Congelamiento y Traspaso
+  congelada                   Boolean           @default(false)
+  fecha_congelacion           DateTime?
+  fecha_descongelacion        DateTime?
+  razon_congelacion           String?
+  fecha_traspaso              DateTime?
+  razon_traspaso              String?
+  
+  usuario_original_id         String?
+  traspasada_a_id             String?
+
+  points_movements            PointsMovement[]
 }
 
 enum MembershipState {
   ACTIVE
+
   EXPIRED
   PENDING
   GRACE      // Dentro del día de gracia
@@ -154,6 +192,13 @@ model Payment {
   comprobante_url     String?       // Para acreditación manual
   referencia_externa  String?       // ID de transacción de la pasarela
   timestamp           DateTime      @default(now())
+
+  // Relación con turno de caja y prevención de doble submit
+  caja_id             String?
+  caja                Caja?         @relation(fields: [caja_id], references: [id])
+  venta_token         String?       @unique
+
+  points_movements    PointsMovement[]
 }
 
 enum PaymentMethod {
@@ -161,6 +206,8 @@ enum PaymentMethod {
   GATEWAY      // Culqi / Izipay
   MANUAL_YAPE  // Acreditación manual Yape
   MANUAL_PLIN  // Acreditación manual Plin
+  TRANSFER     // Transferencia bancaria
+  POS          // Cobro tarjeta POS físico
 }
 
 enum PaymentState {
@@ -234,6 +281,7 @@ model Exercise {
   animacion_version Int      @default(1)  // Incrementar para invalidar caché
   activo            Boolean  @default(true)
   created_at        DateTime @default(now())
+  routine_exercises RoutineExercise[]
 }
 
 model RoutineTemplate {
@@ -252,6 +300,7 @@ model RoutineExercise {
   template_id       String
   template          RoutineTemplate @relation(fields: [template_id], references: [id])
   exercise_id       String
+  exercise          Exercise        @relation(fields: [exercise_id], references: [id])
   orden             Int
   series            Int
   repeticiones      Int
@@ -326,3 +375,274 @@ model Announcement {
   activo      Boolean  @default(true)
   created_at  DateTime @default(now())
 }
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  tenant_id  String
+  actor_id   String
+  actor_name String
+  rol        String
+  accion     String   // "CREATE" | "UPDATE" | "DELETE"
+  entidad    String   // "Payment" | "Membership" | "CashierSession" etc.
+  detalles   Json
+  timestamp  DateTime @default(now())
+}
+
+// ─── CAJA (SALA DE CAJERO) ───────────────────────────────────────
+model Caja {
+  id                          String          @id @default(uuid())
+  tenant_id                   String
+  tenant                      Tenant          @relation(fields: [tenant_id], references: [id])
+  cajero_id                   String
+  cajero                      User            @relation("CajeroSessions", fields: [cajero_id], references: [id])
+  fecha_apertura              DateTime        @default(now())
+  fecha_cierre                DateTime?
+  monto_apertura              Float           @default(0)
+  monto_cierre_efectivo       Float?
+  monto_cierre_transferencia  Float?
+  monto_cierre_yape           Float?
+  monto_cierre_pos            Float?
+  total_ventas_efectivo       Float           @default(0)
+  total_ventas_transferencia  Float           @default(0)
+  total_ventas_yape           Float           @default(0)
+  total_ventas_pos            Float           @default(0)
+  total_ingresos              Float           @default(0)
+  diferencia                  Float           @default(0)
+  observaciones               String?
+  estado                      String          @default("abierta") // abierta | cerrada
+  movimientos                 MovimientoCaja[]
+  payments                    Payment[]       // Pagos de membresías asociados
+  product_sales               ProductSale[]   // Ventas de productos asociadas
+  created_at                  DateTime        @default(now())
+  updated_at                  DateTime        @updatedAt
+}
+
+model MovimientoCaja {
+  id              String   @id @default(uuid())
+  caja_id         String
+  caja            Caja     @relation(fields: [caja_id], references: [id])
+  tipo            String   // ingreso | egreso
+  monto           Float
+  monto_pendiente Float    @default(0)
+  descripcion     String
+  created_at      DateTime @default(now())
+}
+
+// ─── ASISTENCIA BIOMÉTRICA (HUELLA) ──────────────────────────────
+model Fingerprint {
+  id                 String                 @id @default(uuid())
+  usuario_id         String
+  usuario            User                   @relation(fields: [usuario_id], references: [id])
+  dedo               String                 // pulgar_izq, indice_izq, etc.
+  datos_huella       String                 // plantilla biométrica en base64
+  hash_verificacion  String                 // hash SHA256 de integridad
+  token_registro     String                 @unique @default(uuid())
+  fecha_captura      DateTime               @default(now())
+  fecha_actualizacion DateTime              @updatedAt
+  activa             Boolean                @default(true)
+  attendances        FingerprintAttendance[]
+
+  @@unique([usuario_id, dedo])
+}
+
+model FingerprintAttendance {
+  id             String       @id @default(uuid())
+  usuario_id     String
+  usuario        User         @relation(fields: [usuario_id], references: [id])
+  huella_id      String?
+  huella         Fingerprint? @relation(fields: [huella_id], references: [id])
+  fecha_entrada  DateTime     @default(now())
+  ip_origen      String?
+  dispositivo_id String?      // ID del lector ZkTeco
+}
+
+// ─── PRODUCTOS E INVENTARIO ──────────────────────────────────────
+model Product {
+  id                String              @id @default(uuid())
+  tenant_id         String
+  tenant            Tenant              @relation(fields: [tenant_id], references: [id])
+  nombre            String
+  descripcion       String?
+  categoria_id      String
+  categoria         ProductCategory     @relation(fields: [categoria_id], references: [id])
+  sku               String              @unique
+  precio_compra     Float
+  precio_venta      Float
+  stock_actual      Int                 @default(0)
+  stock_minimo      Int                 @default(5)
+  imagen_url        String?
+  estado            String              @default("activo") // activo | inactivo | agotado
+  es_visible        Boolean             @default(true)
+  veces_vendido     Int                 @default(0)
+  ultima_venta      DateTime?
+  created_at        DateTime            @default(now())
+  updated_at        DateTime            @updatedAt
+  sales_details     ProductSaleDetail[]
+  stock_movements   InventoryMovement[]
+}
+
+model ProductCategory {
+  id          String    @id @default(uuid())
+  tenant_id   String
+  tenant      Tenant    @relation(fields: [tenant_id], references: [id])
+  nombre      String    @unique
+  descripcion String?
+  color       String    @default("#6c757d")
+  activo      Boolean   @default(true)
+  products    Product[]
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+}
+
+model ProductSale {
+  id              String             @id @default(uuid())
+  tenant_id       String
+  tenant          Tenant             @relation(fields: [tenant_id], references: [id])
+  referencia      String             @unique
+  cajero_id       String
+  cajero          User               @relation("CajeroSales", fields: [cajero_id], references: [id])
+  cliente_id      String?
+  cliente         User?              @relation("ClientPurchases", fields: [cliente_id], references: [id])
+  caja_id         String?
+  caja            Caja?              @relation(fields: [caja_id], references: [id])
+  subtotal        Float              @default(0)
+  descuento       Float              @default(0)
+  total           Float
+  monto_pendiente Float              @default(0)
+  estado          String             @default("completada") // pendiente | completada | cancelada
+  notas           String?
+  fecha_venta     DateTime           @default(now())
+  created_at      DateTime           @default(now())
+  payment_methods ProductPaymentMethodDetail[]
+  details         ProductSaleDetail[]
+  inventory_moves InventoryMovement[]
+}
+
+model ProductPaymentMethodDetail {
+  id          String      @id @default(uuid())
+  sale_id     String
+  sale        ProductSale @relation(fields: [sale_id], references: [id])
+  metodo      String      // efectivo | transferencia | yape | pos
+  monto       Float
+  referencia  String?
+  created_at  DateTime    @default(now())
+}
+
+model ProductSaleDetail {
+  id              String      @id @default(uuid())
+  sale_id         String
+  sale            ProductSale @relation(fields: [sale_id], references: [id])
+  producto_id     String
+  producto        Product     @relation(fields: [producto_id], references: [id])
+  cantidad        Int
+  precio_unitario Float
+  subtotal        Float
+}
+
+model InventoryMovement {
+  id               String      @id @default(uuid())
+  producto_id      String
+  producto         Product     @relation(fields: [producto_id], references: [id])
+  tipo             String      // entrada | salida | ajuste | devolucion
+  cantidad         Int
+  stock_anterior   Int
+  stock_actual     Int
+  sale_id          String?
+  sale             ProductSale? @relation(fields: [sale_id], references: [id])
+  usuario_id       String
+  usuario          User        @relation(fields: [usuario_id], references: [id])
+  motivo           String?
+  fecha_movimiento DateTime    @default(now())
+  created_at       DateTime    @default(now())
+}
+
+// ─── PUNTOS Y FIDELIZACIÓN ───────────────────────────────────────
+model PointsConfig {
+  id                String   @id @default(uuid())
+  puntos_por_sol    Float    @default(1.0)
+  minimo_para_canje Int      @default(100)
+  puntos_expiran    Boolean  @default(false)
+  dias_expiracion   Int      @default(365)
+  activo            Boolean  @default(true)
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+}
+
+model PointsBalance {
+  id                      String   @id @default(uuid())
+  usuario_id              String   @unique
+  usuario                 User     @relation(fields: [usuario_id], references: [id])
+  puntos_disponibles      Int      @default(0)
+  puntos_totales_ganados  Int      @default(0)
+  puntos_totales_canjeados Int      @default(0)
+  created_at              DateTime @default(now())
+  updated_at              DateTime @updatedAt
+}
+
+model PointsProduct {
+  id             String           @id @default(uuid())
+  nombre         String
+  descripcion    String
+  precio_puntos  Int
+  stock          Int              @default(0)
+  stock_minimo   Int              @default(5)
+  activo         Boolean          @default(true)
+  destacado      Boolean          @default(false)
+  created_at     DateTime         @default(now())
+  updated_at     DateTime         @updatedAt
+  exchanges      PointsExchange[]
+}
+
+model PointsMembership {
+  id             String           @id @default(uuid())
+  nombre         String
+  descripcion    String
+  precio_puntos  Int
+  duracion_dias  Int
+  stock          Int              @default(0) // 0 = ilimitado
+  activo         Boolean          @default(true)
+  destacada      Boolean          @default(false)
+  created_at     DateTime         @default(now())
+  updated_at     DateTime         @updatedAt
+  exchanges      PointsExchange[]
+}
+
+model PointsExchange {
+  id                  String            @id @default(uuid())
+  usuario_id          String
+  usuario             User              @relation("UserExchanges", fields: [usuario_id], references: [id])
+  tipo                String            // producto | membresia
+  producto_id         String?
+  producto            PointsProduct?    @relation(fields: [producto_id], references: [id])
+  membresia_puntos_id String?
+  membresia_puntos    PointsMembership? @relation(fields: [membresia_puntos_id], references: [id])
+  cantidad            Int               @default(1)
+  puntos_utilizados   Int
+  estado              String            @default("pendiente") // pendiente | completado | cancelado | entregado
+  procesado_por_id    String?
+  procesado_por       User?             @relation("ExchangesProcessed", fields: [procesado_por_id], references: [id])
+  notas               String?
+  fecha_canje         DateTime          @default(now())
+  fecha_procesado     DateTime?
+  fecha_entregado     DateTime?
+  movements           PointsMovement[]
+}
+
+model PointsMovement {
+  id             String          @id @default(uuid())
+  usuario_id     String
+  usuario        User            @relation(fields: [usuario_id], references: [id])
+  tipo           String          // ingreso | canje | ajuste | devolucion | expiracion
+  cantidad       Int
+  saldo_anterior Int
+  saldo_nuevo    Int
+  descripcion    String
+  canje_id       String?
+  canje          PointsExchange? @relation(fields: [canje_id], references: [id])
+  membership_id  String?
+  membership     Membership?     @relation(fields: [membership_id], references: [id])
+  payment_id     String?
+  payment        Payment?        @relation(fields: [payment_id], references: [id])
+  created_at     DateTime        @default(now())
+}
+

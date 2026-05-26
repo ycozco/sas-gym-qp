@@ -1,9 +1,158 @@
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
+import 'package:hive/hive.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:socket_io_client/socket_io_client.dart' as io;
+import 'dart:async';
 import '../models/gym_models.dart';
+import '../core/network/api_client.dart';
+import '../core/storage/secure_storage.dart';
 
 class GymState extends ChangeNotifier {
   GymState() {
     _initializeData();
+    _initAuthListener();
+    checkAuth();
+    _initConnectivity();
+  }
+
+  // --- Auth State ---
+  LoggedInUser? _currentUser;
+  bool _authLoading = false;
+  String? _authError;
+
+  LoggedInUser? get currentUser => _currentUser;
+  bool get authLoading => _authLoading;
+  String? get authError => _authError;
+
+  void _initAuthListener() {
+    ApiClient.onUnauthorized = () {
+      _currentUser = null;
+      _authError = 'Sesión expirada. Inicia sesión nuevamente.';
+      notifyListeners();
+    };
+  }
+
+  Future<void> checkAuth() async {
+    _authLoading = true;
+    notifyListeners();
+
+    try {
+      final token = await SecureStorage.getToken();
+      final tenantId = await SecureStorage.getTenantId();
+
+      if (token == null || tenantId == null) {
+        _currentUser = null;
+        _authLoading = false;
+        notifyListeners();
+        return;
+      }
+
+      final response = await ApiClient().dio.get('/auth/me');
+      _currentUser = LoggedInUser.fromJson(response.data as Map<String, dynamic>);
+      _selectedClientId = tenantId;
+      _authError = null;
+      _connectSocket();
+      if (_currentUser?.rol == GymRole.superadmin) {
+        loadSaaSClients();
+      } else if (_currentUser?.rol == GymRole.admin) {
+        loadObservations();
+        loadAuditLogs();
+      }
+    } catch (e) {
+      await SecureStorage.clearAll();
+      _currentUser = null;
+    } finally {
+      _authLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> login({
+    required String email,
+    required String password,
+    required String tenantId,
+  }) async {
+    _authLoading = true;
+    _authError = null;
+    notifyListeners();
+
+    try {
+      final response = await ApiClient().dio.post(
+        '/auth/login',
+        data: {
+          'email': email,
+          'password': password,
+        },
+        options: Options(
+          headers: {'X-Tenant-ID': tenantId},
+        ),
+      );
+
+      final token = response.data['token'] as String;
+      final returnedTenantId = response.data['tenantId'] as String;
+
+      await SecureStorage.saveToken(token);
+      await SecureStorage.saveTenantId(returnedTenantId);
+
+      final profileResponse = await ApiClient().dio.get('/auth/me');
+      _currentUser = LoggedInUser.fromJson(profileResponse.data as Map<String, dynamic>);
+      _selectedClientId = returnedTenantId;
+      _authError = null;
+      _authLoading = false;
+      _connectSocket();
+      if (_currentUser?.rol == GymRole.superadmin) {
+        loadSaaSClients();
+      } else if (_currentUser?.rol == GymRole.admin) {
+        loadObservations();
+        loadAuditLogs();
+      }
+      notifyListeners();
+      return true;
+    } on DioException catch (e) {
+      String message = 'Error de conexión con el servidor.';
+      if (e.response != null && e.response!.data != null) {
+        final data = e.response!.data;
+        if (data is Map && data.containsKey('message')) {
+          final errMessage = data['message'];
+          message = errMessage is List ? errMessage.join('\n') : errMessage.toString();
+        }
+      }
+      _authError = message;
+      _currentUser = null;
+      _authLoading = false;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _authError = 'Ocurrió un error inesperado al iniciar sesión.';
+      _currentUser = null;
+      _authLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<void> logout() async {
+    _closeSocket();
+    _authLoading = true;
+    notifyListeners();
+    await SecureStorage.clearAll();
+    _currentUser = null;
+    _authError = null;
+    _authLoading = false;
+    notifyListeners();
+  }
+
+  Future<bool> recoverPassword(String email) async {
+    try {
+      await ApiClient().dio.post(
+        '/auth/forgot-password',
+        data: {'email': email},
+      );
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 
   // Active SaaS Client (instance)
@@ -45,6 +194,97 @@ class GymState extends ChangeNotifier {
   void selectClient(String clientId) {
     _selectedClientId = clientId;
     notifyListeners();
+  }
+
+  bool get isBackendMode => _currentUser != null;
+
+  Future<Map<String, dynamic>> verifyAttendanceBackend({
+    required String dni,
+    required String otpToken,
+  }) async {
+    try {
+      final response = await ApiClient().dio.post(
+        '/attendance/verify',
+        data: {
+          'dni': dni,
+          'otpToken': otpToken,
+        },
+      );
+      final data = response.data;
+      final verdict = data['verdict'] as String? ?? 'RED';
+      final reason = data['reason'] as String? ?? 'Error de validación';
+      final memberJson = data['member'] as Map<String, dynamic>?;
+
+      final Color logColor = verdict == 'GREEN'
+          ? const Color(0xFF00B85C)
+          : (verdict == 'AMBER' ? const Color(0xFFFFB300) : Colors.red);
+
+      final fullName = memberJson?['fullName'] as String? ?? 'Socio';
+      _addLog('Escáner', 'Registro de ingreso (API)', '$fullName: $reason', logColor);
+      
+      // Update local state if the user was checked in
+      if (verdict == 'GREEN' || verdict == 'AMBER') {
+        final localIdx = _members.indexWhere((m) => m.dni == dni);
+        if (localIdx != -1) {
+          _members[localIdx] = _members[localIdx].copyWith(
+            sessions: _members[localIdx].sessions + 1,
+            lastSeen: 'Hoy',
+            todayCheckIn: true,
+            isActiveInGym: true,
+          );
+        }
+      }
+
+      notifyListeners();
+
+      // Build a MemberRecord from backend response to feed the verdict screen
+      MemberRecord tempRecord = MemberRecord(
+        dni: dni,
+        name: fullName,
+        phone: '',
+        email: '',
+        startDate: 'Hoy',
+        goal: memberJson?['planName'] as String? ?? 'Membresía',
+        sessions: 0,
+        lastSeen: 'Hoy',
+        state: verdict == 'GREEN' ? 'active' : (verdict == 'AMBER' ? 'grace' : 'expired'),
+        assignedTrainer: '',
+        paymentHistory: [],
+        physicalMeasurements: {},
+        progressImages: [],
+      );
+
+      return {
+        'verdict': verdict,
+        'reason': reason,
+        'member': tempRecord,
+      };
+    } on DioException catch (e) {
+      String reason = 'Error de conexión o token inválido.';
+      if (e.response != null && e.response!.data != null) {
+        final data = e.response!.data;
+        if (data is Map && data.containsKey('reason')) {
+          reason = data['reason'].toString();
+        } else if (data is Map && data.containsKey('message')) {
+          reason = data['message'].toString();
+        }
+      }
+      _addLog('Escáner', 'Error API', 'Fallo al verificar: $reason', Colors.red);
+      notifyListeners();
+      return {
+        'verdict': 'RED',
+        'reason': reason,
+        'member': null,
+      };
+    } catch (e) {
+      _addLog('Escáner', 'Error API', 'Fallo al verificar asistencia: $e', Colors.red);
+      notifyListeners();
+      return {
+        'verdict': 'RED',
+        'reason': 'Error de red inesperado.',
+        'member': null,
+      };
+    }
   }
 
   // --- Attendance scanning ---
@@ -171,7 +411,323 @@ class GymState extends ChangeNotifier {
     notifyListeners();
   }
 
+  // --- Backend payments and POS integration ---
+  Future<bool> uploadReceiptBackend({
+    required String planName,
+    required double price,
+    required String method,
+    required List<int> fileBytes,
+    required String fileName,
+  }) async {
+    try {
+      final formData = FormData.fromMap({
+        'monto': price.toString(),
+        'metodo': method,
+        'planNombre': planName,
+        'file': MultipartFile.fromBytes(
+          fileBytes,
+          filename: fileName,
+        ),
+      });
+
+      await ApiClient().dio.post(
+        '/payments/upload-receipt',
+        data: formData,
+      );
+
+      // Reload auth info to refresh state
+      await checkAuth();
+      return true;
+    } catch (e) {
+      debugPrint('Error uploading receipt to backend: $e');
+      return false;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getPendingPaymentsBackend() async {
+    try {
+      final response = await ApiClient().dio.get('/payments/pending');
+      final data = response.data as List;
+      return List<Map<String, dynamic>>.from(data);
+    } catch (e) {
+      debugPrint('Error fetching pending payments: $e');
+      return [];
+    }
+  }
+
+  Future<bool> resolvePaymentBackend({
+    required String paymentId,
+    required String status, // APPROVED | REJECTED
+    required String comments,
+  }) async {
+    try {
+      await ApiClient().dio.post(
+        '/payments/$paymentId/resolve',
+        data: {
+          'status': status,
+          'comments': comments,
+        },
+      );
+      
+      // Reload auth / local state if needed
+      await checkAuth();
+      return true;
+    } catch (e) {
+      debugPrint('Error resolving payment: $e');
+      return false;
+    }
+  }
+
+  Future<bool> checkShiftBackend() async {
+    try {
+      final response = await ApiClient().dio.get('/payments/check-shift');
+      return response.data['isActive'] as bool? ?? false;
+    } catch (e) {
+      debugPrint('Error checking shift backend: $e');
+      return false;
+    }
+  }
+
+  Future<bool> chargePOSBackend({
+    required String memberDni,
+    required List<Map<String, dynamic>> cartItems,
+    required double total,
+    required String paymentMethod,
+  }) async {
+    try {
+      await ApiClient().dio.post(
+        '/payments/pos-charge',
+        data: {
+          'memberDni': memberDni,
+          'cartItems': cartItems,
+          'total': total,
+          'paymentMethod': paymentMethod,
+        },
+      );
+      
+      // Update local state by adding log
+      _addLog('Caja', 'Cobró POS (API)', 'Cobró S/ $total a DNI $memberDni via $paymentMethod', const Color(0xFF00B85C));
+      notifyListeners();
+      return true;
+    } catch (e) {
+      debugPrint('Error processing POS charge backend: $e');
+      rethrow;
+    }
+  }
+
+  // --- Turnos y Sesiones de Caja ---
+
+  Future<Map<String, dynamic>?> openCajaBackend(double montoApertura, String? observaciones) async {
+    try {
+      final response = await ApiClient().dio.post(
+        '/payments/caja/open',
+        data: {
+          'montoApertura': montoApertura,
+          'observaciones': observaciones ?? '',
+        },
+      );
+      _addLog('Caja', 'Apertura de Caja (API)', 'Abrió caja con saldo S/ $montoApertura', const Color(0xFF0066FF));
+      notifyListeners();
+      return response.data as Map<String, dynamic>?;
+    } catch (e) {
+      debugPrint('Error al abrir caja: $e');
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>?> getActiveCajaBackend() async {
+    try {
+      final response = await ApiClient().dio.get('/payments/caja/active');
+      return response.data as Map<String, dynamic>?;
+    } catch (e) {
+      debugPrint('Error al obtener caja activa: $e');
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> createEgressBackend({
+    required double monto,
+    required String motivo,
+    String? metodoPago,
+    String? descripcionAdicional,
+  }) async {
+    try {
+      final response = await ApiClient().dio.post(
+        '/payments/caja/egress',
+        data: {
+          'monto': monto,
+          'motivo': motivo,
+          'metodoPago': metodoPago ?? 'efectivo',
+          'descripcionAdicional': descripcionAdicional ?? '',
+        },
+      );
+      _addLog('Caja', 'Egreso de Caja (API)', 'Registró egreso de S/ $monto por: $motivo', Colors.red);
+      notifyListeners();
+      return response.data as Map<String, dynamic>?;
+    } catch (e) {
+      debugPrint('Error al crear egreso de caja: $e');
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>?> getCajaDetailsBackend() async {
+    try {
+      final response = await ApiClient().dio.get('/payments/caja/details');
+      return response.data as Map<String, dynamic>?;
+    } catch (e) {
+      debugPrint('Error al obtener arqueo de caja: $e');
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> closeCajaBackend({
+    required double cash,
+    required double transfer,
+    required double yape,
+    required double pos,
+    String? observations,
+  }) async {
+    try {
+      final response = await ApiClient().dio.post(
+        '/payments/caja/close',
+        data: {
+          'montoCierreEfectivo': cash,
+          'montoCierreTransferencia': transfer,
+          'montoCierreYape': yape,
+          'montoCierrePOS': pos,
+          'observaciones': observations ?? '',
+        },
+      );
+      final diferencia = response.data['diferencia'] ?? 0.0;
+      _addLog('Caja', 'Cierre de Caja (API)', 'Cerró caja. Diferencia: S/ $diferencia', const Color(0xFF5C5C5C));
+      notifyListeners();
+      return response.data as Map<String, dynamic>?;
+    } catch (e) {
+      debugPrint('Error al cerrar caja: $e');
+      rethrow;
+    }
+  }
+
+  // --- Ventas de Membresías ---
+
+  Future<Map<String, dynamic>?> registerMembershipSaleBackend({
+    required String userId,
+    required String planNombre,
+    required int duracionDias,
+    required double monto,
+    double descuentoPorcentaje = 0,
+    double descuentoMonto = 0,
+    required String ventaToken,
+    required List<Map<String, dynamic>> pagos,
+    String? fechaInicio,
+    String? fechaVencimiento,
+    String? observaciones,
+  }) async {
+    try {
+      final response = await ApiClient().dio.post(
+        '/payments/membership-sale',
+        data: {
+          'userId': userId,
+          'planNombre': planNombre,
+          'duracionDias': duracionDias,
+          'monto': monto,
+          'descuentoPorcentaje': descuentoPorcentaje,
+          'descuentoMonto': descuentoMonto,
+          'ventaToken': ventaToken,
+          'pagos': pagos,
+          'fechaInicio': fechaInicio,
+          'fechaVencimiento': fechaVencimiento,
+          'observaciones': observaciones ?? '',
+        },
+      );
+      final plan = response.data['planNombre'] ?? planNombre;
+      final pagado = response.data['montoPagado'] ?? monto;
+      _addLog('Caja', 'Venta Membresía (API)', 'Membresía $plan registrada. Monto: S/ $pagado', const Color(0xFF00B85C));
+      notifyListeners();
+      return response.data as Map<String, dynamic>?;
+    } catch (e) {
+      debugPrint('Error al registrar venta de membresía: $e');
+      rethrow;
+    }
+  }
+
+  // --- Búsqueda de Socios por Relevancia ---
+
+  Future<List<dynamic>> searchMembersBackend(String query) async {
+    try {
+      final response = await ApiClient().dio.get(
+        '/members/search',
+        queryParameters: {'q': query},
+      );
+      return response.data as List;
+    } catch (e) {
+      debugPrint('Error en búsqueda de socios: $e');
+      return [];
+    }
+  }
+
+  // --- Asistencia y Huellas ---
+
+  Future<Map<String, dynamic>?> registerFingerprintBackend({
+    required String userId,
+    required String dedo,
+    required String datosHuella,
+    required String signature,
+  }) async {
+    try {
+      final response = await ApiClient().dio.post(
+        '/attendance/fingerprint/register',
+        data: {
+          'userId': userId,
+          'dedo': dedo,
+          'datosHuella': datosHuella,
+          'signature': signature,
+        },
+      );
+      return response.data as Map<String, dynamic>?;
+    } catch (e) {
+      debugPrint('Error al registrar huella digital: $e');
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>?> verifyFingerprintBackend({
+    required String tokenRegistro,
+    required String hashVerificacion,
+    String? ipOrigen,
+    String? dispositivoId,
+  }) async {
+    try {
+      final response = await ApiClient().dio.post(
+        '/attendance/fingerprint/verify',
+        data: {
+          'tokenRegistro': tokenRegistro,
+          'hashVerificacion': hashVerificacion,
+          'ipOrigen': ipOrigen,
+          'dispositivoId': dispositivoId,
+        },
+      );
+      final verdict = response.data['verdict'] as String? ?? 'RED';
+      final reason = response.data['reason'] as String? ?? 'Error de validación';
+      final memberJson = response.data['member'] as Map<String, dynamic>?;
+
+      final Color logColor = verdict == 'GREEN'
+          ? const Color(0xFF00B85C)
+          : (verdict == 'AMBER' ? const Color(0xFFFFB300) : Colors.red);
+
+      final fullName = memberJson?['fullName'] as String? ?? 'Socio';
+      _addLog('Biometría', 'Ingreso Huella (API)', '$fullName: $reason', logColor);
+      notifyListeners();
+
+      return response.data as Map<String, dynamic>?;
+    } catch (e) {
+      debugPrint('Error al verificar huella digital: $e');
+      rethrow;
+    }
+  }
+
   // --- POS checkout ---
+
   void chargePOS({
     required String memberDni,
     required List<Map<String, dynamic>> cartItems,
@@ -321,23 +877,7 @@ class GymState extends ChangeNotifier {
     notifyListeners();
   }
 
-  // --- SaaS Client management ---
-  void toggleSaClient(String clientId) {
-    final index = _saClients.indexWhere((c) => c.id == clientId);
-    if (index == -1) return;
 
-    final client = _saClients[index];
-    final nextState = !client.active;
-    _saClients[index] = client.copyWith(active: nextState);
-
-    _addLog(
-      'SuperAdmin',
-      nextState ? 'Habilitó Gym' : 'Suspendió Gym',
-      'Sede/Cliente ${client.name} ${nextState ? 'activado' : 'bloqueado'} en la plataforma SaaS.',
-      nextState ? const Color(0xFF00B85C) : Colors.red,
-    );
-    notifyListeners();
-  }
 
   // --- Observations ---
   void addObservation(String category, String description, String memberName) {
@@ -442,10 +982,10 @@ class GymState extends ChangeNotifier {
     // Initial members with richer data
     _members.addAll([
       MemberRecord(
-        dni: '12345678',
-        name: 'Mateo Salas',
+        dni: '11111111',
+        name: 'Mateo Salas Socio',
         phone: '987654321',
-        email: 'mateo@mail.com',
+        email: 'miembro@gymsmart.com',
         startDate: '01 de ene',
         goal: 'Hipertrofia',
         sessions: 47,
@@ -461,7 +1001,7 @@ class GymState extends ChangeNotifier {
         ],
       ),
       MemberRecord(
-        dni: '87654321',
+        dni: '22222222',
         name: 'Lucía Fernández',
         phone: '912345678',
         email: 'lucia@mail.com',
@@ -478,6 +1018,7 @@ class GymState extends ChangeNotifier {
           PaymentRecord(id: 'PAY-102', planName: 'Plan Trimestral Platinium', price: 400.0, date: '15 de feb', method: 'Tarjeta', state: 'approved'),
         ],
       ),
+
       MemberRecord(
         dni: '11223344',
         name: 'Diego Castro',
@@ -567,6 +1108,311 @@ class GymState extends ChangeNotifier {
         paymentHistory: [],
       ),
     ]);
+  }
+
+  // --- FASE 5 & 6: Connectivity, Hive & WebSockets ---
+  bool _isOnline = true;
+  bool get isOnline => _isOnline;
+  StreamSubscription? _connectivitySubscription;
+  io.Socket? _socket;
+
+  void _initConnectivity() {
+    // Verificar conectividad inicial
+    Connectivity().checkConnectivity().then((event) {
+      final hasConnection = !event.contains(ConnectivityResult.none);
+      _updateConnectionStatus(hasConnection);
+    });
+
+    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((event) {
+      final hasConnection = !event.contains(ConnectivityResult.none);
+      _updateConnectionStatus(hasConnection);
+    });
+  }
+
+  void _updateConnectionStatus(bool online) {
+    if (_isOnline != online) {
+      _isOnline = online;
+      _addLog('Red', 'Estado de Conexión', _isOnline ? 'Online (Conectado)' : 'Offline (Desconectado)', _isOnline ? Colors.green : Colors.red);
+      notifyListeners();
+      if (_isOnline && isBackendMode) {
+        syncOfflineLogs();
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _connectivitySubscription?.cancel();
+    _closeSocket();
+    super.dispose();
+  }
+
+  // Socket.io Connection
+  void _connectSocket() async {
+    _closeSocket();
+    
+    final tenantId = await SecureStorage.getTenantId();
+    if (tenantId == null) return;
+
+    final token = await SecureStorage.getToken();
+    final baseUrl = ApiClient().dio.options.baseUrl.replaceAll('/api/v1', '');
+    try {
+      _socket = io.io(baseUrl, io.OptionBuilder()
+        .setTransports(['websocket'])
+        .setQuery({'token': token ?? ''})
+        .disableAutoConnect()
+        .build());
+
+      _socket?.connect();
+
+      _socket?.onConnect((_) {
+        debugPrint('WebSocket conectado con éxito');
+        _socket?.emit('join');
+      });
+
+      _socket?.on('tenant_suspended', (_) {
+        debugPrint('RECIBIDO: EVENTO DE SUSPENSIÓN SAAS');
+        // Bloquear gimnasio localmente cambiando el estado del saClient correspondiente
+        final index = _saClients.indexWhere((c) => c.id == tenantId);
+        if (index != -1) {
+          _saClients[index] = _saClients[index].copyWith(active: false);
+          _addLog('SaaS', 'Suscripción Bloqueada', 'El gimnasio fue suspendido por administración en tiempo real.', Colors.red);
+          notifyListeners();
+        }
+      });
+      
+      _socket?.onDisconnect((_) {
+        debugPrint('WebSocket desconectado');
+      });
+    } catch (e) {
+      debugPrint('Error en conexión WebSocket: $e');
+    }
+  }
+
+  void _closeSocket() {
+    _socket?.disconnect();
+    _socket?.close();
+    _socket = null;
+  }
+
+  // Carga de Rutinas
+  Future<Map<String, dynamic>?> loadActiveRoutine() async {
+    final box = Hive.box('gym_cache');
+    
+    if (isBackendMode && _isOnline) {
+      try {
+        final response = await ApiClient().dio.get('/routines/active');
+        if (response.data != null) {
+          await box.put('active_routine', response.data);
+          return response.data as Map<String, dynamic>;
+        }
+      } catch (e) {
+        debugPrint('Error loading active routine from backend: $e');
+      }
+    }
+
+    // Fallback de caché local en Hive
+    final cached = box.get('active_routine');
+    if (cached != null) {
+      if (cached is Map) {
+        return Map<String, dynamic>.from(cached);
+      }
+    }
+
+    return null;
+  }
+
+  // Guardado de Sesiones de Entrenamiento
+  Future<bool> saveWorkoutSession(Map<String, dynamic> session) async {
+    if (isBackendMode) {
+      if (_isOnline) {
+        try {
+          await ApiClient().dio.post('/members/workout-log', data: session);
+          _addLog('Entrenamiento', 'Log de esfuerzo', 'Sesión sincronizada con el servidor.', Colors.green);
+          return true;
+        } catch (e) {
+          debugPrint('Error posting workout log, saving offline: $e');
+        }
+      }
+      
+      // Guardar en cola offline de Hive
+      final box = Hive.box('gym_cache');
+      final List<dynamic> queue = box.get('offline_workout_queue') ?? [];
+      queue.add(session);
+      await box.put('offline_workout_queue', queue);
+      _addLog('Entrenamiento', 'Log de esfuerzo (Offline)', 'Sin conexión. Sesión guardada localmente.', Colors.orange);
+      notifyListeners();
+      return false;
+    } else {
+      // Demo mode fallback
+      _addLog('Entrenamiento', 'Log de esfuerzo (Demo)', 'Sesión registrada en modo demo.', Colors.green);
+      return true;
+    }
+  }
+
+  Future<void> syncOfflineLogs() async {
+    final box = Hive.box('gym_cache');
+    final List<dynamic>? queue = box.get('offline_workout_queue');
+    if (queue == null || queue.isEmpty) return;
+
+    debugPrint('Sincronizando ${queue.length} logs de entrenamiento offline...');
+    
+    final List<dynamic> remaining = [];
+    for (var session in queue) {
+      try {
+        await ApiClient().dio.post('/members/workout-log', data: session);
+        debugPrint('Log offline sincronizado correctamente.');
+      } catch (e) {
+        debugPrint('Fallo al sincronizar log offline, re-encolando: $e');
+        remaining.add(session);
+      }
+    }
+
+    await box.put('offline_workout_queue', remaining);
+    if (remaining.isEmpty) {
+      _addLog('Sincronización', 'Entrenamientos Offline', 'Todos los logs pendientes fueron enviados.', Colors.green);
+    } else {
+      _addLog('Sincronización', 'Entrenamientos Offline', 'Fallo al enviar algunos logs (re-encolados).', Colors.orange);
+    }
+    notifyListeners();
+  }
+
+  // Observations Module
+  Future<void> loadObservations() async {
+    if (isBackendMode) {
+      try {
+        final response = await ApiClient().dio.get('/observations');
+        final List<dynamic> data = response.data;
+        _observations.clear();
+        for (var item in data) {
+          _observations.add(GymObservation(
+            id: item['id'],
+            category: item['texto'].toString().split(']')[0].replaceAll('[', ''),
+            description: item['texto'].toString().split(']').skip(1).join(']'),
+            memberName: item['autor_rol'] == 'MEMBER' ? 'Socio' : 'Entrenador',
+            date: item['created_at'].toString().split('T')[0],
+            imageUrl: item['foto_url'],
+          ));
+        }
+        notifyListeners();
+      } catch (e) {
+        debugPrint('Error loading observations: $e');
+      }
+    }
+  }
+
+  Future<bool> uploadObservationBackend({
+    required String category,
+    required String description,
+    required List<int>? fileBytes,
+    required String? fileName,
+  }) async {
+    try {
+      final Map<String, dynamic> dataMap = {
+        'category': category,
+        'description': description,
+      };
+
+      if (fileBytes != null && fileName != null) {
+        dataMap['file'] = MultipartFile.fromBytes(
+          fileBytes,
+          filename: fileName,
+        );
+      }
+
+      final formData = FormData.fromMap(dataMap);
+
+      await ApiClient().dio.post('/observations/upload', data: formData);
+      await loadObservations(); // Refrescar bandeja
+      return true;
+    } catch (e) {
+      debugPrint('Error uploading observation: $e');
+      return false;
+    }
+  }
+
+  // Audit Logs Module
+  Future<void> loadAuditLogs() async {
+    if (isBackendMode) {
+      try {
+        final response = await ApiClient().dio.get('/reports/audit-logs');
+        final List<dynamic> data = response.data;
+        _auditLogs.clear();
+        for (var item in data) {
+          final createdAt = item['created_at'] as String?;
+          final timeStr = createdAt != null
+              ? createdAt.split('T').last.substring(0, 5)
+              : _formatCurrentTime();
+          _auditLogs.add(AuditEntry(
+            time: timeStr,
+            actor: item['rol'] == 'SUPER_ADMIN' ? 'SuperAdmin' : (item['rol'] == 'ADMIN' ? 'Admin' : 'Cajero'),
+            action: '${item['entidad'].toString().toUpperCase()} - ${item['accion']}',
+            detail: item['detalles'] != null ? item['detalles'].toString() : 'Detalles de la operación',
+            color: item['accion'] == 'DELETE' ? Colors.red : (item['accion'] == 'POST' ? Colors.green : Colors.blue),
+          ));
+        }
+        notifyListeners();
+      } catch (e) {
+        debugPrint('Error loading audit logs: $e');
+      }
+    }
+  }
+
+  // SaaS Clients Module
+  Future<void> loadSaaSClients() async {
+    if (isBackendMode) {
+      try {
+        final response = await ApiClient().dio.get('/tenants');
+        final List<dynamic> data = response.data;
+        _saClients.clear();
+        for (var item in data) {
+          _saClients.add(SaaSClient(
+            id: item['id'],
+            name: item['nombre'],
+            logo: item['logo_url'] ?? '🏋️',
+            location: item['direccion'] ?? 'Ubicación',
+            membersCount: '154',
+            active: item['activo'],
+          ));
+        }
+        notifyListeners();
+      } catch (e) {
+        debugPrint('Error loading saClients: $e');
+      }
+    }
+  }
+
+  void toggleSaClient(String clientId) async {
+    final index = _saClients.indexWhere((c) => c.id == clientId);
+    if (index == -1) return;
+
+    final client = _saClients[index];
+    final nextState = !client.active;
+
+    if (isBackendMode) {
+      try {
+        await ApiClient().dio.post('/tenants/$clientId/toggle');
+        _saClients[index] = client.copyWith(active: nextState);
+        _addLog(
+          'SuperAdmin',
+          nextState ? 'Habilitó Sede (API)' : 'Suspendió Sede (API)',
+          'Sede/Cliente ${client.name} ${nextState ? 'activado' : 'bloqueado'} en la plataforma.',
+          nextState ? const Color(0xFF00B85C) : Colors.red,
+        );
+        notifyListeners();
+      } catch (e) {
+        debugPrint('Error toggling tenant status: $e');
+      }
+    } else {
+      _saClients[index] = client.copyWith(active: nextState);
+      _addLog(
+        'SuperAdmin',
+        nextState ? 'Habilitó Gym' : 'Suspendió Gym',
+        'Sede/Cliente ${client.name} ${nextState ? 'activado' : 'bloqueado'} en la plataforma SaaS.',
+        nextState ? const Color(0xFF00B85C) : Colors.red,
+      );
+      notifyListeners();
+    }
   }
 }
 

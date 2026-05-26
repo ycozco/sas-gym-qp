@@ -1,0 +1,15 @@
+import { IsEmail, IsNotEmpty, IsString, IsOptional } from 'class-validator';
+
+export class LoginDto {
+  @IsEmail({}, { message: 'El correo electrónico no es válido.' })
+  @IsNotEmpty({ message: 'El correo electrónico es requerido.' })
+  email: string;
+
+  @IsString({ message: 'La contraseña debe ser una cadena de texto.' })
+  @IsNotEmpty({ message: 'La contraseña es requerida.' })
+  password: string;
+
+  @IsString({ message: 'El ID de inquilino (Tenant) debe ser una cadena de texto.' })
+  @IsOptional()
+  tenantId?: string;
+}

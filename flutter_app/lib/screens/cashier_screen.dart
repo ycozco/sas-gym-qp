@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:otp/otp.dart';
+import 'package:dio/dio.dart';
 import '../data/gym_seed.dart';
 import '../data/gym_state.dart';
 import '../models/gym_models.dart';
@@ -320,12 +322,11 @@ class _CashierScanPage extends StatelessWidget {
           height: 240,
           decoration: BoxDecoration(
             color: const Color(0xFF1E1E1E),
-            borderRadius: BorderRadius.circular(28),
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(color: const Color(0xFF2C2C2C), width: 2),
-            boxShadow: const [BoxShadow(color: Color(0x3F000000), blurRadius: 18)],
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(26),
+            borderRadius: BorderRadius.circular(12),
             child: Stack(
               children: [
                 // Animated red laser sweep line
@@ -337,7 +338,7 @@ class _CashierScanPage extends StatelessWidget {
                     height: 140,
                     decoration: BoxDecoration(
                       border: Border.all(color: palette.accent, width: 2),
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
                 ),
@@ -409,8 +410,8 @@ class _CashierScanPage extends StatelessWidget {
                     child: Container(
                       decoration: BoxDecoration(
                         color: const Color(0xFFF6F6F6),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: const Color(0xFFE8E4D9)),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFE2DDD5)),
                       ),
                       padding: const EdgeInsets.symmetric(horizontal: 14),
                       child: TextField(
@@ -429,7 +430,7 @@ class _CashierScanPage extends StatelessWidget {
                       backgroundColor: const Color(0xFF111111),
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     onPressed: () {
                       if (scanInput.isNotEmpty) {
@@ -462,11 +463,49 @@ class _CashierScanPage extends StatelessWidget {
     );
   }
 
-  void _triggerScan(String dni) {
-    final result = state.recordAttendance(dni);
-    final memberIndex = state.allMembersIncludingSoftDeleted.indexWhere((m) => m.dni == dni);
-    final MemberRecord? member = memberIndex != -1 ? state.allMembersIncludingSoftDeleted[memberIndex] : null;
-    onTriggerVerdict(result, member, dni);
+  void _triggerScan(String input) async {
+    String dni = input;
+    String otpToken = '';
+    
+    if (input.contains('|')) {
+      final parts = input.split('|');
+      dni = parts[0];
+      otpToken = parts[1];
+    } else {
+      // Generate a valid TOTP for testing convenience
+      final secret = '${dni}_secure_totp_secret_key_2026';
+      final time = DateTime.now().millisecondsSinceEpoch;
+      try {
+        otpToken = OTP.generateTOTPCodeString(
+          secret,
+          time,
+          interval: 30,
+          length: 6,
+          algorithm: Algorithm.SHA1,
+        );
+      } catch (e) {
+        debugPrint('Error generating simulator TOTP: $e');
+      }
+    }
+
+    if (state.isBackendMode) {
+      // Show loading or directly trigger the async verdict
+      final res = await state.verifyAttendanceBackend(dni: dni, otpToken: otpToken);
+      final verdict = res['verdict'];
+      final member = res['member'] as MemberRecord?;
+
+      String resultStr = 'denied';
+      if (verdict == 'GREEN') resultStr = 'granted';
+      if (verdict == 'AMBER') resultStr = 'grace';
+
+      onTriggerVerdict(resultStr, member, dni);
+    } else {
+      // Offline/Demo Mode fallback
+      final result = state.recordAttendance(dni);
+      final memberIndex = state.allMembersIncludingSoftDeleted.indexWhere((m) => m.dni == dni);
+      final MemberRecord? member = memberIndex != -1 ? state.allMembersIncludingSoftDeleted[memberIndex] : null;
+      onTriggerVerdict(result, member, dni);
+    }
   }
 }
 
@@ -610,8 +649,8 @@ class _ScannerVerdictView extends StatelessWidget {
                   padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 16)],
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFE2DDD5)),
                   ),
                   child: Row(
                     children: [
@@ -647,7 +686,7 @@ class _ScannerVerdictView extends StatelessWidget {
                       backgroundColor: Colors.white,
                       foregroundColor: Colors.black,
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     icon: const Icon(Icons.point_of_sale_rounded, color: Colors.orange),
                     label: const Text('Cobrar Renovación en POS', style: TextStyle(fontWeight: FontWeight.w900)),
@@ -665,7 +704,7 @@ class _ScannerVerdictView extends StatelessWidget {
                   style: TextButton.styleFrom(
                     foregroundColor: Colors.white,
                     side: const BorderSide(color: Colors.white60),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                   onPressed: onBack,
@@ -879,7 +918,7 @@ class _CashierPOSPageState extends State<_CashierPOSPage> {
                           selectedColor: widget.palette.accent,
                           backgroundColor: Colors.transparent,
                           side: const BorderSide(color: Color(0xFFE8E4D9)),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           onSelected: (val) {
                             if (val) widget.onPaymentMethodChanged(m);
                           },
@@ -905,8 +944,8 @@ class _CashierPOSPageState extends State<_CashierPOSPage> {
                         height: 38,
                         decoration: BoxDecoration(
                           color: const Color(0xFFF7F7F7),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: const Color(0xFFE8E4D9)),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFE2DDD5)),
                         ),
                         padding: const EdgeInsets.symmetric(horizontal: 10),
                         child: TextField(
@@ -941,10 +980,10 @@ class _CashierPOSPageState extends State<_CashierPOSPage> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: widget.palette.accent,
                       foregroundColor: widget.palette.accentInk,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
-                    onPressed: () {
+                    onPressed: () async {
                       if (widget.selectedMemberDni == null) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text('Por favor, selecciona un Socio destinatario primero')),
@@ -952,17 +991,57 @@ class _CashierPOSPageState extends State<_CashierPOSPage> {
                         return;
                       }
 
-                      // Execute chargePOS in state
-                      widget.state.chargePOS(
-                        memberDni: widget.selectedMemberDni!,
-                        cartItems: widget.cartItems,
-                        total: total,
-                        paymentMethod: widget.paymentMethod,
-                      );
-
-                      // Show success dialog
-                      _showPOSReceiptSuccess(context, total, widget.paymentMethod);
-                      widget.onClearCart();
+                      if (widget.state.isBackendMode) {
+                        try {
+                          final ok = await widget.state.chargePOSBackend(
+                            memberDni: widget.selectedMemberDni!,
+                            cartItems: widget.cartItems,
+                            total: total,
+                            paymentMethod: widget.paymentMethod,
+                          );
+                          if (ok) {
+                            if (context.mounted) {
+                              _showPOSReceiptSuccess(context, total, widget.paymentMethod);
+                            }
+                            widget.onClearCart();
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            String errorMsg = 'Error al procesar la venta en el servidor.';
+                            if (e is DioException && e.response != null && e.response!.data != null) {
+                              final data = e.response!.data;
+                              if (data is Map && data.containsKey('message')) {
+                                errorMsg = data['message'].toString();
+                              }
+                            }
+                            showDialog(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                backgroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                title: const Text('Operación Denegada', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
+                                content: Text(errorMsg),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(ctx),
+                                    child: const Text('Entendido', style: TextStyle(fontWeight: FontWeight.bold)),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+                        }
+                      } else {
+                        // Demo mode fallback
+                        widget.state.chargePOS(
+                          memberDni: widget.selectedMemberDni!,
+                          cartItems: widget.cartItems,
+                          total: total,
+                          paymentMethod: widget.paymentMethod,
+                        );
+                        _showPOSReceiptSuccess(context, total, widget.paymentMethod);
+                        widget.onClearCart();
+                      }
                     },
                     child: const Text('PROCESAR Y EMITIR RECIBO', style: TextStyle(fontWeight: FontWeight.w900)),
                   ),
@@ -981,8 +1060,8 @@ class _CashierPOSPageState extends State<_CashierPOSPage> {
               color: Colors.white,
               elevation: 0,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-                side: const BorderSide(color: Color(0xFFE8E4D9)),
+                borderRadius: BorderRadius.circular(12),
+                side: const BorderSide(color: Color(0xFFE2DDD5)),
               ),
               child: ListTile(
                 leading: Text(item['icon'] as String, style: const TextStyle(fontSize: 22)),
@@ -1041,7 +1120,10 @@ class _CashierPOSPageState extends State<_CashierPOSPage> {
       builder: (ctx) {
         return AlertDialog(
           backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: const BorderSide(color: Color(0xFFE2DDD5)),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -1264,7 +1346,7 @@ class _CashierMorePageState extends State<_CashierMorePage> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: widget.palette.accent.withValues(alpha: 0.12),
                     foregroundColor: widget.palette.accent,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     elevation: 0,
                   ),
@@ -1277,8 +1359,8 @@ class _CashierMorePageState extends State<_CashierMorePage> {
                 Container(
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFFE8E4D9)),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFE2DDD5)),
                   ),
                   padding: const EdgeInsets.symmetric(horizontal: 14),
                   child: TextField(
@@ -1366,8 +1448,8 @@ class _CashierMorePageState extends State<_CashierMorePage> {
                 Container(
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFFE8E4D9)),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFE2DDD5)),
                   ),
                   padding: const EdgeInsets.symmetric(horizontal: 14),
                   child: TextField(
@@ -1413,7 +1495,7 @@ class _CashierMorePageState extends State<_CashierMorePage> {
                               foregroundColor: const Color(0xFFFF3B30),
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                               elevation: 0,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             ),
                             onPressed: () {
                               _confirmSoftDelete(context, m);
@@ -1446,6 +1528,10 @@ class _CashierMorePageState extends State<_CashierMorePage> {
       builder: (ctx) {
         return AlertDialog(
           backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: const BorderSide(color: Color(0xFFE2DDD5)),
+          ),
           title: const Text('Registrar Producto', style: TextStyle(fontWeight: FontWeight.w900)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -1505,6 +1591,10 @@ class _CashierMorePageState extends State<_CashierMorePage> {
       builder: (ctx) {
         return AlertDialog(
           backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: const BorderSide(color: Color(0xFFE2DDD5)),
+          ),
           title: Text('Modificar Precio', style: const TextStyle(fontWeight: FontWeight.w900)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -1543,7 +1633,10 @@ class _CashierMorePageState extends State<_CashierMorePage> {
       builder: (ctx) {
         return AlertDialog(
           backgroundColor: const Color(0xFF1E1E1E),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: const BorderSide(color: Color(0xFF2C2C2C)),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -1572,7 +1665,7 @@ class _CashierMorePageState extends State<_CashierMorePage> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.orange,
                         foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                       onPressed: () {
                         widget.state.toggleMemberLogicDelete(member.dni);
@@ -1603,9 +1696,8 @@ class _CashierMorePageState extends State<_CashierMorePage> {
 BoxDecoration _cardDecoration() {
   return BoxDecoration(
     color: Colors.white,
-    borderRadius: BorderRadius.circular(24),
-    border: Border.all(color: const Color(0xFFE8E4D9)),
-    boxShadow: const [BoxShadow(color: Color(0x0F000000), blurRadius: 18, offset: Offset(0, 10))],
+    borderRadius: BorderRadius.circular(12),
+    border: Border.all(color: const Color(0xFFE2DDD5)),
   );
 }
 
@@ -1624,7 +1716,7 @@ class _ShiftBanner extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: palette.accent.withValues(alpha: 0.18)),
       ),
       child: Row(
@@ -1678,7 +1770,7 @@ class _TurnSummary extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: const Color(0xFF111111),
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

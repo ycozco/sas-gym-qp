@@ -67,6 +67,7 @@ class WorkoutDay {
 }
 
 class ExerciseItem {
+  final String? id;
   final String name;
   final String muscle;
   final int sets;
@@ -77,6 +78,7 @@ class ExerciseItem {
   final bool available;
 
   ExerciseItem({
+    this.id,
     required this.name,
     required this.muscle,
     required this.sets,
@@ -88,6 +90,7 @@ class ExerciseItem {
   });
 
   ExerciseItem copyWith({
+    String? id,
     String? name,
     String? muscle,
     int? sets,
@@ -98,6 +101,7 @@ class ExerciseItem {
     bool? available,
   }) {
     return ExerciseItem(
+      id: id ?? this.id,
       name: name ?? this.name,
       muscle: muscle ?? this.muscle,
       sets: sets ?? this.sets,
@@ -382,6 +386,218 @@ class SaaSClient {
       location: location ?? this.location,
       membersCount: membersCount ?? this.membersCount,
       active: active ?? this.active,
+    );
+  }
+}
+
+class LoggedInUser {
+  final String id;
+  final String email;
+  final GymRole rol;
+  final String nombreCompleto;
+  final String? dni;
+  final String? celular;
+  final String? fotoUrl;
+  final String estado;
+  final Map<String, dynamic>? trainerProfile;
+  final Map<String, dynamic>? memberProfile;
+  final List<dynamic>? memberships;
+
+  LoggedInUser({
+    required this.id,
+    required this.email,
+    required this.rol,
+    required this.nombreCompleto,
+    this.dni,
+    this.celular,
+    this.fotoUrl,
+    required this.estado,
+    this.trainerProfile,
+    this.memberProfile,
+    this.memberships,
+  });
+
+  factory LoggedInUser.fromJson(Map<String, dynamic> json) {
+    return LoggedInUser(
+      id: json['id'] as String,
+      email: json['email'] as String,
+      rol: parseRole(json['rol'] as String),
+      nombreCompleto: json['nombre_completo'] as String,
+      dni: json['dni'] as String?,
+      celular: json['celular'] as String?,
+      fotoUrl: json['foto_url'] as String?,
+      estado: json['estado'] as String,
+      trainerProfile: json['trainer_profile'] as Map<String, dynamic>?,
+      memberProfile: json['member_profile'] as Map<String, dynamic>?,
+      memberships: json['memberships'] as List<dynamic>?,
+    );
+  }
+}
+
+
+GymRole parseRole(String roleStr) {
+  return switch (roleStr.toUpperCase()) {
+    'SUPER_ADMIN' => GymRole.superadmin,
+    'ADMIN' => GymRole.admin,
+    'CAJA' => GymRole.cashier,
+    'TRAINER' => GymRole.trainer,
+    'MEMBER' || _ => GymRole.member,
+  };
+}
+
+class CashierSession {
+  final String id;
+  final String cajeroId;
+  final double montoApertura;
+  final double? montoCierreEfectivo;
+  final double? montoCierreTransferencia;
+  final double? montoCierreYape;
+  final double? montoCierrePOS;
+  final double totalVentasEfectivo;
+  final double totalVentasTransferencia;
+  final double totalVentasYape;
+  final double totalVentasPOS;
+  final double totalIngresos;
+  final double diferencia;
+  final String? observaciones;
+  final String estado;
+  final String fechaApertura;
+  final String? fechaCierre;
+
+  CashierSession({
+    required this.id,
+    required this.cajeroId,
+    required this.montoApertura,
+    this.montoCierreEfectivo,
+    this.montoCierreTransferencia,
+    this.montoCierreYape,
+    this.montoCierrePOS,
+    required this.totalVentasEfectivo,
+    required this.totalVentasTransferencia,
+    required this.totalVentasYape,
+    required this.totalVentasPOS,
+    required this.totalIngresos,
+    required this.diferencia,
+    this.observaciones,
+    required this.estado,
+    required this.fechaApertura,
+    this.fechaCierre,
+  });
+
+  factory CashierSession.fromJson(Map<String, dynamic> json) {
+    return CashierSession(
+      id: json['id'] as String,
+      cajeroId: json['cajero_id'] as String,
+      montoApertura: (json['monto_apertura'] as num).toDouble(),
+      montoCierreEfectivo: json['monto_cierre_efectivo'] != null
+          ? (json['monto_cierre_efectivo'] as num).toDouble()
+          : null,
+      montoCierreTransferencia: json['monto_cierre_transferencia'] != null
+          ? (json['monto_cierre_transferencia'] as num).toDouble()
+          : null,
+      montoCierreYape: json['monto_cierre_yape'] != null
+          ? (json['monto_cierre_yape'] as num).toDouble()
+          : null,
+      montoCierrePOS: json['monto_cierre_pos'] != null
+          ? (json['monto_cierre_pos'] as num).toDouble()
+          : null,
+      totalVentasEfectivo: (json['total_ventas_efectivo'] as num? ?? 0).toDouble(),
+      totalVentasTransferencia: (json['total_ventas_transferencia'] as num? ?? 0).toDouble(),
+      totalVentasYape: (json['total_ventas_yape'] as num? ?? 0).toDouble(),
+      totalVentasPOS: (json['total_ventas_pos'] as num? ?? 0).toDouble(),
+      totalIngresos: (json['total_ingresos'] as num? ?? 0).toDouble(),
+      diferencia: (json['diferencia'] as num? ?? 0).toDouble(),
+      observaciones: json['observaciones'] as String?,
+      estado: json['estado'] as String,
+      fechaApertura: json['fecha_apertura'] as String,
+      fechaCierre: json['fecha_cierre'] as String?,
+    );
+  }
+}
+
+class MovimientoCaja {
+  final String id;
+  final String cajaId;
+  final String tipo; // ingreso | egreso
+  final double monto;
+  final String descripcion;
+  final String createdAt;
+
+  MovimientoCaja({
+    required this.id,
+    required this.cajaId,
+    required this.tipo,
+    required this.monto,
+    required this.descripcion,
+    required this.createdAt,
+  });
+
+  factory MovimientoCaja.fromJson(Map<String, dynamic> json) {
+    return MovimientoCaja(
+      id: json['id'] as String,
+      cajaId: json['caja_id'] as String,
+      tipo: json['tipo'] as String,
+      monto: (json['monto'] as num).toDouble(),
+      descripcion: json['descripcion'] as String,
+      createdAt: json['created_at'] as String,
+    );
+  }
+}
+
+class UserPoints {
+  final String usuarioId;
+  final int puntosDisponibles;
+  final int puntosTotalesGanados;
+  final int puntosTotalesCanjeados;
+
+  UserPoints({
+    required this.usuarioId,
+    required this.puntosDisponibles,
+    required this.puntosTotalesGanados,
+    required this.puntosTotalesCanjeados,
+  });
+
+  factory UserPoints.fromJson(Map<String, dynamic> json) {
+    return UserPoints(
+      usuarioId: json['usuario_id'] as String,
+      puntosDisponibles: json['puntos_disponibles'] as int? ?? 0,
+      puntosTotalesGanados: json['puntos_totales_ganados'] as int? ?? 0,
+      puntosTotalesCanjeados: json['puntos_totales_canjeados'] as int? ?? 0,
+    );
+  }
+}
+
+class PointsMovement {
+  final String id;
+  final String usuarioId;
+  final String tipo; // ingreso | canje | ajuste | devolucion
+  final int cantidad;
+  final int saldoAnterior;
+  final int saldoNuevo;
+  final String descripcion;
+  final String createdAt;
+
+  PointsMovement({
+    required this.id,
+    required this.usuarioId,
+    required this.tipo,
+    required this.cantidad,
+    required this.saldoAnterior,
+    required this.saldoNuevo,
+    required this.descripcion,
+    required this.createdAt,
+  });
+
+  factory PointsMovement.fromJson(Map<String, dynamic> json) {
+    return PointsMovement(
+      id: json['id'] as String,
+      usuarioId: json['usuario_id'] as String,
+      tipo: json['tipo'] as String,
+      cantidad: json['cantidad'] as int,
+      saldoAnterior: json['saldo_anterior'] as int,
+      saldoNuevo: json['saldo_nuevo'] as int,
+      descripcion: json['descripcion'] as String,
+      createdAt: json['created_at'] as String,
     );
   }
 }

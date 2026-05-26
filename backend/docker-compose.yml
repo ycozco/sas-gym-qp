@@ -13,6 +13,27 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d gymsmart"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    container_name: gymsmart-api
+    restart: on-failure
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres_secure_password@db:5432/gymsmart?schema=public
+      - PORT=3000
+      - JWT_SECRET=gymsmart_secure_jwt_secret_key_2026
+    command: >
+      sh -c "npx prisma db push --force-reset && npx prisma db seed && npm run start:dev"
 
 volumes:
   postgres_data:

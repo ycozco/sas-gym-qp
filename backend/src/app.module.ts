@@ -11,10 +11,20 @@ import { ObservationsModule } from './modules/observations/observations.module';
 import { AnnouncementsModule } from './modules/announcements/announcements.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { TenantsModule } from './modules/tenants/tenants.module';
+
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { AuditInterceptor } from './core/interceptors/audit.interceptor';
 
 @Module({
-  imports: [AuthModule, MembersModule, PaymentsModule, AttendanceModule, SchedulesModule, RoutinesModule, ObservationsModule, AnnouncementsModule, ReportsModule, PrismaModule],
+  imports: [AuthModule, MembersModule, PaymentsModule, AttendanceModule, SchedulesModule, RoutinesModule, ObservationsModule, AnnouncementsModule, ReportsModule, PrismaModule, TenantsModule],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: AuditInterceptor,
+    },
+  ],
 })
 export class AppModule {}

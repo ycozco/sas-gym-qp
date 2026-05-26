@@ -79,22 +79,13 @@ class SuperAdminScreen extends StatelessWidget {
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(22),
+                    borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: isCurrent
-                          ? palette.accent.withValues(alpha: 0.5)
-                          : const Color(0xFFE8E4D9),
+                          ? palette.accent
+                          : const Color(0xFFE2DDD5),
                       width: isCurrent ? 2 : 1,
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: isCurrent
-                            ? palette.accent.withValues(alpha: 0.08)
-                            : const Color(0x0A000000),
-                        blurRadius: 16,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
                   ),
                   child: Row(
                     children: [

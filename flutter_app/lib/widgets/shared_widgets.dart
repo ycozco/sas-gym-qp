@@ -23,15 +23,8 @@ class QRPattern extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFE8E4D9), width: 1.5),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0C000000),
-            blurRadius: 20,
-            offset: Offset(0, 8),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE2DDD5), width: 1.5),
       ),
       child: CustomPaint(
         painter: _QRPainter(seed: seed, color: color),
@@ -350,7 +343,7 @@ class _ExerciseAnimState extends State<ExerciseAnim> with SingleTickerProviderSt
           height: widget.size,
           decoration: BoxDecoration(
             color: const Color(0xFF1E1E1E),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(color: const Color(0xFF2C2C2C), width: 1.5),
           ),
           child: CustomPaint(
@@ -585,7 +578,10 @@ class _LogEffortModalState extends State<LogEffortModal> {
   Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: const Color(0xFF1E1E1E),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: const BorderSide(color: Color(0xFF3C3C3C)),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(22),
         child: Column(
@@ -718,7 +714,7 @@ class _LogEffortModalState extends State<LogEffortModal> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFD2FF3A),
                       foregroundColor: Colors.black,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
                     onPressed: () {
@@ -803,7 +799,7 @@ class GymSuspendedBarrier extends StatelessWidget {
                   backgroundColor: Colors.white,
                   foregroundColor: Colors.black,
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 icon: const Icon(Icons.headset_mic),
                 label: const Text('Contactar Soporte SaaS', style: TextStyle(fontWeight: FontWeight.w800)),

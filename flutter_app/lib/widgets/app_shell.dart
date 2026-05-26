@@ -15,10 +15,13 @@ class RoleSurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [palette.surfaceTint, Colors.white],
+          colors: isDark
+              ? [const Color(0xFF0E0E11), const Color(0xFF131317)]
+              : [palette.surfaceTint, Colors.white],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -36,7 +39,7 @@ class RoleSurface extends StatelessWidget {
                 gradient: palette.gradient,
                 boxShadow: [
                   BoxShadow(
-                    color: palette.accent.withValues(alpha: 0.18),
+                    color: palette.accent.withValues(alpha: isDark ? 0.08 : 0.18),
                     blurRadius: 60,
                     spreadRadius: 12,
                   ),
@@ -52,7 +55,7 @@ class RoleSurface extends StatelessWidget {
               height: 260,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: palette.accent.withValues(alpha: 0.06),
+                color: palette.accent.withValues(alpha: isDark ? 0.02 : 0.06),
               ),
             ),
           ),
@@ -62,6 +65,7 @@ class RoleSurface extends StatelessWidget {
     );
   }
 }
+
 
 class RoleTabs extends StatelessWidget {
   const RoleTabs({
@@ -172,6 +176,9 @@ class SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final actionColor = isDark ? Colors.white70 : const Color(0xFF5C5C5C);
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -179,7 +186,12 @@ class SectionHeader extends StatelessWidget {
           Expanded(
             child: Text(
               title,
-              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, letterSpacing: -0.2),
+              style: TextStyle(
+                fontSize: 17, 
+                fontWeight: FontWeight.w800, 
+                letterSpacing: -0.2,
+                color: isDark ? Colors.white : Colors.black,
+              ),
             ),
           ),
           if (action != null)
@@ -187,7 +199,11 @@ class SectionHeader extends StatelessWidget {
               onTap: onTap,
               child: Text(
                 action!,
-                style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Color(0xFF5C5C5C)),
+                style: TextStyle(
+                  fontSize: 12.5, 
+                  fontWeight: FontWeight.w700, 
+                  color: actionColor,
+                ),
               ),
             ),
         ],
@@ -214,15 +230,26 @@ class MetricTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xFF16161A) : Colors.white;
+    final borderColor = isDark ? const Color(0xFF232329) : const Color(0xFFE8E4D9);
+    final labelColor = isDark ? Colors.white60 : const Color(0xFF6B6B6B);
+    final valueColor = isDark ? Colors.white : Colors.black;
+    final noteColor = isDark ? Colors.white38 : const Color(0xFF858585);
+
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: const Color(0xFFE8E4D9)),
-          boxShadow: const [
-            BoxShadow(color: Color(0x11000000), blurRadius: 18, offset: Offset(0, 10)),
+          color: cardColor,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: borderColor),
+          boxShadow: [
+            BoxShadow(
+              color: isDark ? Colors.black.withValues(alpha: 0.15) : const Color(0x11000000),
+              blurRadius: 18,
+              offset: const Offset(0, 10),
+            ),
           ],
         ),
         child: Column(
@@ -233,16 +260,24 @@ class MetricTile extends StatelessWidget {
               height: 40,
               decoration: BoxDecoration(
                 color: accent.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(icon, size: 20, color: accent),
             ),
             const SizedBox(height: 16),
-            Text(label, style: const TextStyle(fontSize: 12, color: Color(0xFF6B6B6B), fontWeight: FontWeight.w600)),
+            Text(label, style: TextStyle(fontSize: 11.5, color: labelColor, fontWeight: FontWeight.w600)),
             const SizedBox(height: 6),
-            Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, letterSpacing: -0.4)),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 22, 
+                fontWeight: FontWeight.w800, 
+                letterSpacing: -0.4,
+                color: valueColor,
+              ),
+            ),
             const SizedBox(height: 6),
-            Text(note, style: const TextStyle(fontSize: 11.5, color: Color(0xFF858585), fontWeight: FontWeight.w500)),
+            Text(note, style: TextStyle(fontSize: 11, color: noteColor, fontWeight: FontWeight.w500)),
           ],
         ),
       ),
@@ -268,16 +303,22 @@ class ActionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xFF16161A) : Colors.white;
+    final borderColor = isDark ? const Color(0xFF232329) : const Color(0xFFE8E4D9);
+    final labelColor = isDark ? Colors.white : Colors.black;
+    final noteColor = isDark ? Colors.white54 : const Color(0xFF777777);
+
     return Expanded(
       child: InkWell(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(12),
         onTap: onTap,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: const Color(0xFFE8E4D9)),
+            color: cardColor,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: borderColor),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -287,14 +328,28 @@ class ActionTile extends StatelessWidget {
                 height: 38,
                 decoration: BoxDecoration(
                   color: accent.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(icon, size: 18, color: accent),
               ),
               const SizedBox(height: 12),
-              Text(label, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700)),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12.5, 
+                  fontWeight: FontWeight.w700,
+                  color: labelColor,
+                ),
+              ),
               const SizedBox(height: 4),
-              Text(note, style: const TextStyle(fontSize: 10.5, color: Color(0xFF777777), fontWeight: FontWeight.w500)),
+              Text(
+                note,
+                style: TextStyle(
+                  fontSize: 10.5, 
+                  color: noteColor, 
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ],
           ),
         ),
@@ -355,12 +410,19 @@ class LogTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xFF16161A) : Colors.white;
+    final borderColor = isDark ? const Color(0xFF232329) : const Color(0xFFE8E4D9);
+    final titleColor = isDark ? Colors.white : Colors.black;
+    final detailColor = isDark ? Colors.white60 : const Color(0xFF696969);
+    final timeColor = isDark ? Colors.white30 : const Color(0xFF8B8B8B);
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE8E4D9)),
+        color: cardColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: borderColor),
       ),
       child: Row(
         children: [
@@ -369,7 +431,7 @@ class LogTile extends StatelessWidget {
             height: 40,
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, size: 18, color: color),
           ),
@@ -381,18 +443,39 @@ class LogTile extends StatelessWidget {
                 Row(
                   children: [
                     Expanded(
-                      child: Text(title, style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700)),
+                      child: Text(
+                        title, 
+                        style: TextStyle(
+                          fontSize: 13.5, 
+                          fontWeight: FontWeight.w700,
+                          color: titleColor,
+                        ),
+                      ),
                     ),
                     if (locked) const StatusPill(label: 'SOLO LECTURA', color: Color(0xFF5C5C5C)),
                   ],
                 ),
                 const SizedBox(height: 4),
-                Text(detail, style: const TextStyle(fontSize: 11.8, color: Color(0xFF696969), fontWeight: FontWeight.w500)),
+                Text(
+                  detail, 
+                  style: TextStyle(
+                    fontSize: 11.8, 
+                    color: detailColor, 
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               ],
             ),
           ),
           const SizedBox(width: 12),
-          Text(time, style: const TextStyle(fontSize: 11.5, color: Color(0xFF8B8B8B), fontWeight: FontWeight.w600)),
+          Text(
+            time, 
+            style: TextStyle(
+              fontSize: 11.5, 
+              color: timeColor, 
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       ),
     );
@@ -424,6 +507,10 @@ class RoleNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final navBgColor = isDark ? const Color(0xFF16161A) : Colors.white;
+    final labelColor = isDark ? Colors.white30 : const Color(0xFF777777);
+
     return NavigationBarTheme(
       data: NavigationBarThemeData(
         indicatorColor: accent,
@@ -432,18 +519,18 @@ class RoleNavBar extends StatelessWidget {
           return TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w700,
-            color: selected ? accentInk : const Color(0xFF777777),
+            color: selected ? accentInk : labelColor,
           );
         }),
         iconTheme: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
-          return IconThemeData(color: selected ? accentInk : const Color(0xFF777777), size: 20);
+          return IconThemeData(color: selected ? accentInk : labelColor, size: 20);
         }),
       ),
       child: NavigationBar(
         selectedIndex: currentIndex,
         onDestinationSelected: onChanged,
-        backgroundColor: Colors.white,
+        backgroundColor: navBgColor,
         height: 68,
         destinations: items
             .map(
@@ -457,4 +544,4 @@ class RoleNavBar extends StatelessWidget {
       ),
     );
   }
-}
+}

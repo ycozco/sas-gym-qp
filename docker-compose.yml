@@ -1,18 +1,89 @@
+version: '3.8'
+
 services:
-  web:
-    image: nginx:alpine
-    container_name: sas_gym_frontend
+  # ─── BASE DE DATOS (AISLADA EN RED INTERNA) ──────────────────────
+  db:
+    image: postgres:15-alpine
+    container_name: gymsmart-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres_secure_password
+      POSTGRES_DB: gymsmart
+    # Se expone el puerto 5432 enlazado ÚNICAMENTE al localhost del host.
+    # Esto previene que contenedores de redes públicas u otros equipos de la LAN
+    # accedan a PostgreSQL, pero permite mantenimiento local.
     ports:
-      - "8282:80"
+      - "127.0.0.1:5432:5432"
     volumes:
-      # El hub de navegación (index.html) se sirve en la raíz "/".
-      # Se montan SOLO el hub, los prototipos y la documentación —
-      # NO el resto del workspace (crosshero-gym con .env / credenciales /
-      # backups SQL, flutter_app, PDFs) para no exponerlo por Nginx.
-      - ./index.html:/usr/share/nginx/html/index.html:ro
-      - ./sas_Gym_high:/usr/share/nginx/html/sas_Gym_high:ro
-      - ./crosshero_web_high:/usr/share/nginx/html/crosshero_web_high:ro
-      - ./TRAZABILIDAD_VISTAS.md:/usr/share/nginx/html/TRAZABILIDAD_VISTAS.md:ro
-      - ./TRAZABILIDAD_WEB.md:/usr/share/nginx/html/TRAZABILIDAD_WEB.md:ro
-      - ./APP_CONTEXT.md:/usr/share/nginx/html/APP_CONTEXT.md:ro
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - internal-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d gymsmart"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ─── NESTJS BACKEND API (NEXO ENTRE RED INTERNA Y PÚBLICA) ───────
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: gymsmart-api
+    restart: on-failure
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres_secure_password@db:5432/gymsmart?schema=public
+      - PORT=3000
+      - JWT_SECRET=gymsmart_secure_jwt_secret_key_2026
+      - TZ=America/Lima # Forzar zona horaria en el contenedor para turnos POS
+    command: >
+      sh -c "npx prisma db push --force-reset && npx prisma generate && npx prisma db seed && npm run start:dev"
+    networks:
+      - internal-net
+      - public-net
+
+  # ─── FLUTTER WEB APP (RED PÚBLICA) ──────────────────────────────────
+  frontend-web:
+    build:
+      context: ./flutter_app
+      dockerfile: Dockerfile
+    container_name: sas_gym_flutter_web
+    ports:
+      - "8383:80"
     restart: unless-stopped
+    networks:
+      - public-net
+
+
+
+  # ─── CLIENTE DE PRUEBAS AISLADO (FUERA DE LA RED PROPIA) ───────────
+  test-client:
+    image: curlimages/curl:latest
+    container_name: gymsmart-test-client
+    # Mantiene el contenedor en ejecución para poder ejecutar comandos exec
+    command: sh -c "sleep 3600"
+    networks:
+      - external-test-net
+
+networks:
+  # Red aislada interna: solo accesible por db y api. No tiene salida externa.
+  internal-net:
+    driver: bridge
+    internal: true
+
+  # Red pública de servicios: accesible por api, frontend-web y prototipos
+  public-net:
+    driver: bridge
+
+  # Red externa de pruebas aislada: simula un cliente externo (fuera de la red)
+  external-test-net:
+    driver: bridge
+
+volumes:
+  postgres_data:

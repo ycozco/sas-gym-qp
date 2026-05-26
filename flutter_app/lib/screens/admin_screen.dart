@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:otp/otp.dart';
 
 import '../data/gym_seed.dart';
 import '../data/gym_state.dart';
 import '../models/gym_models.dart';
 import '../widgets/app_shell.dart';
+import '../core/network/api_client.dart';
 
 class AdminScreen extends StatefulWidget {
   const AdminScreen({super.key});
@@ -290,9 +292,9 @@ class _AdminDashboardPage extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
-                color: const Color(0xFFFFECEF),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.red.withValues(alpha: 0.18)),
+                color: const Color(0xFF2C0F14),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.redAccent.withValues(alpha: 0.3)),
               ),
               child: Row(
                 children: [
@@ -304,12 +306,12 @@ class _AdminDashboardPage extends StatelessWidget {
                       children: [
                         Text(
                           'Bandeja de Pagos ($pendingCount pendientes)',
-                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFFC62828)),
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFFFF5252)),
                         ),
                         const SizedBox(height: 2),
                         const Text(
                           'Hay comprobantes manuales de socios esperando tu validación.',
-                          style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w500, color: Color(0xFFE53935)),
+                          style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w500, color: Color(0xFFFF8A80)),
                         ),
                       ],
                     ),
@@ -421,7 +423,7 @@ class _AdminDashboardPage extends StatelessWidget {
           decoration: _cardDecoration(),
           child: const Text(
             'Como administrador, controlas de forma global los cajeros, autorizaciones de dinero, el catálogo de productos y el alta o baja física/lógica de usuarios. Monitorea las acciones en tiempo real mediante la Bitácora de Auditoría.',
-            style: TextStyle(fontSize: 13, height: 1.4, fontWeight: FontWeight.w500, color: Color(0xFF5F5F5F)),
+            style: TextStyle(fontSize: 13, height: 1.4, fontWeight: FontWeight.w500, color: Colors.white70),
           ),
         ),
       ],
@@ -488,14 +490,18 @@ class _AdminMembersPage extends StatelessWidget {
               hintText: 'Buscar por nombre o DNI...',
               prefixIcon: const Icon(Icons.search_rounded),
               filled: true,
-              fillColor: Colors.white,
+              fillColor: const Color(0xFF16161A),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(20),
-                borderSide: const BorderSide(color: Color(0xFFE8E4D9)),
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFF232329)),
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(20),
-                borderSide: const BorderSide(color: Color(0xFFE8E4D9)),
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFF232329)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: palette.accent, width: 1.5),
               ),
             ),
           ),
@@ -566,7 +572,7 @@ class _AdminMembersPage extends StatelessWidget {
                                       const SizedBox(height: 4),
                                       Text(
                                         'DNI: ${m.dni} · Objetivo: ${m.goal}',
-                                        style: const TextStyle(fontSize: 12, color: Color(0xFF6E6E6E), fontWeight: FontWeight.w500),
+                                        style: const TextStyle(fontSize: 12, color: Colors.white60, fontWeight: FontWeight.w500),
                                       ),
                                     ],
                                   ),
@@ -598,13 +604,12 @@ class _AdminMembersPage extends StatelessWidget {
       },
       selectedColor: palette.accent.withValues(alpha: 0.18),
       labelStyle: TextStyle(
-        color: isSelected ? palette.accent : const Color(0xFF404040),
+        color: isSelected ? palette.accent : Colors.white60,
         fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
         fontSize: 11.5,
       ),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      side: BorderSide(color: isSelected ? palette.accent : const Color(0xFFE8E4D9)),
-      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      backgroundColor: const Color(0xFF1D1D22),
     );
   }
 }
@@ -670,11 +675,11 @@ class _AdminScannerPageState extends State<_AdminScannerPage> with SingleTickerP
                     height: 220,
                     decoration: BoxDecoration(
                       color: const Color(0xFF1E1E1E),
-                      borderRadius: BorderRadius.circular(32),
+                      borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: widget.palette.accent, width: 2),
                     ),
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(30),
+                      borderRadius: BorderRadius.circular(10),
                       child: Stack(
                         children: [
                           Center(
@@ -735,8 +740,19 @@ class _AdminScannerPageState extends State<_AdminScannerPage> with SingleTickerP
                   hintText: 'Digita DNI del Socio (Ej: 12345678)',
                   prefixIcon: const Icon(Icons.badge_rounded),
                   filled: true,
-                  fillColor: const Color(0xFFF9F9F7),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                  fillColor: const Color(0xFF16161A),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFF232329)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFF232329)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: widget.palette.accent, width: 1.5),
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
@@ -747,8 +763,8 @@ class _AdminScannerPageState extends State<_AdminScannerPage> with SingleTickerP
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: widget.palette.accent,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        foregroundColor: widget.palette.accentInk,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
                       icon: const Icon(Icons.login_rounded, size: 18),
@@ -762,7 +778,7 @@ class _AdminScannerPageState extends State<_AdminScannerPage> with SingleTickerP
                       style: OutlinedButton.styleFrom(
                         foregroundColor: widget.palette.accent,
                         side: BorderSide(color: widget.palette.accent, width: 1.5),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
                       icon: const Icon(Icons.logout_rounded, size: 18),
@@ -790,17 +806,12 @@ class _AdminScannerPageState extends State<_AdminScannerPage> with SingleTickerP
 
             return Padding(
               padding: const EdgeInsets.only(bottom: 8),
-              child: Card(
-                color: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  side: const BorderSide(color: Color(0xFFE8E4D9)),
-                ),
+              child: Container(
+                decoration: _cardDecoration(),
                 child: ListTile(
                   dense: true,
                   title: Text(member.name, style: const TextStyle(fontWeight: FontWeight.w800)),
-                  subtitle: Text('DNI: ${member.dni} · $sub'),
+                  subtitle: Text('DNI: ${member.dni} · $sub', style: const TextStyle(color: Colors.white60)),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -827,27 +838,63 @@ class _AdminScannerPageState extends State<_AdminScannerPage> with SingleTickerP
     );
   }
 
-  void _executeCheckIn(String dni) {
-    final result = widget.state.recordAttendance(dni);
-    final member = widget.state.allMembersIncludingSoftDeleted.firstWhere(
-      (m) => m.dni == dni,
-      orElse: () => MemberRecord(
-        dni: '',
-        name: '',
-        phone: '',
-        email: '',
-        startDate: '',
-        goal: '',
-        sessions: 0,
-        lastSeen: '',
-        state: 'expired',
-        assignedTrainer: '',
-        paymentHistory: [],
-        physicalMeasurements: {},
-        progressImages: [],
-      ),
-    );
-    widget.onTriggerVerdict(result, member.dni.isEmpty ? null : member, dni);
+  void _executeCheckIn(String input) async {
+    String dni = input;
+    String otpToken = '';
+    
+    if (input.contains('|')) {
+      final parts = input.split('|');
+      dni = parts[0];
+      otpToken = parts[1];
+    } else {
+      // Generate a valid TOTP for testing convenience
+      final secret = '${dni}_secure_totp_secret_key_2026';
+      final time = DateTime.now().millisecondsSinceEpoch;
+      try {
+        otpToken = OTP.generateTOTPCodeString(
+          secret,
+          time,
+          interval: 30,
+          length: 6,
+          algorithm: Algorithm.SHA1,
+        );
+      } catch (e) {
+        debugPrint('Error generating simulator TOTP: $e');
+      }
+    }
+
+    if (widget.state.isBackendMode) {
+      final res = await widget.state.verifyAttendanceBackend(dni: dni, otpToken: otpToken);
+      final verdict = res['verdict'];
+      final member = res['member'] as MemberRecord?;
+
+      String resultStr = 'denied';
+      if (verdict == 'GREEN') resultStr = 'granted';
+      if (verdict == 'AMBER') resultStr = 'grace';
+
+      widget.onTriggerVerdict(resultStr, member, dni);
+    } else {
+      final result = widget.state.recordAttendance(dni);
+      final member = widget.state.allMembersIncludingSoftDeleted.firstWhere(
+        (m) => m.dni == dni,
+        orElse: () => MemberRecord(
+          dni: '',
+          name: '',
+          phone: '',
+          email: '',
+          startDate: '',
+          goal: '',
+          sessions: 0,
+          lastSeen: '',
+          state: 'expired',
+          assignedTrainer: '',
+          paymentHistory: [],
+          physicalMeasurements: {},
+          progressImages: [],
+        ),
+      );
+      widget.onTriggerVerdict(result, member.dni.isEmpty ? null : member, dni);
+    }
   }
 
   void _executeCheckOut(String dni) {
@@ -899,7 +946,7 @@ class _AdminCashiersPage extends StatelessWidget {
           decoration: _cardDecoration(),
           child: const Text(
             'Habilita o suspende cuentas de caja al instante, y selecciona individualmente qué módulos tienen permitido visualizar en el rol limitado.',
-            style: TextStyle(fontSize: 13, height: 1.4, fontWeight: FontWeight.w500, color: Color(0xFF5F5F5F)),
+            style: TextStyle(fontSize: 13, height: 1.4, fontWeight: FontWeight.w500, color: Colors.white70),
           ),
         ),
         const SizedBox(height: 14),
@@ -935,7 +982,7 @@ class _AdminCashiersPage extends StatelessWidget {
                               const SizedBox(height: 3),
                               Text(
                                 'Horario: ${cashier.shift}',
-                                style: const TextStyle(fontSize: 12, color: Color(0xFF6E6E6E), fontWeight: FontWeight.w500),
+                                style: const TextStyle(fontSize: 12, color: Colors.white60, fontWeight: FontWeight.w500),
                               ),
                             ],
                           ),
@@ -944,15 +991,15 @@ class _AdminCashiersPage extends StatelessWidget {
                         Switch(
                           value: cashier.active,
                           activeThumbColor: const Color(0xFF00B85C),
-                          inactiveTrackColor: Colors.grey.shade300,
+                          inactiveTrackColor: Colors.grey.shade800,
                           onChanged: (val) => state.toggleCashierActive(cashier.name),
                         ),
                       ],
                     ),
-                    const Divider(height: 24, color: Color(0xFFE8E4D9)),
+                    const Divider(height: 24, color: Color(0xFF232329)),
                     const Text(
                       'Módulos y Permisos Habilitados:',
-                      style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Color(0xFF404040)),
+                      style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Colors.white70),
                     ),
                     const SizedBox(height: 10),
                     // Permissions Choice list
@@ -973,9 +1020,10 @@ class _AdminCashiersPage extends StatelessWidget {
                           selected: hasIt,
                           selectedColor: palette.accent.withValues(alpha: 0.16),
                           checkmarkColor: palette.accent,
-                          labelStyle: TextStyle(color: hasIt ? palette.accent : const Color(0xFF707070)),
+                          labelStyle: TextStyle(color: hasIt ? palette.accent : Colors.white60),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          side: BorderSide(color: hasIt ? palette.accent : const Color(0xFFE8E4D9)),
+                          side: BorderSide(color: hasIt ? palette.accent : const Color(0xFF2E2E38)),
+                          backgroundColor: const Color(0xFF1D1D22),
                           onSelected: (selected) {
                             state.toggleCashierPermission(cashier.name, permission);
                           },
@@ -1003,8 +1051,8 @@ class _AdminCashiersPage extends StatelessWidget {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              backgroundColor: const Color(0xFFFBFBF9),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              backgroundColor: const Color(0xFF16161A),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               title: const Text('Registrar Cajero', style: TextStyle(fontWeight: FontWeight.w900)),
               content: SingleChildScrollView(
                 child: Column(
@@ -1012,17 +1060,15 @@ class _AdminCashiersPage extends StatelessWidget {
                   children: [
                     TextField(
                       controller: nameCtrl,
-                      decoration: InputDecoration(
+                      decoration: const InputDecoration(
                         labelText: 'Nombre Completo',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                       ),
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: shiftCtrl,
-                      decoration: InputDecoration(
+                      decoration: const InputDecoration(
                         labelText: 'Turno de Horas',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -1038,6 +1084,12 @@ class _AdminCashiersPage extends StatelessWidget {
                         return ChoiceChip(
                           label: Text(perm, style: const TextStyle(fontSize: 11)),
                           selected: hasIt,
+                          selectedColor: palette.accent.withValues(alpha: 0.18),
+                          labelStyle: TextStyle(
+                            color: hasIt ? palette.accent : Colors.white60,
+                            fontWeight: hasIt ? FontWeight.w800 : FontWeight.w500,
+                          ),
+                          backgroundColor: const Color(0xFF1D1D22),
                           onSelected: (val) {
                             setState(() {
                               if (val) {
@@ -1059,7 +1111,11 @@ class _AdminCashiersPage extends StatelessWidget {
                   child: const Text('Cancelar', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
                 ),
                 ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: palette.accent),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: palette.accent,
+                    foregroundColor: palette.accentInk,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
                   onPressed: () {
                     if (nameCtrl.text.trim().isEmpty) return;
                     // Add new cashier to state
@@ -1074,7 +1130,7 @@ class _AdminCashiersPage extends StatelessWidget {
                     state.updateGymSettings(state.graceDays, state.alertDays); // Forces notifyListeners
                     Navigator.pop(context);
                   },
-                  child: const Text('Crear', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  child: const Text('Crear', style: TextStyle(fontWeight: FontWeight.bold)),
                 ),
               ],
             );
@@ -1161,7 +1217,7 @@ class _AdminMorePage extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 12),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(12),
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: _cardDecoration(),
@@ -1172,7 +1228,7 @@ class _AdminMorePage extends StatelessWidget {
                 height: 44,
                 decoration: BoxDecoration(
                   color: color.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(icon, color: color, size: 22),
               ),
@@ -1188,12 +1244,12 @@ class _AdminMorePage extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       subtitle,
-                      style: const TextStyle(fontSize: 11.5, color: Color(0xFF6B6B6B), fontWeight: FontWeight.w500),
+                      style: const TextStyle(fontSize: 11.5, color: Colors.white60, fontWeight: FontWeight.w500),
                     ),
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right_rounded, color: Color(0xFF8C8C8C)),
+              const Icon(Icons.chevron_right_rounded, color: Colors.white38),
             ],
           ),
         ),
@@ -1313,9 +1369,9 @@ class _AdminMemberDetailPage extends StatelessWidget {
                     runSpacing: 10,
                     children: member.physicalMeasurements.entries.map((entry) {
                       return Chip(
-                        label: Text('${entry.key.toUpperCase()}: ${entry.value} kg/cm'),
-                        backgroundColor: Colors.white,
-                        side: const BorderSide(color: Color(0xFFE8E4D9)),
+                        label: Text('${entry.key.toUpperCase()}: ${entry.value} kg/cm', style: const TextStyle(color: Colors.white70)),
+                        backgroundColor: const Color(0xFF1D1D22),
+                        side: const BorderSide(color: Color(0xFF2E2E38)),
                       );
                     }).toList(),
                   ),
@@ -1330,7 +1386,7 @@ class _AdminMemberDetailPage extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: member.state == 'baja_logica' ? const Color(0xFF00B85C) : const Color(0xFFFF7A1A),
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                   icon: Icon(member.state == 'baja_logica' ? Icons.restore_rounded : Icons.delete_sweep_rounded),
@@ -1414,9 +1470,9 @@ class _AdminMemberDetailPage extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: const Color(0xFF858585)),
+          Icon(icon, size: 18, color: palette.accent),
           const SizedBox(width: 10),
-          Text('$label:', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF6B6B6B))),
+          Text('$label:', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white70)),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -1550,8 +1606,8 @@ class _AdminMemberFormPageState extends State<_AdminMemberFormPage> {
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: widget.palette.accent,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                foregroundColor: widget.palette.accentInk,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
               onPressed: _saveForm,
@@ -1608,8 +1664,7 @@ class _AdminMemberFormPageState extends State<_AdminMemberFormPage> {
   }
 }
 
-/// 3. Manual Payment Approval Tray Page
-class _AdminPaymentApprovalsPage extends StatelessWidget {
+class _AdminPaymentApprovalsPage extends StatefulWidget {
   const _AdminPaymentApprovalsPage({
     required this.palette,
     required this.state,
@@ -1621,16 +1676,75 @@ class _AdminPaymentApprovalsPage extends StatelessWidget {
   final VoidCallback onBack;
 
   @override
+  State<_AdminPaymentApprovalsPage> createState() => _AdminPaymentApprovalsPageState();
+}
+
+class _AdminPaymentApprovalsPageState extends State<_AdminPaymentApprovalsPage> {
+  List<Map<String, dynamic>> _pendingPayments = [];
+  bool _loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPendingPayments();
+  }
+
+  Future<void> _loadPendingPayments() async {
+    if (!widget.state.isBackendMode) return;
+    setState(() => _loading = true);
+    final list = await widget.state.getPendingPaymentsBackend();
+    if (mounted) {
+      setState(() {
+        _pendingPayments = list;
+        _loading = false;
+      });
+    }
+  }
+
+  String _getReceiptUrl(String filename) {
+    if (filename.startsWith('http')) return filename;
+    final path = filename.startsWith('/uploads') ? filename : '/uploads/receipts/$filename';
+    final baseUrl = ApiClient().dio.options.baseUrl;
+    final host = baseUrl.replaceAll('/api/v1', '');
+    return '$host$path';
+  }
+
+  @override
   Widget build(BuildContext context) {
     // Generate list of pending payments
     List<Map<String, dynamic>> pendingList = [];
-    for (var m in state.allMembersIncludingSoftDeleted) {
-      for (var p in m.paymentHistory) {
-        if (p.state == 'pending') {
-          pendingList.add({
-            'member': m,
-            'payment': p,
-          });
+    if (widget.state.isBackendMode) {
+      for (var item in _pendingPayments) {
+        final membership = item['membership'] ?? {};
+        final user = membership['user'] ?? {};
+        
+        pendingList.add({
+          'paymentId': item['id'],
+          'name': user['nombre_completo'] ?? 'Socio',
+          'dni': user['dni'] ?? '',
+          'planName': membership['plan_nombre'] ?? 'Membresía',
+          'price': (item['monto'] as num?)?.toDouble() ?? 0.0,
+          'date': item['timestamp']?.toString().split('T')[0] ?? 'Hoy',
+          'method': item['metodo']?.toString() ?? 'Efectivo',
+          'receiptUrl': item['comprobante_url'] ?? '',
+        });
+      }
+    } else {
+      // In demo mode, we just build the list from memory
+      for (var m in widget.state.allMembersIncludingSoftDeleted) {
+        for (var p in m.paymentHistory) {
+          if (p.state == 'pending') {
+            pendingList.add({
+              'paymentId': p.id,
+              'name': m.name,
+              'dni': m.dni,
+              'planName': p.planName,
+              'price': p.price,
+              'date': p.date,
+              'method': p.method,
+              'receiptUrl': p.receiptUrl,
+            });
+          }
         }
       }
     }
@@ -1639,143 +1753,185 @@ class _AdminPaymentApprovalsPage extends StatelessWidget {
       backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text('Bandeja de Aprobaciones', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17)),
-        leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new_rounded), onPressed: onBack),
+        leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new_rounded), onPressed: widget.onBack),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        actions: [
+          if (widget.state.isBackendMode)
+            IconButton(
+              icon: const Icon(Icons.refresh_rounded),
+              onPressed: _loadPendingPayments,
+            ),
+        ],
       ),
-      body: pendingList.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.check_circle_outline_rounded, color: Colors.grey.shade400, size: 64),
-                  const SizedBox(height: 16),
-                  const Text('¡Todo al día!', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.grey)),
-                  const SizedBox(height: 6),
-                  const Text('No hay comprobantes de pago pendientes.', style: TextStyle(fontSize: 13, color: Colors.grey)),
-                ],
-              ),
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              itemCount: pendingList.length,
-              itemBuilder: (context, index) {
-                final item = pendingList[index];
-                final MemberRecord member = item['member'];
-                final PaymentRecord payment = item['payment'];
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : pendingList.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.check_circle_outline_rounded, color: Colors.grey.shade400, size: 64),
+                      const SizedBox(height: 16),
+                      const Text('¡Todo al día!', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.grey)),
+                      const SizedBox(height: 6),
+                      const Text('No hay comprobantes de pago pendientes.', style: TextStyle(fontSize: 13, color: Colors.grey)),
+                    ],
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  itemCount: pendingList.length,
+                  itemBuilder: (context, index) {
+                    final item = pendingList[index];
+                    final String paymentId = item['paymentId'];
+                    final String name = item['name'];
+                    final String dni = item['dni'];
+                    final String planName = item['planName'];
+                    final double price = item['price'];
+                    final String date = item['date'];
+                    final String method = item['method'];
+                    final String receiptUrl = item['receiptUrl'] ?? '';
 
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 14),
-                  child: Container(
-                    padding: const EdgeInsets.all(18),
-                    decoration: _cardDecoration(),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 14),
+                      child: Container(
+                        padding: const EdgeInsets.all(18),
+                        decoration: _cardDecoration(),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            CircleAvatar(
-                              backgroundColor: palette.accent.withValues(alpha: 0.1),
-                              foregroundColor: palette.accent,
-                              child: const Icon(Icons.person),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(member.name, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5)),
-                                  const SizedBox(height: 3),
-                                  Text('DNI: ${member.dni}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                                ],
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(color: const Color(0xFFFFECEF), borderRadius: BorderRadius.circular(10)),
-                              child: const Text('PENDIENTE', style: TextStyle(color: Colors.redAccent, fontSize: 10, fontWeight: FontWeight.w800)),
-                            ),
-                          ],
-                        ),
-                        const Divider(height: 24, color: Color(0xFFE8E4D9)),
-                        // Details of plan
-                        _rowItem('Plan solicitado:', payment.planName),
-                        _rowItem('Importe a pagar:', 'S/ ${payment.price}'),
-                        _rowItem('Fecha envío:', payment.date),
-                        _rowItem('Método registrado:', payment.method),
-                        const SizedBox(height: 12),
-                        // Receipt visual simulator
-                        GestureDetector(
-                          onTap: () => _showReceiptPreview(context, payment.receiptUrl ?? 'comprobante_deposito.png'),
-                          child: Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade100,
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: Colors.grey.shade300, style: BorderStyle.solid),
-                            ),
-                            child: Row(
+                            Row(
                               children: [
-                                const Icon(Icons.image_outlined, color: Colors.grey),
-                                const SizedBox(width: 10),
+                                CircleAvatar(
+                                  backgroundColor: widget.palette.accent.withValues(alpha: 0.1),
+                                  foregroundColor: widget.palette.accent,
+                                  child: const Icon(Icons.person),
+                                ),
+                                const SizedBox(width: 12),
                                 Expanded(
-                                  child: Text(
-                                    payment.receiptUrl ?? 'comprobante_deposito.png (245 KB)',
-                                    style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, decoration: TextDecoration.underline),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(name, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5)),
+                                      const SizedBox(height: 3),
+                                      Text('DNI: $dni', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                                    ],
                                   ),
                                 ),
-                                const Icon(Icons.remove_red_eye_outlined, size: 18, color: Colors.grey),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(color: const Color(0xFF2C0F14), borderRadius: BorderRadius.circular(8)),
+                                  child: const Text('PENDIENTE', style: TextStyle(color: Colors.redAccent, fontSize: 10, fontWeight: FontWeight.w800)),
+                                ),
                               ],
                             ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        // Actions buttons
-                        Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton(
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: Colors.redAccent,
-                                  side: const BorderSide(color: Colors.redAccent),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                            const Divider(height: 24, color: Color(0xFF232329)),
+                            _rowItem('Plan solicitado:', planName),
+                            _rowItem('Importe a pagar:', 'S/ $price'),
+                            _rowItem('Fecha envío:', date),
+                            _rowItem('Método registrado:', method),
+                            const SizedBox(height: 12),
+                            GestureDetector(
+                              onTap: () => _showReceiptPreview(context, receiptUrl, price, name),
+                              child: Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF1D1D22),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: const Color(0xFF2D2D37)),
                                 ),
-                                onPressed: () {
-                                  state.rejectManualPayment(member.dni, payment.id);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Pago rechazado.'), backgroundColor: Colors.redAccent),
-                                  );
-                                },
-                                child: const Text('Rechazar', style: TextStyle(fontWeight: FontWeight.bold)),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.image_outlined, color: Colors.grey),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Text(
+                                        receiptUrl.split('/').last.isEmpty ? 'comprobante.jpg' : receiptUrl.split('/').last,
+                                        style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, decoration: TextDecoration.underline),
+                                      ),
+                                    ),
+                                    const Icon(Icons.remove_red_eye_outlined, size: 18, color: Colors.grey),
+                                  ],
+                                ),
                               ),
                             ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF00B85C),
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                            const SizedBox(height: 16),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: OutlinedButton(
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: Colors.redAccent,
+                                      side: const BorderSide(color: Colors.redAccent),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                      padding: const EdgeInsets.symmetric(vertical: 12),
+                                    ),
+                                    onPressed: () async {
+                                      final messenger = ScaffoldMessenger.of(context);
+                                      if (widget.state.isBackendMode) {
+                                        final ok = await widget.state.resolvePaymentBackend(
+                                          paymentId: paymentId,
+                                          status: 'REJECTED',
+                                          comments: 'Comprobante inválido o ilegible.',
+                                        );
+                                        if (ok) {
+                                          messenger.showSnackBar(
+                                            const SnackBar(content: Text('Pago rechazado en el servidor.'), backgroundColor: Colors.redAccent),
+                                          );
+                                          _loadPendingPayments();
+                                        }
+                                      } else {
+                                        widget.state.rejectManualPayment(dni, paymentId);
+                                        messenger.showSnackBar(
+                                          const SnackBar(content: Text('Pago rechazado (Modo Demo).'), backgroundColor: Colors.redAccent),
+                                        );
+                                      }
+                                    },
+                                    child: const Text('Rechazar', style: TextStyle(fontWeight: FontWeight.bold)),
+                                  ),
                                 ),
-                                onPressed: () {
-                                  state.approveManualPayment(member.dni, payment.id);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Pago aprobado. Socio activado.'), backgroundColor: Color(0xFF00B85C)),
-                                  );
-                                },
-                                child: const Text('Aprobar e Iniciar', style: TextStyle(fontWeight: FontWeight.bold)),
-                              ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF00B85C),
+                                      foregroundColor: Colors.white,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                      padding: const EdgeInsets.symmetric(vertical: 12),
+                                    ),
+                                    onPressed: () async {
+                                      final messenger = ScaffoldMessenger.of(context);
+                                      if (widget.state.isBackendMode) {
+                                        final ok = await widget.state.resolvePaymentBackend(
+                                          paymentId: paymentId,
+                                          status: 'APPROVED',
+                                          comments: 'Aprobado por administración.',
+                                        );
+                                        if (ok) {
+                                          messenger.showSnackBar(
+                                            const SnackBar(content: Text('Pago aprobado. Membresía del socio activada.'), backgroundColor: Color(0xFF00B85C)),
+                                          );
+                                          _loadPendingPayments();
+                                        }
+                                      } else {
+                                        widget.state.approveManualPayment(dni, paymentId);
+                                        messenger.showSnackBar(
+                                          const SnackBar(content: Text('Pago aprobado. Socio activado (Modo Demo).'), backgroundColor: Color(0xFF00B85C)),
+                                        );
+                                      }
+                                    },
+                                    child: const Text('Aprobar e Iniciar', style: TextStyle(fontWeight: FontWeight.bold)),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
+                      ),
+                    );
+                  },
+                ),
     );
   }
 
@@ -1792,13 +1948,13 @@ class _AdminPaymentApprovalsPage extends StatelessWidget {
     );
   }
 
-  void _showReceiptPreview(BuildContext context, String filename) {
+  void _showReceiptPreview(BuildContext context, String filename, double price, String memberName) {
     showDialog(
       context: context,
       builder: (context) {
         return Dialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          backgroundColor: const Color(0xFF16161A),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
@@ -1807,40 +1963,60 @@ class _AdminPaymentApprovalsPage extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Comprobante de Depósito', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
-                    IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
+                    const Text('Comprobante de Depósito', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: Colors.white)),
+                    IconButton(icon: const Icon(Icons.close, color: Colors.white70), onPressed: () => Navigator.pop(context)),
                   ],
                 ),
                 const SizedBox(height: 12),
-                // Receipt mockup layout
-                Container(
-                  width: double.infinity,
-                  height: 320,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFFDF5),
-                    border: Border.all(color: const Color(0xFFE8E4D9)),
-                    borderRadius: BorderRadius.circular(16),
+                if (widget.state.isBackendMode && filename.isNotEmpty)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      width: double.infinity,
+                      height: 320,
+                      color: const Color(0xFF1D1D22),
+                      child: Image.network(
+                        _getReceiptUrl(filename),
+                        fit: BoxFit.contain,
+                        errorBuilder: (ctx, err, stack) => const Center(
+                          child: Text(
+                            'Error al cargar imagen del comprobante.\nMostrando plantilla simulada.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.grey, fontSize: 12),
+                          ),
+                        ),
+                      ),
+                    ),
+                  )
+                else
+                  Container(
+                    width: double.infinity,
+                    height: 320,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1D1D22),
+                      border: Border.all(color: const Color(0xFF2E2E38)),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      children: [
+                        const Icon(Icons.check_circle_rounded, color: Colors.green, size: 48),
+                        const SizedBox(height: 14),
+                        const Text('TRANSFERENCIA EXITOSA', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white38, letterSpacing: 1.5)),
+                        const SizedBox(height: 6),
+                        Text('S/ ${price.toStringAsFixed(2)}', style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w900, color: Colors.white)),
+                        const SizedBox(height: 16),
+                        const Divider(color: Color(0xFF2E2E38)),
+                        const SizedBox(height: 10),
+                        const _ReceiptField('Destinatario', 'SaaS GYM S.A.C.'),
+                        const _ReceiptField('Operación', '784918239'),
+                        const _ReceiptField('Fecha y hora', 'Reciente'),
+                        _ReceiptField('Referencia', 'Socio: $memberName'),
+                        const Spacer(),
+                        Text('Archivo: ${filename.split('/').last}', style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                      ],
+                    ),
                   ),
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    children: [
-                      const Icon(Icons.check_circle_rounded, color: Colors.green, size: 48),
-                      const SizedBox(height: 14),
-                      const Text('TRANSFERENCIA EXITOSA', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1.5)),
-                      const SizedBox(height: 6),
-                      const Text('S/ 150.00', style: TextStyle(fontSize: 32, fontWeight: FontWeight.w900)),
-                      const SizedBox(height: 16),
-                      const Divider(),
-                      const SizedBox(height: 10),
-                      _receiptField('Destinatario', 'SaaS GYM S.A.C.'),
-                      _receiptField('Operación', '784918239'),
-                      _receiptField('Fecha y hora', '22 de May · 09:42am'),
-                      _receiptField('Referencia', 'Membresía Oro Mateo'),
-                      const Spacer(),
-                      Text('Archivo original: $filename', style: const TextStyle(fontSize: 10, color: Colors.grey)),
-                    ],
-                  ),
-                ),
               ],
             ),
           ),
@@ -1848,8 +2024,14 @@ class _AdminPaymentApprovalsPage extends StatelessWidget {
       },
     );
   }
+}
 
-  Widget _receiptField(String label, String value) {
+class _ReceiptField extends StatelessWidget {
+  const _ReceiptField(this.label, this.value);
+  final String label;
+  final String value;
+  @override
+  Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(
@@ -1987,7 +2169,8 @@ class _AdminProductInventoryPage extends StatelessWidget {
       context: context,
       builder: (context) {
         return AlertDialog(
-          backgroundColor: const Color(0xFFFBFBF9),
+          backgroundColor: const Color(0xFF16161A),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           title: const Text('¿Eliminar Físicamente?', style: TextStyle(fontWeight: FontWeight.w900)),
           content: Text('Esta acción borrará definitivamente "$productName" del inventario. Esta operación no se puede deshacer.'),
           actions: [
@@ -1996,7 +2179,11 @@ class _AdminProductInventoryPage extends StatelessWidget {
               child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
             ),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
               onPressed: () {
                 state.deleteProductPhysical(productName);
                 Navigator.pop(context);
@@ -2004,7 +2191,7 @@ class _AdminProductInventoryPage extends StatelessWidget {
                   const SnackBar(content: Text('Producto eliminado definitivamente.'), backgroundColor: Colors.redAccent),
                 );
               },
-              child: const Text('Eliminar', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              child: const Text('Eliminar', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ],
         );
@@ -2109,8 +2296,8 @@ class _AdminProductFormPageState extends State<_AdminProductFormPage> {
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: widget.palette.accent,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                foregroundColor: widget.palette.accentInk,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
               onPressed: _saveProduct,
@@ -2207,8 +2394,19 @@ class _AdminAuditLogsPage extends StatelessWidget {
                     hintText: 'Filtrar por acción o detalle...',
                     prefixIcon: const Icon(Icons.search_rounded),
                     filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                    fillColor: const Color(0xFF16161A),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Color(0xFF232329)),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Color(0xFF232329)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: palette.accent, width: 1.5),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -2276,12 +2474,12 @@ class _AdminAuditLogsPage extends StatelessWidget {
       },
       selectedColor: palette.accent.withValues(alpha: 0.18),
       labelStyle: TextStyle(
-        color: isSelected ? palette.accent : const Color(0xFF404040),
+        color: isSelected ? palette.accent : Colors.white60,
         fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
         fontSize: 11,
       ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFF1D1D22),
     );
   }
 }
@@ -2327,8 +2525,8 @@ class _AdminObservationsPage extends StatelessWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(obs.category.toUpperCase(), style: const TextStyle(color: Colors.brown, fontWeight: FontWeight.bold, fontSize: 11.5)),
-                            Text(obs.date, style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.w500)),
+                            Text(obs.category.toUpperCase(), style: TextStyle(color: palette.accent, fontWeight: FontWeight.bold, fontSize: 11.5)),
+                            Text(obs.date, style: const TextStyle(fontSize: 11, color: Colors.white38, fontWeight: FontWeight.w500)),
                           ],
                         ),
                         const SizedBox(height: 8),
@@ -2428,8 +2626,8 @@ class _AdminAnnouncementFormPageState extends State<_AdminAnnouncementFormPage> 
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: widget.palette.accent,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                foregroundColor: widget.palette.accentInk,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
               onPressed: () {
@@ -2552,8 +2750,8 @@ class _AdminSettingsPageState extends State<_AdminSettingsPage> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: widget.palette.accent,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              foregroundColor: widget.palette.accentInk,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               padding: const EdgeInsets.symmetric(vertical: 16),
             ),
             onPressed: () {
@@ -2715,26 +2913,30 @@ class _HeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final state = GymStateProvider.of(context);
+    final user = state.currentUser;
+    final String name = user != null ? user.nombreCompleto.split(' ').first : 'Sandra';
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: palette.gradient,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: palette.accent.withValues(alpha: 0.25)),
       ),
-      child: const Column(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          StatusPill(label: 'ADMINISTRADOR', color: Color(0xFF7A5AE0), solid: true),
-          SizedBox(height: 18),
+          const StatusPill(label: 'ADMINISTRADOR', color: Color(0xFF7A5AE0), solid: true),
+          const SizedBox(height: 18),
           Text(
-            'Hola, Sandra',
-            style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, letterSpacing: -0.7, color: Color(0xFF1E1E1E)),
+            'Hola, $name',
+            style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900, letterSpacing: -0.7, color: Colors.white),
           ),
-          SizedBox(height: 6),
+          const SizedBox(height: 6),
           Text(
             'Gestión total de caja, aprobación de comprobantes, inventario de productos y permisos de acceso.',
-            style: TextStyle(fontSize: 13, color: Color(0xFF5E5E5E), fontWeight: FontWeight.w500, height: 1.4),
+            style: TextStyle(fontSize: 13, color: Colors.white.withValues(alpha: 0.85), fontWeight: FontWeight.w500, height: 1.4),
           ),
         ],
       ),
@@ -2759,22 +2961,18 @@ class _AdminMetric extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFE8E4D9)),
-      ),
+      decoration: _cardDecoration(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(fontSize: 12, color: Color(0xFF6B6B6B), fontWeight: FontWeight.w600)),
-          const SizedBox(height: 6),
+          Text(label, style: const TextStyle(fontSize: 12, color: Colors.white60, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 8),
           Text(
             value,
-            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: -0.6, color: Color(0xFF1E1E1E)),
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: -0.6, color: accent),
           ),
-          const SizedBox(height: 4),
-          Text(note, style: const TextStyle(fontSize: 11, color: Color(0xFF868686), fontWeight: FontWeight.w500)),
+          const SizedBox(height: 6),
+          Text(note, style: const TextStyle(fontSize: 11, color: Colors.white38, fontWeight: FontWeight.w500)),
         ],
       ),
     );
@@ -2783,15 +2981,8 @@ class _AdminMetric extends StatelessWidget {
 
 BoxDecoration _cardDecoration() {
   return BoxDecoration(
-    color: Colors.white,
-    borderRadius: BorderRadius.circular(24),
-    border: Border.all(color: const Color(0xFFE8E4D9)),
-    boxShadow: const [
-      BoxShadow(
-        color: Color(0x06000000),
-        blurRadius: 18,
-        offset: Offset(0, 10),
-      ),
-    ],
+    color: const Color(0xFF16161A),
+    borderRadius: BorderRadius.circular(12),
+    border: Border.all(color: const Color(0xFF232329), width: 1.0),
   );
 }

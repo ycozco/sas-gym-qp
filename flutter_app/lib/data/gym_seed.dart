@@ -37,16 +37,17 @@ final Map<GymRole, RolePalette> rolePalettes = <GymRole, RolePalette>{
     label: 'Operación limitada',
   ),
   GymRole.admin: RolePalette(
-    accent: const Color(0xFF7A5AE0),
-    accentInk: Colors.white,
-    surfaceTint: const Color(0xFFF6F1FF),
+    accent: const Color(0xFF00FF87), // Neon Green
+    accentInk: const Color(0xFF0E0E11),
+    surfaceTint: const Color(0xFF16161A), // Dark Anthracite card background
     gradient: const LinearGradient(
-      colors: [Color(0xFFF6F1FF), Color(0xFFE0D5FF)],
+      colors: [Color(0xFF7A5AE0), Color(0xFFFFB300)], // Electric Violet and Amber highlights
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
     ),
     label: 'Gestión total y auditoría',
   ),
+
   GymRole.superadmin: RolePalette(
     accent: const Color(0xFFE91E63),
     accentInk: Colors.white,

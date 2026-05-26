@@ -1,11 +1,48 @@
 import 'dart:async';
-import 'dart:math' as math;
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:otp/otp.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:image/image.dart' as img;
+import 'package:file_picker/file_picker.dart';
 import '../data/gym_seed.dart';
 import '../data/gym_state.dart';
 import '../models/gym_models.dart';
 import '../widgets/app_shell.dart';
 import '../widgets/shared_widgets.dart';
+
+MemberRecord _getLoggedMember(GymState state) {
+  final user = state.currentUser;
+  return state.allMembersIncludingSoftDeleted.firstWhere(
+    (m) => m.dni == user?.dni,
+    orElse: () {
+      if (user != null) {
+        return MemberRecord(
+          dni: user.dni ?? '',
+          name: user.nombreCompleto,
+          phone: user.celular ?? '',
+          email: user.email,
+          startDate: 'Hoy',
+          goal: user.memberProfile?['objetivo'] ?? 'Hipertrofia',
+          sessions: 0,
+          lastSeen: 'Hoy',
+          state: (user.memberships != null && user.memberships!.isNotEmpty)
+              ? user.memberships!.first['estado']?.toString().toLowerCase() ?? 'expired'
+              : (user.estado == 'ACTIVE' ? 'active' : 'expired'),
+
+          assignedTrainer: 'Carlos Mendoza',
+          paymentHistory: [],
+          physicalMeasurements: {
+            'peso': (user.memberProfile?['peso_kg'] as num?)?.toDouble() ?? 70.0,
+            'altura': (user.memberProfile?['altura_cm'] as num?)?.toDouble() ?? 170.0,
+          },
+          progressImages: [],
+        );
+      }
+      return state.allMembersIncludingSoftDeleted.first;
+    },
+  );
+}
 
 class MemberScreen extends StatefulWidget {
   const MemberScreen({super.key});
@@ -69,7 +106,7 @@ class _MemberScreenState extends State<MemberScreen> {
           onBack: _back,
         );
       } else if (screen == 'observation') {
-        activeView = _ReportObservationView(
+        activeView = ReportObservationView(
           palette: palette,
           onBack: _back,
         );
@@ -156,11 +193,7 @@ class _MemberHomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = GymStateProvider.of(context);
-    // Find member Mateo Salas
-    final mateo = state.allMembersIncludingSoftDeleted.firstWhere(
-      (m) => m.dni == '12345678',
-      orElse: () => state.allMembersIncludingSoftDeleted.first,
-    );
+    final mateo = _getLoggedMember(state);
 
     final isExpired = mateo.state == 'expired';
     final isGrace = mateo.state == 'grace';
@@ -325,7 +358,7 @@ class _MemberHomePage extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Column(
@@ -367,9 +400,8 @@ class _MemberHomePage extends StatelessWidget {
   BoxDecoration _cardDecoration() {
     return BoxDecoration(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(24),
-      border: Border.all(color: const Color(0xFFE8E4D9)),
-      boxShadow: const [BoxShadow(color: Color(0x06000000), blurRadius: 16, offset: Offset(0, 8))],
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: const Color(0xFFE2DDD5)),
     );
   }
 }
@@ -387,7 +419,7 @@ class _HeroCard extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: palette.gradient,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: palette.accent.withValues(alpha: 0.25)),
       ),
       child: Column(
@@ -452,9 +484,9 @@ class _MemberAgendaPage extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
                   color: day.today ? palette.accent : Colors.white,
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: day.today ? palette.accent : const Color(0xFFE8E4D9),
+                    color: day.today ? palette.accent : const Color(0xFFE2DDD5),
                   ),
                 ),
                 child: Column(
@@ -528,7 +560,7 @@ class _MemberAgendaPage extends StatelessWidget {
                   backgroundColor: palette.accent,
                   foregroundColor: palette.accentInk,
                   minimumSize: const Size.fromHeight(52),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
               ),
             ],
@@ -568,9 +600,8 @@ class _MemberAgendaPage extends StatelessWidget {
   BoxDecoration _cardDecoration() {
     return BoxDecoration(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(24),
-      border: Border.all(color: const Color(0xFFE8E4D9)),
-      boxShadow: const [BoxShadow(color: Color(0x06000000), blurRadius: 16, offset: Offset(0, 8))],
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: const Color(0xFFE2DDD5)),
     );
   }
 }
@@ -584,10 +615,7 @@ class _MemberSubscriptionPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = GymStateProvider.of(context);
-    final mateo = state.allMembersIncludingSoftDeleted.firstWhere(
-      (m) => m.dni == '12345678',
-      orElse: () => state.allMembersIncludingSoftDeleted.first,
-    );
+    final mateo = _getLoggedMember(state);
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 6, 20, 36),
@@ -646,7 +674,7 @@ class _MemberSubscriptionPage extends StatelessWidget {
                   backgroundColor: Colors.black,
                   foregroundColor: Colors.white,
                   minimumSize: const Size.fromHeight(50),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 onPressed: () => onGo('pay'),
                 child: const Text('Renovar / Pagar Membresía', style: TextStyle(fontWeight: FontWeight.w900)),
@@ -723,9 +751,8 @@ class _MemberSubscriptionPage extends StatelessWidget {
   BoxDecoration _cardDecoration() {
     return BoxDecoration(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(24),
-      border: Border.all(color: const Color(0xFFE8E4D9)),
-      boxShadow: const [BoxShadow(color: Color(0x06000000), blurRadius: 16, offset: Offset(0, 8))],
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: const Color(0xFFE2DDD5)),
     );
   }
 }
@@ -758,10 +785,7 @@ class _MemberProfilePageState extends State<_MemberProfilePage> with SingleTicke
   @override
   Widget build(BuildContext context) {
     final state = GymStateProvider.of(context);
-    final mateo = state.allMembersIncludingSoftDeleted.firstWhere(
-      (m) => m.dni == '12345678',
-      orElse: () => state.allMembersIncludingSoftDeleted.first,
-    );
+    final mateo = _getLoggedMember(state);
 
     return Column(
       children: [
@@ -992,9 +1016,8 @@ class _MemberProfilePageState extends State<_MemberProfilePage> with SingleTicke
   BoxDecoration _cardDecoration() {
     return BoxDecoration(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(24),
-      border: Border.all(color: const Color(0xFFE8E4D9)),
-      boxShadow: const [BoxShadow(color: Color(0x06000000), blurRadius: 16, offset: Offset(0, 8))],
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: const Color(0xFFE2DDD5)),
     );
   }
 }
@@ -1014,29 +1037,52 @@ class _FullQRView extends StatefulWidget {
 }
 
 class _FullQRViewState extends State<_FullQRView> {
-  int _secondsLeft = 60;
-  String _seed = DateTime.now().millisecondsSinceEpoch.toString();
+  int _secondsLeft = 30;
+  String _qrData = '';
   Timer? _timer;
 
   @override
   void initState() {
     super.initState();
-    _startTimer();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _startTimer();
+    });
   }
 
   void _startTimer() {
+    _updateQrData();
     _timer = Timer.periodic(const Duration(seconds: 1), (t) {
-      if (_secondsLeft > 1) {
-        setState(() {
-          _secondsLeft--;
-        });
-      } else {
-        setState(() {
-          _secondsLeft = 60;
-          _seed = DateTime.now().millisecondsSinceEpoch.toString();
-        });
-      }
+      if (!mounted) return;
+      final now = DateTime.now();
+      setState(() {
+        _secondsLeft = 30 - (now.second % 30);
+        if (_secondsLeft == 30) {
+          _updateQrData();
+        }
+      });
     });
+  }
+
+  void _updateQrData() {
+    if (!mounted) return;
+    final state = GymStateProvider.of(context);
+    final userDni = state.currentUser?.dni ?? '11111111';
+    final secret = '${userDni}_secure_totp_secret_key_2026';
+    final time = DateTime.now().millisecondsSinceEpoch;
+    try {
+      final token = OTP.generateTOTPCodeString(
+        secret,
+        time,
+        interval: 30,
+        length: 6,
+        algorithm: Algorithm.SHA1,
+      );
+      setState(() {
+        _qrData = '$userDni|$token';
+      });
+    } catch (e) {
+      debugPrint('Error generating TOTP: $e');
+    }
   }
 
   @override
@@ -1048,12 +1094,8 @@ class _FullQRViewState extends State<_FullQRView> {
   @override
   Widget build(BuildContext context) {
     final state = GymStateProvider.of(context);
-    final mateo = state.allMembersIncludingSoftDeleted.firstWhere(
-      (m) => m.dni == '12345678',
-      orElse: () => state.allMembersIncludingSoftDeleted.first,
-    );
-
-    final bool isGranted = mateo.state == 'active' || mateo.state == 'grace';
+    final member = _getLoggedMember(state);
+    final bool isGranted = member.state == 'active' || member.state == 'grace';
 
     return Scaffold(
       backgroundColor: const Color(0xFF0F0F0F),
@@ -1073,27 +1115,59 @@ class _FullQRViewState extends State<_FullQRView> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Dynamic QR pattern
-              QRPattern(
-                seed: _seed,
-                size: 230,
-                color: isGranted ? Colors.black : Colors.red[900]!,
+              // Real scannable QR code
+              Container(
+                width: 230,
+                height: 230,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFE2DDD5), width: 1.5),
+                ),
+                child: _qrData.isEmpty
+                    ? const Center(child: CircularProgressIndicator())
+                    : QrImageView(
+                        data: _qrData,
+                        version: QrVersions.auto,
+                        size: 200.0,
+                        eyeStyle: QrEyeStyle(
+                          eyeShape: QrEyeShape.square,
+                          color: isGranted ? Colors.black : Colors.red[900]!,
+                        ),
+                        dataModuleStyle: QrDataModuleStyle(
+                          dataModuleShape: QrDataModuleShape.square,
+                          color: isGranted ? Colors.black : Colors.red[900]!,
+                        ),
+                      ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 12),
+              if (_qrData.isNotEmpty) ...[
+                Text(
+                  'Token: ${_qrData.split('|').last}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    letterSpacing: 2,
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
 
               // Status indicator
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                 decoration: BoxDecoration(
                   color: isGranted
-                      ? (mateo.state == 'grace'
+                      ? (member.state == 'grace'
                           ? const Color(0xFFFFB300).withValues(alpha: 0.15)
                           : const Color(0xFF00B85C).withValues(alpha: 0.15))
                       : Colors.red.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: isGranted
-                        ? (mateo.state == 'grace'
+                        ? (member.state == 'grace'
                             ? const Color(0xFFFFB300)
                             : const Color(0xFF00B85C))
                         : Colors.red,
@@ -1105,7 +1179,7 @@ class _FullQRViewState extends State<_FullQRView> {
                     Icon(
                       isGranted ? Icons.check_circle : Icons.cancel,
                       color: isGranted
-                          ? (mateo.state == 'grace'
+                          ? (member.state == 'grace'
                               ? const Color(0xFFFFB300)
                               : const Color(0xFF00B85C))
                           : Colors.red,
@@ -1114,13 +1188,13 @@ class _FullQRViewState extends State<_FullQRView> {
                     const SizedBox(width: 8),
                     Text(
                       isGranted
-                          ? (mateo.state == 'grace'
+                          ? (member.state == 'grace'
                               ? 'ACCESO EN GRACIA'
                               : 'ACCESO CONCEDIDO')
                           : 'ACCESO DENEGADO',
                       style: TextStyle(
                         color: isGranted
-                            ? (mateo.state == 'grace'
+                            ? (member.state == 'grace'
                                 ? const Color(0xFFFFB300)
                                 : const Color(0xFF00B85C))
                             : Colors.red,
@@ -1162,6 +1236,10 @@ class _WorkoutAssistantView extends StatefulWidget {
 }
 
 class _WorkoutAssistantViewState extends State<_WorkoutAssistantView> {
+  List<ExerciseItem> _exercises = [];
+  bool _loading = true;
+  String? _activeTemplateId;
+
   int _exerciseIndex = 0;
   int _setIndex = 0; // 0 to sets-1
   bool _isResting = false;
@@ -1172,6 +1250,63 @@ class _WorkoutAssistantViewState extends State<_WorkoutAssistantView> {
   int _completedExercisesCount = 0;
   double _totalWeightLifted = 0.0;
   final List<String> _prAlerts = [];
+  final List<Map<String, dynamic>> _loggedSeries = [];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadRoutine();
+    });
+  }
+
+  Future<void> _loadRoutine() async {
+    try {
+      final state = GymStateProvider.of(context);
+      final routine = await state.loadActiveRoutine();
+      if (routine != null) {
+        final List<ExerciseItem> parsed = [];
+        _activeTemplateId = routine['template_id'] as String?;
+        final template = routine['template'];
+        if (template != null && template['ejercicios'] != null) {
+          final ejerciciosList = template['ejercicios'] as List;
+          for (var item in ejerciciosList) {
+            final exercise = item['exercise'];
+            if (exercise != null) {
+              parsed.add(ExerciseItem(
+                id: exercise['id'] as String?,
+                name: exercise['nombre'] ?? 'Ejercicio',
+                muscle: exercise['grupo_muscular'] ?? 'General',
+                sets: item['series'] ?? 4,
+                reps: '${item['repeticiones']}',
+                weight: item['peso_sugerido_kg'] != null ? (item['peso_sugerido_kg'] as num).toInt() : null,
+                restSeconds: item['descanso_seg'] ?? 60,
+                icon: Icons.fitness_center,
+                available: exercise['activo'] ?? true,
+              ));
+            }
+          }
+        }
+        if (parsed.isNotEmpty) {
+          setState(() {
+            _exercises = parsed;
+            _loading = false;
+          });
+          return;
+        }
+      }
+      setState(() {
+        _exercises = List.from(memberExercises);
+        _loading = false;
+      });
+    } catch (e) {
+      debugPrint('Error loading active routine: $e');
+      setState(() {
+        _exercises = List.from(memberExercises);
+        _loading = false;
+      });
+    }
+  }
 
   void _startRest(int seconds) {
     setState(() {
@@ -1225,17 +1360,29 @@ class _WorkoutAssistantViewState extends State<_WorkoutAssistantView> {
 
   void _nextExercise() {
     _stopRest();
-    if (_exerciseIndex < memberExercises.length - 1) {
+    if (_exerciseIndex < _exercises.length - 1) {
       setState(() {
         _exerciseIndex++;
         _setIndex = 0;
       });
     } else {
-      // Finished workout! Set index to -1 to trigger final finished screen
+      // Finished workout! Save session
+      _saveWorkoutSession();
       setState(() {
-        _exerciseIndex = memberExercises.length;
+        _exerciseIndex = _exercises.length;
       });
     }
+  }
+
+  Future<void> _saveWorkoutSession() async {
+    final state = GymStateProvider.of(context);
+    final sessionData = {
+      'templateId': _activeTemplateId ?? 'rutina_a_fuerza_general',
+      'fecha': DateTime.now().toIso8601String(),
+      'estado': 'COMPLETED',
+      'seriesLog': _loggedSeries,
+    };
+    await state.saveWorkoutSession(sessionData);
   }
 
   @override
@@ -1246,7 +1393,31 @@ class _WorkoutAssistantViewState extends State<_WorkoutAssistantView> {
 
   @override
   Widget build(BuildContext context) {
-    final totalExercises = memberExercises.length;
+    if (_loading) {
+      return Scaffold(
+        backgroundColor: const Color(0xFF0F0F0F),
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+            onPressed: widget.onBack,
+          ),
+          title: const Text(
+            'CARGANDO RUTINA...',
+            style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900, letterSpacing: 1),
+          ),
+          centerTitle: true,
+        ),
+        body: const Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFD2FF3A)),
+          ),
+        ),
+      );
+    }
+
+    final totalExercises = _exercises.length;
 
     // Summary/Finished screen
     if (_exerciseIndex >= totalExercises) {
@@ -1284,7 +1455,7 @@ class _WorkoutAssistantViewState extends State<_WorkoutAssistantView> {
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     color: const Color(0xFF1E1E1E),
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: const Color(0xFF2C2C2C)),
                   ),
                   child: Column(
@@ -1294,8 +1465,10 @@ class _WorkoutAssistantViewState extends State<_WorkoutAssistantView> {
                       _finishedStatRow('Volumen levantado', '${_totalWeightLifted.round()} kg'),
                       const Divider(color: Color(0xFF2C2C2C), height: 24),
                       _finishedStatRow('Duración aproximada', '48 min'),
-                      const Divider(color: Color(0xFF2C2C2C), height: 24),
-                      _finishedStatRow('Nuevos Récords (PR)', 'Press de banca (70 kg) 🎉'),
+                      if (_prAlerts.isNotEmpty) ...[
+                        const Divider(color: Color(0xFF2C2C2C), height: 24),
+                        _finishedStatRow('Nuevos Récords (PR)', _prAlerts.first),
+                      ],
                     ],
                   ),
                 ),
@@ -1306,11 +1479,10 @@ class _WorkoutAssistantViewState extends State<_WorkoutAssistantView> {
                     backgroundColor: const Color(0xFFD2FF3A),
                     foregroundColor: Colors.black,
                     padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     minimumSize: const Size.fromHeight(54),
                   ),
                   onPressed: () {
-                    // Update check-in or logs if necessary
                     widget.onBack();
                   },
                   child: const Text('Volver a Inicio', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
@@ -1322,7 +1494,7 @@ class _WorkoutAssistantViewState extends State<_WorkoutAssistantView> {
       );
     }
 
-    final currentExercise = memberExercises[_exerciseIndex];
+    final currentExercise = _exercises[_exerciseIndex];
 
     return Scaffold(
       backgroundColor: const Color(0xFF0F0F0F),
@@ -1337,6 +1509,10 @@ class _WorkoutAssistantViewState extends State<_WorkoutAssistantView> {
               context: context,
               builder: (ctx) => AlertDialog(
                 backgroundColor: const Color(0xFF1E1E1E),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: const BorderSide(color: Color(0xFF2C2C2C)),
+              ),
                 title: const Text('¿Abandonar entrenamiento?', style: TextStyle(color: Colors.white)),
                 content: const Text('Tu progreso de series registradas hoy no se guardará.', style: TextStyle(color: Colors.white70)),
                 actions: [
@@ -1471,7 +1647,7 @@ class _WorkoutAssistantViewState extends State<_WorkoutAssistantView> {
                             backgroundColor: const Color(0xFFD2FF3A),
                             foregroundColor: Colors.black,
                             minimumSize: const Size.fromHeight(68),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
                           onPressed: () {
                             // Show effort logger dialog
@@ -1482,6 +1658,15 @@ class _WorkoutAssistantViewState extends State<_WorkoutAssistantView> {
                                 defaultReps: currentExercise.reps,
                                 defaultWeight: currentExercise.weight,
                                 onSave: (reps, weight, rpe) {
+                                  // Save this set's log
+                                  _loggedSeries.add({
+                                    'exerciseId': currentExercise.id ?? currentExercise.name,
+                                    'serieNumero': _setIndex + 1,
+                                    'pesoRealKg': weight.toDouble(),
+                                    'repsReales': reps,
+                                    'completada': true,
+                                    'rpe': rpe,
+                                  });
                                   // Update stats with real logged weight
                                   setState(() {
                                     if (weight > (currentExercise.weight ?? 0)) {
@@ -1546,12 +1731,72 @@ class _PayMembershipViewState extends State<_PayMembershipView> {
   bool _uploaded = false;
   String _uploadedFileName = '';
   bool _submitting = false;
+  List<int>? _selectedFileBytes;
+  bool _compressing = false;
 
   final Map<String, double> planPrices = {
     'Mensual Plata (S/ 120)': 120.0,
     'Mensual Oro (S/ 150)': 150.0,
     'Trimestral Platinium (S/ 400)': 400.0,
   };
+
+  Future<void> _pickAndCompressFile() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['jpg', 'jpeg', 'png'],
+        withData: true,
+      );
+
+      if (result == null || result.files.isEmpty) return;
+
+      final file = result.files.first;
+      final rawBytes = file.bytes;
+      if (rawBytes == null) return;
+
+      setState(() {
+        _compressing = true;
+        _uploadedFileName = file.name;
+        _uploaded = false;
+      });
+
+      await Future.delayed(const Duration(milliseconds: 100));
+      final compressedBytes = await _compressImage(rawBytes);
+
+      setState(() {
+        _selectedFileBytes = compressedBytes;
+        _uploaded = true;
+        _compressing = false;
+      });
+    } catch (e) {
+      debugPrint('Error picking/compressing file: $e');
+      setState(() {
+        _compressing = false;
+      });
+    }
+  }
+
+  Future<List<int>> _compressImage(List<int> bytes) async {
+    try {
+      final img.Image? decoded = img.decodeImage(Uint8List.fromList(bytes));
+      if (decoded == null) return bytes;
+
+      img.Image resized = decoded;
+      if (decoded.width > 1080 || decoded.height > 1080) {
+        resized = img.copyResize(
+          decoded,
+          width: decoded.width > decoded.height ? 1080 : null,
+          height: decoded.height >= decoded.width ? 1080 : null,
+        );
+      }
+
+      final compressed = img.encodeJpg(resized, quality: 80);
+      return compressed;
+    } catch (e) {
+      debugPrint('Compression error: $e');
+      return bytes;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1578,7 +1823,7 @@ class _PayMembershipViewState extends State<_PayMembershipView> {
             return Card(
               elevation: 0,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(12),
                 side: BorderSide(
                   color: isSelected ? widget.palette.accent : const Color(0xFFE8E4D9),
                   width: isSelected ? 2 : 1,
@@ -1586,7 +1831,7 @@ class _PayMembershipViewState extends State<_PayMembershipView> {
               ),
               color: Colors.white,
               child: InkWell(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(12),
                 onTap: () {
                   setState(() {
                     _selectedPlan = plan;
@@ -1642,9 +1887,9 @@ class _PayMembershipViewState extends State<_PayMembershipView> {
           const Text('2. Método de Pago', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
           const SizedBox(height: 10),
           DropdownButtonFormField<String>(
-            initialValue: _selectedMethod,
+            value: _selectedMethod,
             decoration: InputDecoration(
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               filled: true,
               fillColor: Colors.white,
             ),
@@ -1668,8 +1913,8 @@ class _PayMembershipViewState extends State<_PayMembershipView> {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: const Color(0xFFE8E4D9)),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFE2DDD5)),
               ),
               child: Column(
                 children: [
@@ -1693,18 +1938,12 @@ class _PayMembershipViewState extends State<_PayMembershipView> {
           const Text('3. Comprobante de Pago', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
           const SizedBox(height: 10),
           GestureDetector(
-            onTap: () {
-              // Simulate file picking
-              setState(() {
-                _uploaded = true;
-                _uploadedFileName = 'comprobante_yape_${math.Random().nextInt(9999)}.png';
-              });
-            },
+            onTap: _compressing ? null : _pickAndCompressFile,
             child: Container(
               height: 110,
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: _uploaded ? const Color(0xFF00B85C) : const Color(0xFFFF7A1A),
                   style: BorderStyle.solid,
@@ -1712,25 +1951,37 @@ class _PayMembershipViewState extends State<_PayMembershipView> {
                 ),
               ),
               alignment: Alignment.center,
-              child: _uploaded
+              child: _compressing
                   ? Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.check_circle, color: Color(0xFF00B85C), size: 32),
+                        const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFFF7A1A))),
                         const SizedBox(height: 8),
-                        Text(_uploadedFileName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
-                        Text('Cargado correctamente (PNG, 1.4 MB)', style: TextStyle(color: Colors.grey[600], fontSize: 11)),
+                        Text('Comprimiendo imagen...', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
                       ],
                     )
-                  : const Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.cloud_upload_outlined, color: Color(0xFFFF7A1A), size: 36),
-                        SizedBox(height: 8),
-                        Text('Simular Carga de Captura (Máx 2MB)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                        Text('Formatos: JPG, PNG', style: TextStyle(color: Colors.grey, fontSize: 11)),
-                      ],
-                    ),
+                  : _uploaded
+                      ? Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.check_circle, color: Color(0xFF00B85C), size: 32),
+                            const SizedBox(height: 8),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              child: Text(_uploadedFileName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5), maxLines: 1, overflow: TextOverflow.ellipsis),
+                            ),
+                            Text('Comprimido con éxito a ${(_selectedFileBytes?.length ?? 0) ~/ 1024} KB', style: TextStyle(color: Colors.grey[600], fontSize: 11)),
+                          ],
+                        )
+                      : const Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.cloud_upload_outlined, color: Color(0xFFFF7A1A), size: 36),
+                            SizedBox(height: 8),
+                            Text('Cargar Imagen de Comprobante', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                            Text('Formatos: JPG, PNG (Auto-comprimir < 2MB)', style: TextStyle(color: Colors.grey, fontSize: 11)),
+                          ],
+                        ),
             ),
           ),
           const SizedBox(height: 36),
@@ -1740,34 +1991,65 @@ class _PayMembershipViewState extends State<_PayMembershipView> {
               backgroundColor: Colors.black,
               foregroundColor: Colors.white,
               minimumSize: const Size.fromHeight(56),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: (_uploaded && _selectedPlan != null && !_submitting)
-                ? () {
+                ? () async {
                     final messenger = ScaffoldMessenger.of(context);
                     setState(() => _submitting = true);
-                    Future.delayed(const Duration(milliseconds: 800), () {
-                      if (!mounted) return;
-                      final planName = _selectedPlan!.split(' (')[0];
-                      final price = planPrices[_selectedPlan!]!;
+                    
+                    final planName = _selectedPlan!.split(' (')[0];
+                    final price = planPrices[_selectedPlan!]!;
 
-                      // Submit payment
-                      state.submitManualPayment(
-                        memberDni: '12345678', // Mateo Salas
+                    if (state.isBackendMode && _selectedFileBytes != null) {
+                      final success = await state.uploadReceiptBackend(
                         planName: planName,
                         price: price,
                         method: _selectedMethod,
-                        receiptName: _uploadedFileName,
+                        fileBytes: _selectedFileBytes!,
+                        fileName: _uploadedFileName,
                       );
+                      
+                      setState(() => _submitting = false);
+                      
+                      if (success) {
+                        messenger.showSnackBar(
+                          const SnackBar(
+                            content: Text('Pago enviado para acreditación. Un administrador lo revisará.'),
+                            backgroundColor: Color(0xFF0066FF),
+                          ),
+                        );
+                        widget.onBack();
+                      } else {
+                        messenger.showSnackBar(
+                          const SnackBar(
+                            content: Text('Error al enviar el pago al servidor.'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    } else {
+                      // Demo mode fallback
+                      Future.delayed(const Duration(milliseconds: 800), () {
+                        if (!mounted) return;
+                        state.submitManualPayment(
+                          memberDni: state.currentUser?.dni ?? '11111111',
+                          planName: planName,
+                          price: price,
+                          method: _selectedMethod,
+                          receiptName: _uploadedFileName,
+                        );
 
-                      messenger.showSnackBar(
-                        const SnackBar(
-                          content: Text('Pago enviado para acreditación. Un administrador lo revisará.'),
-                          backgroundColor: Color(0xFF0066FF),
-                        ),
-                      );
-                      widget.onBack();
-                    });
+                        messenger.showSnackBar(
+                          const SnackBar(
+                            content: Text('Pago enviado para acreditación (Modo Demo).'),
+                            backgroundColor: Color(0xFF0066FF),
+                          ),
+                        );
+                        setState(() => _submitting = false);
+                        widget.onBack();
+                      });
+                    }
                   }
                 : null,
             child: _submitting
@@ -1822,8 +2104,8 @@ class _ClassBookingViewState extends State<_ClassBookingView> {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: const Color(0xFFE8E4D9)),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE2DDD5)),
             ),
             child: Row(
               children: [
@@ -1885,19 +2167,119 @@ class _ClassBookingViewState extends State<_ClassBookingView> {
   }
 }
 
-class _ReportObservationView extends StatefulWidget {
-  const _ReportObservationView({required this.palette, required this.onBack});
+class ReportObservationView extends StatefulWidget {
+  const ReportObservationView({super.key, required this.palette, required this.onBack});
 
   final RolePalette palette;
   final VoidCallback onBack;
 
   @override
-  State<_ReportObservationView> createState() => _ReportObservationViewState();
+  State<ReportObservationView> createState() => _ReportObservationViewState();
 }
 
-class _ReportObservationViewState extends State<_ReportObservationView> {
+class _ReportObservationViewState extends State<ReportObservationView> {
   final _descCtrl = TextEditingController();
   String _category = 'Equipamiento';
+  PlatformFile? _selectedFile;
+  bool _isUploading = false;
+
+  Future<void> _pickImage() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        withData: true,
+      );
+      if (result != null && result.files.isNotEmpty) {
+        setState(() {
+          _selectedFile = result.files.first;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error picking image: $e');
+    }
+  }
+
+  Future<List<int>?> _compressImage(Uint8List bytes) async {
+    try {
+      final decoded = img.decodeImage(bytes);
+      if (decoded == null) return null;
+      return img.encodeJpg(decoded, quality: 80);
+    } catch (e) {
+      debugPrint('Error compressing image: $e');
+      return null;
+    }
+  }
+
+  Future<void> _submit(GymState state) async {
+    if (_descCtrl.text.isEmpty) return;
+
+    setState(() {
+      _isUploading = true;
+    });
+
+    try {
+      bool success = false;
+      if (state.isBackendMode) {
+        List<int>? fileBytes;
+        String? fileName;
+
+        if (_selectedFile != null && _selectedFile!.bytes != null) {
+          final compressed = await _compressImage(_selectedFile!.bytes!);
+          if (compressed != null) {
+            fileBytes = compressed;
+            fileName = _selectedFile!.name.replaceAll(RegExp(r'\.[^.]+$'), '.jpg');
+          } else {
+            fileBytes = _selectedFile!.bytes;
+            fileName = _selectedFile!.name;
+          }
+        }
+
+        success = await state.uploadObservationBackend(
+          category: _category,
+          description: _descCtrl.text,
+          fileBytes: fileBytes,
+          fileName: fileName,
+        );
+      } else {
+        state.addObservation(_category, _descCtrl.text, state.currentUser?.nombreCompleto ?? 'Mateo Salas');
+        success = true;
+      }
+
+      if (mounted) {
+        if (success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Reporte enviado correctamente.'),
+              backgroundColor: Color(0xFF00B85C),
+            ),
+          );
+          widget.onBack();
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Error al enviar el reporte. Inténtalo de nuevo.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Ocurrió un error inesperado.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUploading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1924,9 +2306,9 @@ class _ReportObservationViewState extends State<_ReportObservationView> {
             const Text('Categoría', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
-              initialValue: _category,
+              value: _category,
               decoration: InputDecoration(
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 filled: true,
                 fillColor: Colors.white,
               ),
@@ -1951,34 +2333,91 @@ class _ReportObservationViewState extends State<_ReportObservationView> {
               maxLines: 5,
               decoration: InputDecoration(
                 hintText: 'Detalla lo ocurrido o tu propuesta aquí...',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 fillColor: Colors.white,
                 filled: true,
               ),
             ),
+            const SizedBox(height: 20),
+
+            const Text('Adjuntar Foto (Opcional)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            InkWell(
+              onTap: _isUploading ? null : _pickImage,
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFE2DDD5)),
+                ),
+                child: _selectedFile != null
+                    ? Column(
+                        children: [
+                          if (_selectedFile!.bytes != null)
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.memory(
+                                _selectedFile!.bytes!,
+                                height: 150,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          const SizedBox(height: 12),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.check_circle, color: Color(0xFF00B85C), size: 20),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _selectedFile!.name,
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete, color: Colors.red),
+                                onPressed: () {
+                                  setState(() {
+                                    _selectedFile = null;
+                                  });
+                                },
+                              ),
+                            ],
+                          ),
+                        ],
+                      )
+                    : const Column(
+                        children: [
+                          Icon(Icons.camera_alt_outlined, size: 36, color: Colors.grey),
+                          SizedBox(height: 8),
+                          Text('Seleccionar imagen de la galería', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                        ],
+                      ),
+              ),
+            ),
             const SizedBox(height: 36),
 
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: widget.palette.accent,
-                foregroundColor: widget.palette.accentInk,
-                minimumSize: const Size.fromHeight(56),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            if (_isUploading)
+              const Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFD2FF3A)),
+                ),
+              )
+            else
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: widget.palette.accent,
+                  foregroundColor: widget.palette.accentInk,
+                  minimumSize: const Size.fromHeight(56),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                onPressed: () => _submit(state),
+                child: const Text('Enviar Reporte', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
               ),
-              onPressed: () {
-                if (_descCtrl.text.isNotEmpty) {
-                  state.addObservation(_category, _descCtrl.text, 'Mateo Salas');
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Sugerencia enviada correctamente.'),
-                      backgroundColor: Color(0xFF00B85C),
-                    ),
-                  );
-                  widget.onBack();
-                }
-              },
-              child: const Text('Enviar Reporte', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
-            ),
           ],
         ),
       ),
@@ -2018,8 +2457,8 @@ class _NotificationsView extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFFE8E4D9)),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE2DDD5)),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,

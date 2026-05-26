@@ -30,9 +30,11 @@ The app is published on `http://localhost:8282`.
 ## Layout summary
 
 - `lib/app.dart`: role shell and topbar tabs.
-- `lib/screens/`: member, trainer, cashier and admin views.
+- `lib/features/`: feature entrypoints grouped by auth and role.
+- `lib/screens/`: current screen implementations used by the feature exports.
 - `lib/data/`: mock data for workouts, products, logs and cashiers.
 - `lib/widgets/`: reusable UI helpers.
+- `lib/core/`: API and local storage services.
 
 ## Getting Started
 
