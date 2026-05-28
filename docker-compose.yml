@@ -49,7 +49,7 @@ services:
   # ─── FLUTTER WEB APP (RED PÚBLICA) ──────────────────────────────────
   frontend-web:
     build:
-      context: ./flutter_app
+      context: ./mobile_app
       dockerfile: Dockerfile
       target: runtime
     container_name: sas_gym_flutter_web
@@ -64,13 +64,26 @@ services:
   # del contenedor. Uso: docker compose build flutter-ci
   flutter-ci:
     build:
-      context: ./flutter_app
+      context: ./mobile_app
       dockerfile: Dockerfile
       target: ci
     image: sas_gym_flutter_ci:latest
     profiles: ["ci"]
 
-
+  # ─── NAVIGATOR HUB & STATIC PROTOTYPES (RED PÚBLICA) ─────────────────
+  web:
+    image: nginx:alpine
+    container_name: sas_gym_frontend
+    ports:
+      - "8282:80"
+    volumes:
+      - ./index.html:/usr/share/nginx/html/index.html:ro
+      - ./mockups/mobile:/usr/share/nginx/html/mockups/mobile:ro
+      - ./mockups/web:/usr/share/nginx/html/mockups/web:ro
+      - ./docs:/usr/share/nginx/html/docs:ro
+    restart: unless-stopped
+    networks:
+      - public-net
 
   # ─── CLIENTE DE PRUEBAS AISLADO (FUERA DE LA RED PROPIA) ───────────
   test-client:

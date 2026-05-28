@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C \"d:/proyectos/sas_gym\" mv flutter_app/lib/core/saas/gym_suspended_barrier.dart flutter_app/lib/widgets/saas/gym_suspended_barrier.dart)"
+    ]
+  }
+}

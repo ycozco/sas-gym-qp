@@ -373,6 +373,7 @@ model Announcement {
   descripcion String
   imagen_url  String?
   activo      Boolean  @default(true)
+  severidad   String   @default("INFO")
   created_at  DateTime @default(now())
 }
 

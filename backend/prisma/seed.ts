@@ -7,6 +7,7 @@ async function main() {
   console.log('Iniciando el sembrado de datos (Seed)...');
 
   // Limpiar base de datos
+  await prisma.announcement.deleteMany();
   await prisma.auditLog.deleteMany();
   await prisma.observation.deleteMany();
   await prisma.seriesLog.deleteMany();
@@ -625,6 +626,40 @@ async function main() {
       precio_puntos: 120,
       duracion_dias: 7,
       stock: 0, // ilimitado
+    },
+  });
+
+  // 9. Crear Anuncios (Banners Dinámicos) con Severidades
+  await prisma.announcement.create({
+    data: {
+      tenant_id: tenantActivoId,
+      autor_id: admin.id,
+      titulo: 'Clases gratis de Sábado',
+      descripcion: 'Entrenamiento funcional al aire libre en el Parque Kennedy a las 8am. ¡Trae a un amigo!',
+      severidad: 'INFO',
+      activo: true,
+    },
+  });
+
+  await prisma.announcement.create({
+    data: {
+      tenant_id: tenantActivoId,
+      autor_id: admin.id,
+      titulo: 'Mantenimiento preventivo',
+      descripcion: 'La máquina Smith del segundo nivel estará fuera de servicio de 6pm a 9pm el jueves.',
+      severidad: 'WARNING',
+      activo: true,
+    },
+  });
+
+  await prisma.announcement.create({
+    data: {
+      tenant_id: tenantActivoId,
+      autor_id: admin.id,
+      titulo: 'Cierre por feriado nacional',
+      descripcion: 'El gimnasio permanecerá cerrado este domingo por elecciones nacionales. Las clases se reanudan el lunes.',
+      severidad: 'DANGER',
+      activo: true,
     },
   });
 
