@@ -103,9 +103,8 @@ class GymState extends ChangeNotifier {
   }
 
   Future<bool> login({
-    required String email,
+    required String emailOrDni,
     required String password,
-    required String tenantId,
   }) async {
     _authLoading = true;
     _authError = null;
@@ -115,12 +114,9 @@ class GymState extends ChangeNotifier {
       final response = await ApiClient().dio.post(
         '/auth/login',
         data: {
-          'email': email,
+          'emailOrDni': emailOrDni,
           'password': password,
         },
-        options: Options(
-          headers: {'X-Tenant-ID': tenantId},
-        ),
       );
 
       final token = response.data['token'] as String;

@@ -186,6 +186,14 @@ class _CashierScreenState extends State<CashierScreen> {
   }
 }
 
+BoxDecoration _cardDecoration() {
+  return BoxDecoration(
+    color: Colors.white,
+    borderRadius: BorderRadius.circular(16),
+    border: Border.all(color: const Color(0xFFE6E2D8)),
+  );
+}
+
 // ==========================================
 // TABS IMPLEMENTATION
 // ==========================================
@@ -207,7 +215,12 @@ class _CashierHomePage extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 6, 20, 24),
       children: [
-        _ShiftBanner(palette: palette),
+        RoleHeroHeader(
+          palette: palette,
+          title: 'Caja y Accesos',
+          subtitle: 'Valida ingresos, cobra operaciones y deja trazabilidad inmediata.',
+          trailing: StatusPill(label: 'TURNO', color: palette.accent, solid: true),
+        ),
         const SizedBox(height: 16),
         _TurnSummary(palette: palette, logs: myLogs),
         const SizedBox(height: 18),
@@ -314,19 +327,23 @@ class _CashierScanPage extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 6, 20, 24),
       children: [
-        const SectionHeader(title: 'Escáner de Sala', action: 'Acceso de socios'),
-        const SizedBox(height: 10),
+        RoleHeroHeader(
+          palette: palette,
+          title: 'Escáner de Sala',
+          subtitle: 'Simula accesos y valida reglas de entrada al instante.',
+        ),
+        const SizedBox(height: 16),
 
         // Scanner Graphic with Overlay Grid
         Container(
           height: 240,
           decoration: BoxDecoration(
             color: const Color(0xFF1E1E1E),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(18),
             border: Border.all(color: const Color(0xFF2C2C2C), width: 2),
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(18),
             child: Stack(
               children: [
                 // Animated red laser sweep line
@@ -338,7 +355,7 @@ class _CashierScanPage extends StatelessWidget {
                     height: 140,
                     decoration: BoxDecoration(
                       border: Border.all(color: palette.accent, width: 2),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(16),
                     ),
                   ),
                 ),
@@ -351,7 +368,7 @@ class _CashierScanPage extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
                         color: Colors.black.withValues(alpha: 0.6),
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(999),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -410,7 +427,7 @@ class _CashierScanPage extends StatelessWidget {
                     child: Container(
                       decoration: BoxDecoration(
                         color: const Color(0xFFF6F6F6),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(16),
                         border: Border.all(color: const Color(0xFFE2DDD5)),
                       ),
                       padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -426,11 +443,10 @@ class _CashierScanPage extends StatelessWidget {
                   ),
                   const SizedBox(width: 10),
                   ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF111111),
-                      foregroundColor: Colors.white,
+                    style: roleFilledPillButtonStyle(
+                      backgroundColor: palette.accent,
+                      foregroundColor: palette.accentInk,
                       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     onPressed: () {
                       if (scanInput.isNotEmpty) {
@@ -450,12 +466,10 @@ class _CashierScanPage extends StatelessWidget {
 
   Widget _scanSimButton(String label, String dni) {
     return ElevatedButton(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 0,
-        side: const BorderSide(color: Color(0xFFE8E4D9)),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      style: roleOutlinedPillButtonStyle(
+        foregroundColor: palette.accent,
+        backgroundColor: palette.accent.withValues(alpha: 0.08),
+        side: BorderSide(color: palette.accent.withValues(alpha: 0.18)),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       ),
       onPressed: () => _triggerScan(dni),
@@ -682,11 +696,10 @@ class _ScannerVerdictView extends StatelessWidget {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
+                    style: roleFilledPillButtonStyle(
                       backgroundColor: Colors.white,
                       foregroundColor: Colors.black,
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     icon: const Icon(Icons.point_of_sale_rounded, color: Colors.orange),
                     label: const Text('Cobrar Renovación en POS', style: TextStyle(fontWeight: FontWeight.w900)),
@@ -701,10 +714,8 @@ class _ScannerVerdictView extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: TextButton(
-                  style: TextButton.styleFrom(
+                  style: roleTextPillButtonStyle(
                     foregroundColor: Colors.white,
-                    side: const BorderSide(color: Colors.white60),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                   onPressed: onBack,
@@ -918,7 +929,7 @@ class _CashierPOSPageState extends State<_CashierPOSPage> {
                           selectedColor: widget.palette.accent,
                           backgroundColor: Colors.transparent,
                           side: const BorderSide(color: Color(0xFFE8E4D9)),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: const StadiumBorder(),
                           onSelected: (val) {
                             if (val) widget.onPaymentMethodChanged(m);
                           },
@@ -977,10 +988,9 @@ class _CashierPOSPageState extends State<_CashierPOSPage> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
+                    style: roleFilledPillButtonStyle(
                       backgroundColor: widget.palette.accent,
                       foregroundColor: widget.palette.accentInk,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
                     onPressed: () async {
@@ -1135,11 +1145,11 @@ class _CashierPOSPageState extends State<_CashierPOSPage> {
                   textAlign: TextAlign.center, style: const TextStyle(color: Colors.grey)),
               const SizedBox(height: 20),
               ElevatedButton(
-                style: ElevatedButton.styleFrom(
+                style: roleFilledPillButtonStyle(
                   backgroundColor: const Color(0xFF111111),
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  minimumHeight: 44,
                 ),
                 onPressed: () => Navigator.pop(ctx),
                 child: const Text('Listo', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -1343,12 +1353,10 @@ class _CashierMorePageState extends State<_CashierMorePage> {
               padding: const EdgeInsets.all(16),
               children: [
                 ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: widget.palette.accent.withValues(alpha: 0.12),
+                  style: roleOutlinedPillButtonStyle(
                     foregroundColor: widget.palette.accent,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    backgroundColor: widget.palette.accent.withValues(alpha: 0.08),
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    elevation: 0,
                   ),
                   icon: const Icon(Icons.add_circle_outline_rounded),
                   label: const Text('Agregar Nuevo Producto', style: TextStyle(fontWeight: FontWeight.w900)),
@@ -1490,12 +1498,11 @@ class _CashierMorePageState extends State<_CashierMorePage> {
                           ),
                           // Soft delete action
                           ElevatedButton(
-                            style: ElevatedButton.styleFrom(
+                            style: roleFilledPillButtonStyle(
                               backgroundColor: const Color(0xFFFFECEB),
                               foregroundColor: const Color(0xFFFF3B30),
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              minimumHeight: 36,
                             ),
                             onPressed: () {
                               _confirmSoftDelete(context, m);
@@ -1665,7 +1672,7 @@ class _CashierMorePageState extends State<_CashierMorePage> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.orange,
                         foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: const StadiumBorder(),
                       ),
                       onPressed: () {
                         widget.state.toggleMemberLogicDelete(member.dni);
@@ -1692,61 +1699,6 @@ class _CashierMorePageState extends State<_CashierMorePage> {
 
 // ==========================================
 // CARD DECORATION & SUMMARY HELPERS
-// ==========================================
-BoxDecoration _cardDecoration() {
-  return BoxDecoration(
-    color: Colors.white,
-    borderRadius: BorderRadius.circular(12),
-    border: Border.all(color: const Color(0xFFE2DDD5)),
-  );
-}
-
-class _ShiftBanner extends StatelessWidget {
-  const _ShiftBanner({required this.palette});
-
-  final RolePalette palette;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [palette.accent.withValues(alpha: 0.16), Colors.white],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: palette.accent.withValues(alpha: 0.18)),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 22,
-            backgroundColor: palette.accent,
-            foregroundColor: palette.accentInk,
-            child: const Icon(Icons.schedule_rounded),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('TURNO ACTIVO', style: TextStyle(fontSize: 11, letterSpacing: 1.2, fontWeight: FontWeight.w900)),
-                const SizedBox(height: 4),
-                Text('${activeShift.start} - ${activeShift.end} · restan ${activeShift.remaining}', style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w800)),
-                const SizedBox(height: 2),
-                Text('Asignado por ${activeShift.assignedBy} · ${activeShift.code}', style: const TextStyle(fontSize: 12, color: Color(0xFF6F6F6F), fontWeight: FontWeight.w500)),
-              ],
-            ),
-          ),
-          StatusPill(label: 'CAJERO', color: palette.accent, solid: true),
-        ],
-      ),
-    );
-  }
-}
-
 class _TurnSummary extends StatelessWidget {
   const _TurnSummary({required this.palette, required this.logs});
 

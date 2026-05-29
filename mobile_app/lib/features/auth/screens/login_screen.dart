@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../data/gym_state.dart';
+import '../../../widgets/app_shell.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -9,7 +10,6 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _tenantController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
@@ -19,7 +19,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
-    _tenantController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -29,9 +28,8 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     final success = await state.login(
-      email: _emailController.text.trim(),
+      emailOrDni: _emailController.text.trim(),
       password: _passwordController.text,
-      tenantId: _tenantController.text.trim(),
     );
 
     if (success && mounted) {
@@ -46,22 +44,19 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _selectDemoAccount(
     GymState state, {
-    required String tenantId,
     required String email,
     required String password,
     required String roleLabel,
   }) async {
     setState(() {
-      _tenantController.text = tenantId;
       _emailController.text = email;
       _passwordController.text = password;
       _showDemoPanel = false;
     });
 
     final success = await state.login(
-      email: email,
+      emailOrDni: email,
       password: password,
-      tenantId: tenantId,
     );
 
     if (success && mounted) {
@@ -134,13 +129,10 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 20),
               ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFE5A93B),
+                style: roleFilledPillButtonStyle(
+                  backgroundColor: const Color(0xFFD2FF3A),
                   foregroundColor: Colors.black,
                   padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
                 ),
                 onPressed: () async {
                   final email = emailController.text.trim();
@@ -186,13 +178,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFE5A93B).withValues(alpha: 0.1),
+                        color: const Color(0xFFD2FF3A).withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
                         Icons.fitness_center,
                         size: 48,
-                        color: Color(0xFFE5A93B),
+                        color: Color(0xFFD2FF3A),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -225,58 +217,25 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Campo Tenant ID
-                    const Text(
-                      'ID del Gimnasio (Tenant)',
-                      style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 6),
-                    TextFormField(
-                      controller: _tenantController,
-                      style: const TextStyle(color: Colors.white),
-                      decoration: InputDecoration(
-                        prefixIcon: const Icon(Icons.business, color: Colors.white54),
-                        hintText: 'UUID o ID de inquilino',
-                        hintStyle: const TextStyle(color: Colors.white30),
-                        filled: true,
-                        fillColor: const Color(0xFF161618),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFFE5A93B), width: 1.5),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
-                        ),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Por favor ingresa el ID del gimnasio';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 18),
-
                     // Campo Email
                     const Text(
-                      'Correo Electrónico',
+                      'Correo Electrónico o DNI',
                       style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 6),
                     TextFormField(
                       controller: _emailController,
                       style: const TextStyle(color: Colors.white),
-                      keyboardType: TextInputType.emailAddress,
+                      keyboardType: TextInputType.text,
                       decoration: InputDecoration(
                         prefixIcon: const Icon(Icons.email, color: Colors.white54),
-                        hintText: 'ejemplo@mail.com',
+                        hintText: 'ejemplo@mail.com o DNI',
                         hintStyle: const TextStyle(color: Colors.white30),
                         filled: true,
                         fillColor: const Color(0xFF161618),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFFE5A93B), width: 1.5),
+                          borderSide: const BorderSide(color: Color(0xFFD2FF3A), width: 1.5),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -285,10 +244,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
-                          return 'Por favor ingresa tu correo electrónico';
-                        }
-                        if (!value.contains('@')) {
-                          return 'Por favor ingresa un correo válido';
+                          return 'Por favor ingresa tu correo electrónico o DNI';
                         }
                         return null;
                       },
@@ -320,7 +276,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         fillColor: const Color(0xFF161618),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFFE5A93B), width: 1.5),
+                          borderSide: const BorderSide(color: Color(0xFFD2FF3A), width: 1.5),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -345,7 +301,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   onPressed: () => _showForgotPasswordSheet(state),
                   child: const Text(
                     '¿Olvidaste tu contraseña?',
-                    style: TextStyle(color: Color(0xFFE5A93B), fontSize: 13, fontWeight: FontWeight.w600),
+                    style: TextStyle(color: Color(0xFFD2FF3A), fontSize: 13, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
@@ -378,15 +334,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
               // Botón Entrar
               ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFE5A93B),
+                style: roleFilledPillButtonStyle(
+                  backgroundColor: const Color(0xFFD2FF3A),
                   foregroundColor: Colors.black,
-                  elevation: 4,
-                  shadowColor: const Color(0xFFE5A93B).withValues(alpha: 0.3),
                   padding: const EdgeInsets.symmetric(vertical: 15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
                 ),
                 onPressed: state.authLoading ? null : () => _submit(state),
                 child: state.authLoading
@@ -412,9 +363,6 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildDemoBypassSection(GymState state) {
-    const String activeTenant = '77777777-7777-7777-7777-777777777777';
-    const String suspendedTenant = '88888888-8888-8888-8888-888888888888';
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -467,10 +415,9 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 _buildDemoButton(
                   roleLabel: 'SuperAdmin',
-                  color: const Color(0xFFE5A93B),
+                  color: const Color(0xFFD2FF3A),
                   onPressed: () => _selectDemoAccount(
                     state,
-                    tenantId: activeTenant,
                     email: 'superadmin@gymsmart.com',
                     password: 'super_secure_pass',
                     roleLabel: 'SuperAdmin',
@@ -481,7 +428,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   color: const Color(0xFFFF7A1A),
                   onPressed: () => _selectDemoAccount(
                     state,
-                    tenantId: activeTenant,
                     email: 'admin@gymsmart.com',
                     password: 'admin_secure_pass',
                     roleLabel: 'Administrador',
@@ -492,7 +438,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   color: const Color(0xFF0066FF),
                   onPressed: () => _selectDemoAccount(
                     state,
-                    tenantId: activeTenant,
                     email: 'caja@gymsmart.com',
                     password: 'caja_secure_pass',
                     roleLabel: 'Caja',
@@ -503,7 +448,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   color: const Color(0xFF7A5AE0),
                   onPressed: () => _selectDemoAccount(
                     state,
-                    tenantId: activeTenant,
                     email: 'entrenador@gymsmart.com',
                     password: 'trainer_secure_pass',
                     roleLabel: 'Entrenador',
@@ -514,7 +458,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   color: const Color(0xFF00B85C),
                   onPressed: () => _selectDemoAccount(
                     state,
-                    tenantId: activeTenant,
                     email: 'miembro@gymsmart.com',
                     password: 'member_secure_pass',
                     roleLabel: 'Socio Activo',
@@ -525,8 +468,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   color: Colors.redAccent,
                   onPressed: () => _selectDemoAccount(
                     state,
-                    tenantId: suspendedTenant,
-                    email: 'admin@gymsmart.com',
+                    email: 'admin_suspendido@gymsmart.com',
                     password: 'admin_secure_pass',
                     roleLabel: 'Gym Suspendido',
                   ),
@@ -540,26 +482,26 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildDemoButton({required String roleLabel, required Color color, required VoidCallback onPressed}) {
-    return InkWell(
-      onTap: onPressed,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: const Color(0xFF222225),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withValues(alpha: 0.15)),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 6,
-              height: 6,
-              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-            ),
-            const SizedBox(height: 4),
-            Text(
+    return ElevatedButton(
+      onPressed: onPressed,
+      style: roleFilledPillButtonStyle(
+        backgroundColor: const Color(0xFF222225),
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        minimumHeight: 44,
+        side: BorderSide(color: color.withValues(alpha: 0.18)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
               roleLabel,
               style: const TextStyle(
                 color: Colors.white,
@@ -567,9 +509,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 fontWeight: FontWeight.bold,
               ),
               textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

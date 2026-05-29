@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'data/gym_seed.dart';
 import 'data/gym_state.dart';
 import 'features/admin/admin.dart';
@@ -43,12 +44,13 @@ class _SasGymAppState extends State<SasGymApp> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 CircularProgressIndicator(
-                  color: Color(0xFFE5A93B),
+                  color: Color(0xFFD2FF3A),
                 ),
                 SizedBox(height: 20),
                 Text(
                   'SaaaS GYM',
                   style: TextStyle(
+                    fontFamily: 'Bricolage Grotesque',
                     color: Colors.white70,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -58,6 +60,7 @@ class _SasGymAppState extends State<SasGymApp> {
                 Text(
                   'Cargando tu perfil...',
                   style: TextStyle(
+                    fontFamily: 'Plus Jakarta Sans',
                     color: Colors.white30,
                     fontSize: 12,
                   ),
@@ -93,7 +96,6 @@ class _SasGymAppState extends State<SasGymApp> {
       title: 'SaaaS GYM',
       theme: isDark ? AppTheme.dark() : AppTheme.light(),
       home: Scaffold(
-        backgroundColor: isDark ? const Color(0xFF0E0E11) : const Color(0xFFFBFBF9),
         body: SafeArea(
           child: Column(
             children: [
@@ -151,16 +153,16 @@ class _TopBar extends StatelessWidget {
           Row(
             children: [
               Container(
-                width: 14,
-                height: 14,
+                width: 11,
+                height: 11,
                 decoration: BoxDecoration(
                   color: rolePalettes[selectedRole]!.accent,
-                  borderRadius: BorderRadius.circular(5),
+                  borderRadius: BorderRadius.circular(4),
                   boxShadow: [
                     BoxShadow(
                       color: rolePalettes[selectedRole]!.accent.withValues(alpha: 0.25),
-                      blurRadius: 18,
-                      spreadRadius: 2,
+                      blurRadius: 4,
+                      spreadRadius: 3,
                     ),
                   ],
                 ),
@@ -169,9 +171,9 @@ class _TopBar extends StatelessWidget {
               Expanded(
                 child: Text(
                   'SaaaS GYM',
-                  style: TextStyle(
-                    fontSize: 22, 
-                    fontWeight: FontWeight.w800, 
+                  style: GoogleFonts.bricolageGrotesque(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
                     letterSpacing: -0.4,
                     color: isDark ? Colors.white : Colors.black,
                   ),
@@ -191,11 +193,18 @@ class _TopBar extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF16161A) : rolePalettes[selectedRole]!.surfaceTint.withValues(alpha: 0.04),
-                borderRadius: BorderRadius.circular(12),
+                color: isDark ? const Color(0xFF16161A) : Colors.white,
+                borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: isDark ? const Color(0xFF232329) : rolePalettes[selectedRole]!.accent.withValues(alpha: 0.08),
+                  color: isDark ? const Color(0xFF232329) : const Color(0xFFE6E2D8),
                 ),
+                boxShadow: isDark ? [] : [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 2,
+                    offset: const Offset(0, 1),
+                  )
+                ],
               ),
               child: Row(
                 children: [

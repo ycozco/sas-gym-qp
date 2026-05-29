@@ -204,6 +204,12 @@ class _MemberHomePage extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 6, 20, 36),
       children: [
+        RoleHeroHeader(
+          palette: palette,
+          title: 'Panel del Socio',
+          subtitle: 'Accede rápido a tus clases, membresía y QR de ingreso.',
+        ),
+        const SizedBox(height: 16),
         _HeroCard(palette: palette, member: mateo, onGo: onGo),
         const SizedBox(height: 16),
 
@@ -452,13 +458,11 @@ class _MemberHomePage extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(
+            style: roleFilledPillButtonStyle(
               backgroundColor: color,
               foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              minimumSize: const Size(100, 36),
+              minimumHeight: 36,
             ),
             onPressed: onTap,
             child: Text(btnText, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
@@ -627,11 +631,10 @@ class _MemberAgendaPage extends StatelessWidget {
                 onPressed: () => onGo('assistant'),
                 icon: const Icon(Icons.play_circle_filled_rounded),
                 label: const Text('Iniciar Asistente', style: TextStyle(fontWeight: FontWeight.w900)),
-                style: ElevatedButton.styleFrom(
+                style: roleFilledPillButtonStyle(
                   backgroundColor: palette.accent,
                   foregroundColor: palette.accentInk,
-                  minimumSize: const Size.fromHeight(52),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  minimumHeight: 52,
                 ),
               ),
             ],
@@ -741,11 +744,10 @@ class _MemberSubscriptionPage extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               ElevatedButton(
-                style: ElevatedButton.styleFrom(
+                style: roleFilledPillButtonStyle(
                   backgroundColor: Colors.black,
                   foregroundColor: Colors.white,
-                  minimumSize: const Size.fromHeight(50),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  minimumHeight: 50,
                 ),
                 onPressed: () => onGo('pay'),
                 child: const Text('Renovar / Pagar Membresía', style: TextStyle(fontWeight: FontWeight.w900)),
@@ -1546,12 +1548,11 @@ class _WorkoutAssistantViewState extends State<_WorkoutAssistantView> {
                 const SizedBox(height: 36),
 
                 ElevatedButton(
-                  style: ElevatedButton.styleFrom(
+                  style: roleFilledPillButtonStyle(
                     backgroundColor: const Color(0xFFD2FF3A),
                     foregroundColor: Colors.black,
                     padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    minimumSize: const Size.fromHeight(54),
+                    minimumHeight: 54,
                   ),
                   onPressed: () {
                     widget.onBack();
@@ -1687,11 +1688,10 @@ class _WorkoutAssistantViewState extends State<_WorkoutAssistantView> {
                           children: [
                             Expanded(
                               child: OutlinedButton(
-                                style: OutlinedButton.styleFrom(
-                                  side: const BorderSide(color: Color(0xFF3C3C3C)),
+                                style: roleOutlinedPillButtonStyle(
                                   foregroundColor: Colors.white,
-                                  minimumSize: const Size.fromHeight(60),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                                  side: const BorderSide(color: Color(0xFF3C3C3C)),
+                                  minimumHeight: 60,
                                 ),
                                 onPressed: () => _addRestSeconds(15),
                                 child: const Text('+15s', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
@@ -1700,11 +1700,10 @@ class _WorkoutAssistantViewState extends State<_WorkoutAssistantView> {
                             const SizedBox(width: 14),
                             Expanded(
                               child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
+                                style: roleFilledPillButtonStyle(
                                   backgroundColor: const Color(0xFF2C2C2C),
                                   foregroundColor: Colors.white,
-                                  minimumSize: const Size.fromHeight(60),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                                  minimumHeight: 60,
                                 ),
                                 onPressed: _stopRest,
                                 child: const Text('Saltar Descanso', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
@@ -1714,11 +1713,10 @@ class _WorkoutAssistantViewState extends State<_WorkoutAssistantView> {
                         ),
                       ] else ...[
                         ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
+                          style: roleFilledPillButtonStyle(
                             backgroundColor: const Color(0xFFD2FF3A),
                             foregroundColor: Colors.black,
-                            minimumSize: const Size.fromHeight(68),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            minimumHeight: 68,
                           ),
                           onPressed: () {
                             // Show effort logger dialog
@@ -1813,7 +1811,7 @@ class _PayMembershipViewState extends State<_PayMembershipView> {
 
   Future<void> _pickAndCompressFile() async {
     try {
-      final result = await FilePicker.platform.pickFiles(
+      final result = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['jpg', 'jpeg', 'png'],
         withData: true,
@@ -2058,11 +2056,10 @@ class _PayMembershipViewState extends State<_PayMembershipView> {
           const SizedBox(height: 36),
 
           ElevatedButton(
-            style: ElevatedButton.styleFrom(
+            style: roleFilledPillButtonStyle(
               backgroundColor: Colors.black,
               foregroundColor: Colors.white,
-              minimumSize: const Size.fromHeight(56),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              minimumHeight: 56,
             ),
             onPressed: (_uploaded && _selectedPlan != null && !_submitting)
                 ? () async {
@@ -2204,12 +2201,11 @@ class _ClassBookingViewState extends State<_ClassBookingView> {
                     Text('${c['spots']} cupos disp.', style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Colors.grey)),
                     const SizedBox(height: 10),
                     ElevatedButton(
-                      style: ElevatedButton.styleFrom(
+                      style: roleFilledPillButtonStyle(
                         backgroundColor: statusColor,
                         foregroundColor: c['status'] == 'Reservado' ? Colors.white : Colors.black,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                        elevation: 0,
+                        minimumHeight: 36,
                       ),
                       onPressed: () {
                         setState(() {
@@ -2256,7 +2252,7 @@ class _ReportObservationViewState extends State<ReportObservationView> {
 
   Future<void> _pickImage() async {
     try {
-      final result = await FilePicker.platform.pickFiles(
+      final result = await FilePicker.pickFiles(
         type: FileType.image,
         withData: true,
       );
@@ -2480,11 +2476,10 @@ class _ReportObservationViewState extends State<ReportObservationView> {
               )
             else
               ElevatedButton(
-                style: ElevatedButton.styleFrom(
+                style: roleFilledPillButtonStyle(
                   backgroundColor: widget.palette.accent,
                   foregroundColor: widget.palette.accentInk,
-                  minimumSize: const Size.fromHeight(56),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  minimumHeight: 56,
                 ),
                 onPressed: () => _submit(state),
                 child: const Text('Enviar Reporte', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),

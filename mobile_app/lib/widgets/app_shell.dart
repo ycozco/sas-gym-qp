@@ -178,6 +178,14 @@ class SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final actionColor = isDark ? Colors.white70 : const Color(0xFF5C5C5C);
+    final titleStyle = Theme.of(context).textTheme.titleMedium?.copyWith(
+          fontWeight: FontWeight.w800,
+          letterSpacing: -0.2,
+        );
+    final actionStyle = Theme.of(context).textTheme.labelMedium?.copyWith(
+          color: actionColor,
+          fontWeight: FontWeight.w700,
+        );
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -186,12 +194,7 @@ class SectionHeader extends StatelessWidget {
           Expanded(
             child: Text(
               title,
-              style: TextStyle(
-                fontSize: 17, 
-                fontWeight: FontWeight.w800, 
-                letterSpacing: -0.2,
-                color: isDark ? Colors.white : Colors.black,
-              ),
+              style: titleStyle?.copyWith(color: isDark ? Colors.white : Colors.black),
             ),
           ),
           if (action != null)
@@ -199,17 +202,139 @@ class SectionHeader extends StatelessWidget {
               onTap: onTap,
               child: Text(
                 action!,
-                style: TextStyle(
-                  fontSize: 12.5, 
-                  fontWeight: FontWeight.w700, 
-                  color: actionColor,
-                ),
+                style: actionStyle,
               ),
             ),
         ],
       ),
     );
   }
+}
+
+class RoleHeroHeader extends StatelessWidget {
+  const RoleHeroHeader({
+    super.key,
+    required this.palette,
+    required this.title,
+    required this.subtitle,
+    this.trailing,
+  });
+
+  final RolePalette palette;
+  final String title;
+  final String subtitle;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surfaceColor = isDark ? const Color(0xFF16161A) : Colors.white;
+    final borderColor = isDark ? const Color(0xFF232329) : const Color(0xFFE8E4D9);
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: surfaceColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: borderColor),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 12,
+            height: 12,
+            margin: const EdgeInsets.only(top: 4),
+            decoration: BoxDecoration(
+              color: palette.accent,
+              borderRadius: BorderRadius.circular(999),
+              boxShadow: [
+                BoxShadow(
+                  color: palette.accent.withValues(alpha: 0.22),
+                  blurRadius: 16,
+                  spreadRadius: 2,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: isDark ? Colors.white : const Color(0xFF0B0B0B),
+                        fontWeight: FontWeight.w800,
+                      ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: isDark ? Colors.white70 : const Color(0xFF5C5C5C),
+                      ),
+                ),
+              ],
+            ),
+          ),
+          if (trailing != null) ...[
+            const SizedBox(width: 12),
+            trailing!,
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+ButtonStyle roleFilledPillButtonStyle({
+  required Color backgroundColor,
+  required Color foregroundColor,
+  EdgeInsetsGeometry padding = const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+  double minimumHeight = 48,
+  BorderSide? side,
+}) {
+  return ElevatedButton.styleFrom(
+    backgroundColor: backgroundColor,
+    foregroundColor: foregroundColor,
+    elevation: 0,
+    padding: padding,
+    minimumSize: Size(0, minimumHeight),
+    shape: const StadiumBorder(),
+    side: side,
+  );
+}
+
+ButtonStyle roleOutlinedPillButtonStyle({
+  required Color foregroundColor,
+  Color? backgroundColor,
+  EdgeInsetsGeometry padding = const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+  double minimumHeight = 48,
+  BorderSide? side,
+}) {
+  return OutlinedButton.styleFrom(
+    foregroundColor: foregroundColor,
+    backgroundColor: backgroundColor,
+    padding: padding,
+    minimumSize: Size(0, minimumHeight),
+    shape: const StadiumBorder(),
+    side: side ?? BorderSide(color: foregroundColor.withValues(alpha: 0.24), width: 1.4),
+  );
+}
+
+ButtonStyle roleTextPillButtonStyle({
+  required Color foregroundColor,
+  EdgeInsetsGeometry padding = const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+  BorderSide? side,
+}) {
+  return TextButton.styleFrom(
+    foregroundColor: foregroundColor,
+    padding: padding,
+    shape: const StadiumBorder(),
+    side: side ?? BorderSide(color: foregroundColor.withValues(alpha: 0.24), width: 1.2),
+  );
 }
 
 class MetricTile extends StatelessWidget {
@@ -241,7 +366,7 @@ class MetricTile extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: cardColor,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
@@ -259,24 +384,23 @@ class MetricTile extends StatelessWidget {
             height: 40,
             decoration: BoxDecoration(
               color: accent.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, size: 20, color: accent),
           ),
           const SizedBox(height: 16),
-          Text(label, style: TextStyle(fontSize: 11.5, color: labelColor, fontWeight: FontWeight.w600)),
+          Text(label, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: labelColor)),
           const SizedBox(height: 6),
           Text(
             value,
-            style: TextStyle(
-              fontSize: 22,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              color: valueColor,
               fontWeight: FontWeight.w800,
               letterSpacing: -0.4,
-              color: valueColor,
             ),
           ),
           const SizedBox(height: 6),
-          Text(note, style: TextStyle(fontSize: 11, color: noteColor, fontWeight: FontWeight.w500)),
+          Text(note, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: noteColor, fontWeight: FontWeight.w500)),
         ],
       ),
     );
@@ -383,7 +507,7 @@ class ActionTile extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
         decoration: BoxDecoration(
           color: cardColor,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: borderColor),
         ),
         child: Column(
@@ -394,7 +518,7 @@ class ActionTile extends StatelessWidget {
               height: 38,
               decoration: BoxDecoration(
                 color: accent.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, size: 18, color: accent),
             ),
@@ -609,4 +733,4 @@ class RoleNavBar extends StatelessWidget {
       ),
     );
   }
-}
+}

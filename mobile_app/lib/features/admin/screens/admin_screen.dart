@@ -283,7 +283,12 @@ class _AdminDashboardPage extends StatelessWidget {
       key: const PageStorageKey<String>('admin-dashboard'),
       padding: const EdgeInsets.fromLTRB(20, 6, 20, 24),
       children: [
-        _HeroCard(palette: palette),
+        RoleHeroHeader(
+          palette: palette,
+          title: 'Centro de Control',
+          subtitle: 'Administra socios, caja, auditoría y configuración global del gimnasio.',
+          trailing: StatusPill(label: 'ADMIN', color: palette.accent, solid: true),
+        ),
         const SizedBox(height: 16),
 
         if (pendingCount > 0) ...[
@@ -293,7 +298,7 @@ class _AdminDashboardPage extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
                 color: const Color(0xFF2C0F14),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(18),
                 border: Border.all(color: Colors.redAccent.withValues(alpha: 0.3)),
               ),
               child: Row(
@@ -761,10 +766,9 @@ class _AdminScannerPageState extends State<_AdminScannerPage> with SingleTickerP
                 children: [
                   Expanded(
                     child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
+                      style: roleFilledPillButtonStyle(
                         backgroundColor: widget.palette.accent,
                         foregroundColor: widget.palette.accentInk,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
                       icon: const Icon(Icons.login_rounded, size: 18),
@@ -775,10 +779,9 @@ class _AdminScannerPageState extends State<_AdminScannerPage> with SingleTickerP
                   const SizedBox(width: 10),
                   Expanded(
                     child: OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
+                      style: roleOutlinedPillButtonStyle(
                         foregroundColor: widget.palette.accent,
                         side: BorderSide(color: widget.palette.accent, width: 1.5),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
                       icon: const Icon(Icons.logout_rounded, size: 18),
@@ -808,11 +811,15 @@ class _AdminScannerPageState extends State<_AdminScannerPage> with SingleTickerP
               padding: const EdgeInsets.only(bottom: 8),
               child: Container(
                 decoration: _cardDecoration(),
-                child: ListTile(
-                  dense: true,
-                  title: Text(member.name, style: const TextStyle(fontWeight: FontWeight.w800)),
-                  subtitle: Text('DNI: ${member.dni} · $sub', style: const TextStyle(color: Colors.white60)),
-                  trailing: Row(
+                child: Material(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(16),
+                  clipBehavior: Clip.antiAlias,
+                  child: ListTile(
+                    dense: true,
+                    title: Text(member.name, style: const TextStyle(fontWeight: FontWeight.w800)),
+                    subtitle: Text('DNI: ${member.dni} · $sub', style: const TextStyle(color: Colors.white60)),
+                    trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       StatusPill(label: member.state.toUpperCase(), color: pillCol),
@@ -831,7 +838,8 @@ class _AdminScannerPageState extends State<_AdminScannerPage> with SingleTickerP
                   ),
                 ),
               ),
-            );
+            ),
+          );
           }).toList(),
         ),
       ],
@@ -1052,7 +1060,7 @@ class _AdminCashiersPage extends StatelessWidget {
           builder: (context, setState) {
             return AlertDialog(
               backgroundColor: const Color(0xFF16161A),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               title: const Text('Registrar Cajero', style: TextStyle(fontWeight: FontWeight.w900)),
               content: SingleChildScrollView(
                 child: Column(
@@ -1111,10 +1119,9 @@ class _AdminCashiersPage extends StatelessWidget {
                   child: const Text('Cancelar', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
                 ),
                 ElevatedButton(
-                  style: ElevatedButton.styleFrom(
+                  style: roleFilledPillButtonStyle(
                     backgroundColor: palette.accent,
                     foregroundColor: palette.accentInk,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   onPressed: () {
                     if (nameCtrl.text.trim().isEmpty) return;
@@ -1383,10 +1390,9 @@ class _AdminMemberDetailPage extends StatelessWidget {
             children: [
               Expanded(
                 child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
+                  style: roleFilledPillButtonStyle(
                     backgroundColor: member.state == 'baja_logica' ? const Color(0xFF00B85C) : const Color(0xFFFF7A1A),
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                   icon: Icon(member.state == 'baja_logica' ? Icons.restore_rounded : Icons.delete_sweep_rounded),
@@ -1604,10 +1610,9 @@ class _AdminMemberFormPageState extends State<_AdminMemberFormPage> {
             ),
             const SizedBox(height: 24),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(
+              style: roleFilledPillButtonStyle(
                 backgroundColor: widget.palette.accent,
                 foregroundColor: widget.palette.accentInk,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
               onPressed: _saveForm,
@@ -1861,10 +1866,9 @@ class _AdminPaymentApprovalsPageState extends State<_AdminPaymentApprovalsPage> 
                               children: [
                                 Expanded(
                                   child: OutlinedButton(
-                                    style: OutlinedButton.styleFrom(
+                                    style: roleOutlinedPillButtonStyle(
                                       foregroundColor: Colors.redAccent,
                                       side: const BorderSide(color: Colors.redAccent),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                       padding: const EdgeInsets.symmetric(vertical: 12),
                                     ),
                                     onPressed: () async {
@@ -1894,10 +1898,9 @@ class _AdminPaymentApprovalsPageState extends State<_AdminPaymentApprovalsPage> 
                                 const SizedBox(width: 10),
                                 Expanded(
                                   child: ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
+                                    style: roleFilledPillButtonStyle(
                                       backgroundColor: const Color(0xFF00B85C),
                                       foregroundColor: Colors.white,
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                       padding: const EdgeInsets.symmetric(vertical: 12),
                                     ),
                                     onPressed: () async {
@@ -1954,7 +1957,7 @@ class _AdminPaymentApprovalsPageState extends State<_AdminPaymentApprovalsPage> 
       builder: (context) {
         return Dialog(
           backgroundColor: const Color(0xFF16161A),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
@@ -2170,7 +2173,7 @@ class _AdminProductInventoryPage extends StatelessWidget {
       builder: (context) {
         return AlertDialog(
           backgroundColor: const Color(0xFF16161A),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: const Text('¿Eliminar Físicamente?', style: TextStyle(fontWeight: FontWeight.w900)),
           content: Text('Esta acción borrará definitivamente "$productName" del inventario. Esta operación no se puede deshacer.'),
           actions: [
@@ -2179,10 +2182,9 @@ class _AdminProductInventoryPage extends StatelessWidget {
               child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
             ),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(
+              style: roleFilledPillButtonStyle(
                 backgroundColor: Colors.red,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               onPressed: () {
                 state.deleteProductPhysical(productName);
@@ -2294,10 +2296,9 @@ class _AdminProductFormPageState extends State<_AdminProductFormPage> {
             ),
             const SizedBox(height: 24),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(
+              style: roleFilledPillButtonStyle(
                 backgroundColor: widget.palette.accent,
                 foregroundColor: widget.palette.accentInk,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
               onPressed: _saveProduct,
@@ -2624,10 +2625,9 @@ class _AdminAnnouncementFormPageState extends State<_AdminAnnouncementFormPage> 
             ),
             const SizedBox(height: 24),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(
+              style: roleFilledPillButtonStyle(
                 backgroundColor: widget.palette.accent,
                 foregroundColor: widget.palette.accentInk,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
               onPressed: () {
@@ -2748,10 +2748,9 @@ class _AdminSettingsPageState extends State<_AdminSettingsPage> {
           ),
           const SizedBox(height: 24),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(
+            style: roleFilledPillButtonStyle(
               backgroundColor: widget.palette.accent,
               foregroundColor: widget.palette.accentInk,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               padding: const EdgeInsets.symmetric(vertical: 16),
             ),
             onPressed: () {
@@ -2882,10 +2881,9 @@ class _AdminVerdictView extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
+                    style: roleFilledPillButtonStyle(
                       backgroundColor: Colors.white,
                       foregroundColor: Colors.black,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                     ),
                     icon: const Icon(Icons.replay_rounded),
@@ -2897,48 +2895,6 @@ class _AdminVerdictView extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-// ============================================================================
-// WIDGET HELPER IMPLEMENTATIONS
-// ============================================================================
-
-class _HeroCard extends StatelessWidget {
-  const _HeroCard({required this.palette});
-
-  final RolePalette palette;
-
-  @override
-  Widget build(BuildContext context) {
-    final state = GymStateProvider.of(context);
-    final user = state.currentUser;
-    final String name = user != null ? user.nombreCompleto.split(' ').first : 'Sandra';
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: palette.gradient,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: palette.accent.withValues(alpha: 0.25)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const StatusPill(label: 'ADMINISTRADOR', color: Color(0xFF7A5AE0), solid: true),
-          const SizedBox(height: 18),
-          Text(
-            'Hola, $name',
-            style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900, letterSpacing: -0.7, color: Colors.white),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Gestión total de caja, aprobación de comprobantes, inventario de productos y permisos de acceso.',
-            style: TextStyle(fontSize: 13, color: Colors.white.withValues(alpha: 0.85), fontWeight: FontWeight.w500, height: 1.4),
-          ),
-        ],
       ),
     );
   }
@@ -2982,7 +2938,7 @@ class _AdminMetric extends StatelessWidget {
 BoxDecoration _cardDecoration() {
   return BoxDecoration(
     color: const Color(0xFF16161A),
-    borderRadius: BorderRadius.circular(12),
-    border: Border.all(color: const Color(0xFF232329), width: 1.0),
+    borderRadius: BorderRadius.circular(16),
+    border: Border.all(color: const Color(0xFF2E2E38), width: 1.0),
   );
 }

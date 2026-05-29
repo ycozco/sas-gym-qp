@@ -217,29 +217,11 @@ class _TrainerMembersTab extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 6, 20, 24),
       children: [
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: palette.gradient,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: palette.accent.withValues(alpha: 0.25)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              StatusPill(label: 'COCKPIT ENTRENADOR', color: palette.accent, solid: true),
-              const SizedBox(height: 18),
-              const Text(
-                'Hola, Carlos M.',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, letterSpacing: -0.7),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Supervisa el progreso físico de tus alumnos, planifica sus rutinas y edita la biblioteca técnica.',
-                style: TextStyle(fontSize: 13.5, color: Colors.black.withValues(alpha: 0.6), fontWeight: FontWeight.w500),
-              ),
-            ],
-          ),
+        RoleHeroHeader(
+          palette: palette,
+          title: 'Cockpit Entrenador',
+          subtitle: 'Supervisa el progreso físico, planifica rutinas y gestiona tu biblioteca técnica.',
+          trailing: StatusPill(label: 'ACTIVO', color: palette.accent, solid: true),
         ),
         const SizedBox(height: 18),
         Row(
@@ -298,7 +280,7 @@ class _TrainerMembersTab extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 12),
                 child: InkWell(
                   onTap: () => onGo('student-details', {'member': member}),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(18),
                   child: Container(
                     padding: const EdgeInsets.all(16),
                     decoration: _cardDecoration(),
@@ -567,12 +549,11 @@ class _StudentDetailsViewState extends State<_StudentDetailsView> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
+              style: roleFilledPillButtonStyle(
                 backgroundColor: widget.palette.accent,
                 foregroundColor: widget.palette.accentInk,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                elevation: 0,
+                minimumHeight: 52,
               ),
               icon: const Icon(Icons.edit_calendar_rounded),
               label: const Text('Planificar / Asignar Rutina Semanal', style: TextStyle(fontWeight: FontWeight.w900)),
@@ -804,10 +785,9 @@ class _AssignRoutineViewState extends State<_AssignRoutineView> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
+              style: roleFilledPillButtonStyle(
                 backgroundColor: const Color(0xFF111111),
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
               onPressed: () {
@@ -911,7 +891,7 @@ class _TrainerExerciseLibraryTabState extends State<_TrainerExerciseLibraryTab> 
                     selectedColor: widget.palette.accent,
                     backgroundColor: Colors.white,
                     side: const BorderSide(color: Color(0xFFE8E4D9)),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: const StadiumBorder(),
                     onSelected: (val) {
                       if (val) {
                         setState(() => _selectedMuscle = muscle);
@@ -926,12 +906,10 @@ class _TrainerExerciseLibraryTabState extends State<_TrainerExerciseLibraryTab> 
 
           // Add exercise quick action
           ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: widget.palette.accent.withValues(alpha: 0.12),
+            style: roleOutlinedPillButtonStyle(
               foregroundColor: widget.palette.accent,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              backgroundColor: widget.palette.accent.withValues(alpha: 0.08),
               padding: const EdgeInsets.symmetric(vertical: 14),
-              elevation: 0,
             ),
             icon: const Icon(Icons.add_rounded),
             label: const Text('Nuevo Ejercicio a la Biblioteca', style: TextStyle(fontWeight: FontWeight.w900)),
@@ -947,24 +925,28 @@ class _TrainerExerciseLibraryTabState extends State<_TrainerExerciseLibraryTab> 
               return Container(
                 margin: const EdgeInsets.only(bottom: 12),
                 decoration: _cardDecoration(),
-                child: Column(
-                  children: [
-                    ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      leading: CircleAvatar(
-                        backgroundColor: widget.palette.accent.withValues(alpha: 0.12),
-                        foregroundColor: widget.palette.accent,
-                        child: Icon(exercise.icon, size: 18),
+                child: Material(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(16),
+                  clipBehavior: Clip.antiAlias,
+                  child: Column(
+                    children: [
+                      ListTile(
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        leading: CircleAvatar(
+                          backgroundColor: widget.palette.accent.withValues(alpha: 0.12),
+                          foregroundColor: widget.palette.accent,
+                          child: Icon(exercise.icon, size: 18),
+                        ),
+                        title: Text(exercise.name, style: const TextStyle(fontWeight: FontWeight.w800)),
+                        subtitle: Text('${exercise.muscle} · ${exercise.sets}×${exercise.reps} · ${exercise.weight ?? 0}kg'),
+                        trailing: Icon(isExpanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded),
+                        onTap: () {
+                          setState(() {
+                            _expandedExerciseName = isExpanded ? null : exercise.name;
+                          });
+                        },
                       ),
-                      title: Text(exercise.name, style: const TextStyle(fontWeight: FontWeight.w800)),
-                      subtitle: Text('${exercise.muscle} · ${exercise.sets}×${exercise.reps} · ${exercise.weight ?? 0}kg'),
-                      trailing: Icon(isExpanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded),
-                      onTap: () {
-                        setState(() {
-                          _expandedExerciseName = isExpanded ? null : exercise.name;
-                        });
-                      },
-                    ),
                     if (isExpanded)
                       Padding(
                         padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -994,7 +976,8 @@ class _TrainerExerciseLibraryTabState extends State<_TrainerExerciseLibraryTab> 
                       ),
                   ],
                 ),
-              );
+              ),
+            );
             }).toList(),
           ),
         ],
@@ -1062,7 +1045,10 @@ class _TrainerExerciseLibraryTabState extends State<_TrainerExerciseLibraryTab> 
                   child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
                 ),
                 ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: widget.palette.accent),
+                  style: roleFilledPillButtonStyle(
+                    backgroundColor: widget.palette.accent,
+                    foregroundColor: widget.palette.accentInk,
+                  ),
                   onPressed: () {
                     if (name.isNotEmpty) {
                       widget.onAddExercise(ExerciseItem(
@@ -1115,10 +1101,9 @@ class _TrainerTemplatesTab extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         ElevatedButton.icon(
-          style: ElevatedButton.styleFrom(
+          style: roleFilledPillButtonStyle(
             backgroundColor: const Color(0xFF111111),
             foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             padding: const EdgeInsets.symmetric(vertical: 14),
           ),
           icon: const Icon(Icons.create_new_folder_outlined),
@@ -1208,7 +1193,10 @@ class _TrainerTemplatesTab extends StatelessWidget {
               child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
             ),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF111111)),
+              style: roleFilledPillButtonStyle(
+                backgroundColor: const Color(0xFF111111),
+                foregroundColor: Colors.white,
+              ),
               onPressed: () {
                 if (name.isNotEmpty && muscle.isNotEmpty) {
                   final list = exStr.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
@@ -1449,16 +1437,21 @@ class _TrainerProfileTab extends StatelessWidget {
             children: [
               const Text('Soporte e Incidencias', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
               const SizedBox(height: 14),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: CircleAvatar(
-                  backgroundColor: palette.accent.withValues(alpha: 0.12),
-                  child: Icon(Icons.report_problem_rounded, color: palette.accent),
+              Material(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(16),
+                clipBehavior: Clip.antiAlias,
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: CircleAvatar(
+                    backgroundColor: palette.accent.withValues(alpha: 0.12),
+                    child: Icon(Icons.report_problem_rounded, color: palette.accent),
+                  ),
+                  title: const Text('Buzón de Incidencias', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  subtitle: const Text('Reporta daños en máquinas o áreas del local', style: TextStyle(fontSize: 12)),
+                  trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
+                  onTap: () => onGo('report-observation'),
                 ),
-                title: const Text('Buzón de Incidencias', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                subtitle: const Text('Reporta daños en máquinas o áreas del local', style: TextStyle(fontSize: 12)),
-                trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
-                onTap: () => onGo('report-observation'),
               ),
             ],
           ),
@@ -1488,7 +1481,7 @@ class _TrainerProfileTab extends StatelessWidget {
 BoxDecoration _cardDecoration() {
   return BoxDecoration(
     color: Colors.white,
-    borderRadius: BorderRadius.circular(12),
-    border: Border.all(color: const Color(0xFFE2DDD5)),
+    borderRadius: BorderRadius.circular(16),
+    border: Border.all(color: const Color(0xFFE6E2D8)),
   );
 }
