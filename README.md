@@ -159,6 +159,17 @@ Lee el detalle en `arquitectura/07-avance-actual.md`.
 
 ## Comandos rapidos
 
+### App movil por ambiente
+
+```powershell
+cd mobile_app
+flutter run --flavor dev --dart-define=APP_ENV=dev --dart-define=APP_MODE=backend --dart-define=API_BASE_URL=http://10.0.2.2:3000/api/v1
+flutter build web --release --dart-define=APP_ENV=staging --dart-define=APP_MODE=backend --dart-define=API_BASE_URL=http://localhost:3000/api/v1
+flutter build apk --debug --flavor dev --dart-define=APP_ENV=dev --dart-define=APP_MODE=backend --dart-define=API_BASE_URL=http://10.0.2.2:3000/api/v1
+```
+
+Para builds release Android, copiar `mobile_app/android/key.properties.example` a `mobile_app/android/key.properties` y completar valores locales. No commitear keystore ni claves reales.
+
 ### Despliegue local completo
 
 ```powershell
