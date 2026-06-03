@@ -24,6 +24,10 @@ class AppConfig {
     'ENABLE_QR_SIMULATOR',
     defaultValue: false,
   );
+  static const int maxLocalImageBytes = int.fromEnvironment(
+    'MAX_LOCAL_IMAGE_BYTES',
+    defaultValue: 5 * 1024 * 1024,
+  );
 
   static AppEnvironment get environment {
     return switch (environmentName.toLowerCase()) {

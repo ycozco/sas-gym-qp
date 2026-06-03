@@ -1226,8 +1226,16 @@ class _ReportObservationViewState extends State<ReportObservationView> {
         withData: true,
       );
       if (result != null && result.files.isNotEmpty) {
+        final file = result.files.first;
+        if (file.size > AppConfig.maxLocalImageBytes) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('La imagen supera el tamano maximo permitido.')),
+          );
+          return;
+        }
         setState(() {
-          _selectedFile = result.files.first;
+          _selectedFile = file;
         });
       }
     } catch (e) {

@@ -47,6 +47,14 @@ class _PayMembershipViewState extends State<PayMembershipView> {
       if (result == null || result.files.isEmpty) return;
 
       final file = result.files.first;
+      if (file.size > AppConfig.maxLocalImageBytes) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('El archivo supera el tamano maximo permitido.')),
+        );
+        return;
+      }
+
       final rawBytes = file.bytes;
       if (rawBytes == null) return;
 
