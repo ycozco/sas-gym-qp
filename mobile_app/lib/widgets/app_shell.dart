@@ -698,7 +698,10 @@ class RoleNavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final navBgColor = isDark ? const Color(0xFF16161A) : Colors.white;
-    final labelColor = isDark ? Colors.white30 : const Color(0xFF777777);
+    final labelColor = isDark ? Colors.white30 : const Color(0xFF999999);
+    // Selected label uses accent on light bg, accentInk on indicator bg
+    final selectedLabelColor = isDark ? accent : accent;
+    final selectedIconColor = accentInk; // icon sits on top of accent indicator
 
     return NavigationBarTheme(
       data: NavigationBarThemeData(
@@ -707,13 +710,13 @@ class RoleNavBar extends StatelessWidget {
           final selected = states.contains(WidgetState.selected);
           return TextStyle(
             fontSize: 11,
-            fontWeight: FontWeight.w700,
-            color: selected ? accentInk : labelColor,
+            fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+            color: selected ? selectedLabelColor : labelColor,
           );
         }),
         iconTheme: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
-          return IconThemeData(color: selected ? accentInk : labelColor, size: 20);
+          return IconThemeData(color: selected ? selectedIconColor : labelColor, size: 20);
         }),
       ),
       child: NavigationBar(

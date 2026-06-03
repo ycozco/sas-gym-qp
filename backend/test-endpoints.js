@@ -74,7 +74,7 @@ async function runTests() {
     // 1. Iniciar sesión como Cajero
     console.log('[1] Iniciando sesión como cajero...');
     const loginRes = await request('POST', '/auth/login', {
-      email: 'caja@gymsmart.com',
+      emailOrDni: 'caja@gymsmart.com',
       password: 'caja_secure_pass',
     });
 

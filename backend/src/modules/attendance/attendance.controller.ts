@@ -6,9 +6,15 @@ import { TenantGuard } from '../../core/guards/tenant.guard';
 import { RolesGuard } from '../../core/guards/roles.guard';
 import { Roles } from '../../core/decorators/roles.decorator';
 import { Role } from '@prisma/client';
+import { IsNotEmpty, IsString } from 'class-validator';
 
 class VerifyQrDto {
+  @IsString()
+  @IsNotEmpty()
   dni: string;
+
+  @IsString()
+  @IsNotEmpty()
   otpToken: string;
 }
 

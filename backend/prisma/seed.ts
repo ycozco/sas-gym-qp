@@ -118,6 +118,19 @@ async function main() {
     },
   });
 
+  // Admin Suspendido
+  await prisma.user.create({
+    data: {
+      tenant_id: tenantSuspendidoId,
+      email: 'admin_suspendido@gymsmart.com',
+      password_hash: hashAdmin,
+      rol: Role.ADMIN,
+      nombre_completo: 'Administrador Suspendido',
+      dni: '88888888',
+      estado: UserState.ACTIVE,
+    },
+  });
+
   // Caja
   const caja = await prisma.user.create({
     data: {
@@ -192,7 +205,7 @@ async function main() {
     data: {
       tenant_id: tenantActivoId,
       user_id: member.id,
-      plan_nombre: 'Mensual Plata',
+      plan_nombre: 'Plan Mensual Plata',
       duracion_dias: 30,
       monto: 120.0,
       estado: MembershipState.ACTIVE,
@@ -231,7 +244,7 @@ async function main() {
     data: {
       tenant_id: tenantActivoId,
       user_id: luciaUser.id,
-      plan_nombre: 'Trimestral Platinium',
+      plan_nombre: 'Plan Trimestral Platinium',
       duracion_dias: 90,
       monto: 400.0,
       estado: MembershipState.ACTIVE,
@@ -272,7 +285,7 @@ async function main() {
     data: {
       tenant_id: tenantActivoId,
       user_id: diegoUser.id,
-      plan_nombre: 'Mensual Plata',
+      plan_nombre: 'Plan Mensual Plata',
       duracion_dias: 30,
       monto: 120.0,
       estado: MembershipState.EXPIRED,
@@ -309,7 +322,7 @@ async function main() {
     data: {
       tenant_id: tenantActivoId,
       user_id: rosaUser.id,
-      plan_nombre: 'Mensual Plata',
+      plan_nombre: 'Plan Mensual Plata',
       duracion_dias: 30,
       monto: 120.0,
       estado: MembershipState.ACTIVE,
@@ -350,7 +363,7 @@ async function main() {
     data: {
       tenant_id: tenantActivoId,
       user_id: anaUser.id,
-      plan_nombre: 'Mensual Oro',
+      plan_nombre: 'Plan Mensual Oro',
       duracion_dias: 30,
       monto: 150.0,
       estado: MembershipState.GRACE,

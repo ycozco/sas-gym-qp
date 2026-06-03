@@ -229,6 +229,7 @@ class MemberRecord {
   final List<String> progressImages; // Simulated images
   final bool todayCheckIn;
   final bool isActiveInGym;
+  final int? daysLeft;
 
   MemberRecord({
     required this.dni,
@@ -246,6 +247,7 @@ class MemberRecord {
     required this.progressImages,
     this.todayCheckIn = false,
     this.isActiveInGym = false,
+    this.daysLeft,
   });
 
   MemberRecord copyWith({
@@ -264,6 +266,7 @@ class MemberRecord {
     List<String>? progressImages,
     bool? todayCheckIn,
     bool? isActiveInGym,
+    int? daysLeft,
   }) {
     return MemberRecord(
       dni: dni ?? this.dni,
@@ -281,6 +284,7 @@ class MemberRecord {
       progressImages: progressImages ?? this.progressImages,
       todayCheckIn: todayCheckIn ?? this.todayCheckIn,
       isActiveInGym: isActiveInGym ?? this.isActiveInGym,
+      daysLeft: daysLeft ?? this.daysLeft,
     );
   }
 }

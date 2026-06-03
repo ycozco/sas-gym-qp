@@ -115,7 +115,6 @@ export class FingerprintService {
           include: {
             memberships: {
               orderBy: { fecha_vencimiento: 'desc' },
-              take: 1,
             },
           },
         },
@@ -152,9 +151,9 @@ export class FingerprintService {
     }
 
     // 2. Verificar estado de membresía del socio
-    const latestMembership = user.memberships[0];
+    const memberships = user.memberships;
 
-    if (!latestMembership) {
+    if (memberships.length === 0) {
       return {
         verdict: 'RED',
         reason: 'El socio no cuenta con ninguna membresía registrada.',
@@ -165,11 +164,29 @@ export class FingerprintService {
       };
     }
 
+    // Buscar si hay alguna membresía activa o en gracia
+    const activeOrGrace = memberships.find(
+      m => m.estado === MembershipState.ACTIVE || m.estado === MembershipState.GRACE
+    );
+    
+    // Si no hay activa/gracia, buscar si hay alguna pendiente
+    const pending = memberships.find(m => m.estado === MembershipState.PENDING);
+    
+    // Si no hay pendiente, buscar si hay alguna suspendida
+    const suspended = memberships.find(m => m.estado === MembershipState.SUSPENDED);
+    
+    // De lo contrario, usar la primera (que por el orden desc es la de vencimiento más lejano)
+    const latestMembership = activeOrGrace || pending || suspended || memberships[0];
+
     const state = latestMembership.estado;
-    if (state === MembershipState.EXPIRED || state === MembershipState.SUSPENDED) {
+    if (state === MembershipState.EXPIRED || state === MembershipState.SUSPENDED || state === MembershipState.PENDING) {
       return {
         verdict: 'RED',
-        reason: state === MembershipState.EXPIRED ? 'Membresía vencida.' : 'Membresía suspendida.',
+        reason: state === MembershipState.EXPIRED
+            ? 'Membresía vencida.'
+            : (state === MembershipState.PENDING
+                ? 'Membresía pendiente de aprobación de pago.'
+                : 'Membresía suspendida.'),
         member: {
           fullName: user.nombre_completo,
           status: state,

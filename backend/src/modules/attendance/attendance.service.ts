@@ -27,7 +27,6 @@ export class AttendanceService {
         member_profile: true,
         memberships: {
           orderBy: { fecha_vencimiento: 'desc' },
-          take: 1,
         },
       },
     });
@@ -35,7 +34,7 @@ export class AttendanceService {
     if (!user) {
       return {
         verdict: 'RED',
-        reason: 'Socio no registrado en este gimnasio.',
+        reason: 'DNI inválido - Usuario no registrado.',
       };
     }
 
@@ -106,9 +105,9 @@ export class AttendanceService {
     }, 95000);
 
     // 3. Verificar estado de la membresía
-    const latestMembership = user.memberships[0];
+    const memberships = user.memberships;
 
-    if (!latestMembership) {
+    if (memberships.length === 0) {
       return {
         verdict: 'RED',
         reason: 'El socio no cuenta con ninguna membresía registrada.',
@@ -119,16 +118,50 @@ export class AttendanceService {
       };
     }
 
+    // Buscar si hay alguna membresía activa o en gracia
+    const activeOrGrace = memberships.find(
+      m => m.estado === MembershipState.ACTIVE || m.estado === MembershipState.GRACE
+    );
+    
+    // Si no hay activa/gracia, buscar si hay alguna pendiente
+    const pending = memberships.find(m => m.estado === MembershipState.PENDING);
+    
+    // Si no hay pendiente, buscar si hay alguna suspendida
+    const suspended = memberships.find(m => m.estado === MembershipState.SUSPENDED);
+    
+    // De lo contrario, usar la primera (que por el orden desc es la de vencimiento más lejano)
+    const latestMembership = activeOrGrace || pending || suspended || memberships[0];
+
     const state = latestMembership.estado;
 
-    if (state === MembershipState.EXPIRED || state === MembershipState.SUSPENDED) {
+    const today = new Date();
+    const todayClean = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const expiresAt = latestMembership.fecha_vencimiento ? new Date(latestMembership.fecha_vencimiento) : null;
+    let daysLeft = 0;
+    if (expiresAt) {
+      const expiresClean = new Date(expiresAt.getFullYear(), expiresAt.getMonth(), expiresAt.getDate());
+      const diffTime = expiresClean.getTime() - todayClean.getTime();
+      daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    }
+
+    if (state === MembershipState.EXPIRED || state === MembershipState.SUSPENDED || state === MembershipState.PENDING) {
+      let reason = 'Membresía vencida.';
+      if (state === MembershipState.SUSPENDED) {
+        reason = 'Membresía suspendida.';
+      } else if (state === MembershipState.PENDING) {
+        reason = 'Membresía pendiente de aprobación de pago.';
+      }
       return {
         verdict: 'RED',
-        reason: state === MembershipState.EXPIRED ? 'Membresía vencida.' : 'Membresía suspendida.',
+        reason,
         member: {
           fullName: user.nombre_completo,
           status: state,
+          planName: latestMembership.plan_nombre,
           expiresAt: latestMembership.fecha_vencimiento,
+          daysLeft,
+          email: user.email,
+          phone: user.celular || '',
         },
       };
     }
@@ -161,6 +194,9 @@ export class AttendanceService {
         status: statusText,
         planName: latestMembership.plan_nombre,
         expiresAt: latestMembership.fecha_vencimiento,
+        daysLeft,
+        email: user.email,
+        phone: user.celular || '',
       },
     };
   }

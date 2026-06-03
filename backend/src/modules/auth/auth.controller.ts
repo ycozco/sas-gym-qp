@@ -24,20 +24,10 @@ export class AuthController {
   @Public()
   @HttpCode(HttpStatus.OK)
   @Post('login')
-  async login(
-    @Body() loginDto: LoginDto,
-    @Headers('x-tenant-id') tenantIdHeader?: string,
-  ) {
-    const tenantId = tenantIdHeader || loginDto.tenantId;
-    if (!tenantId) {
-      throw new BadRequestException(
-        'El ID de inquilino (Tenant) es requerido en el header X-Tenant-ID o en el cuerpo (tenantId).',
-      );
-    }
+  async login(@Body() loginDto: LoginDto) {
     const user = await this.authService.validateUser(
-      loginDto.email,
+      loginDto.emailOrDni,
       loginDto.password,
-      tenantId,
     );
     return this.authService.login(user);
   }

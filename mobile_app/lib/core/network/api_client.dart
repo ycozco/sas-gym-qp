@@ -8,6 +8,7 @@ class ApiClient {
 
   late final Dio dio;
   static VoidCallback? onUnauthorized;
+  static VoidCallback? onTenantSuspended;
 
   ApiClient._internal() {
     dio = Dio(
@@ -45,6 +46,12 @@ class ApiClient {
             await SecureStorage.clearAll();
             if (onUnauthorized != null) {
               onUnauthorized!();
+            }
+          }
+          // Si el servidor retorna 403 Forbidden (Inquilino SaaS Suspendido)
+          if (e.response?.statusCode == 403) {
+            if (onTenantSuspended != null) {
+              onTenantSuspended!();
             }
           }
           return handler.next(e);

@@ -11,36 +11,34 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async validateUser(email: string, pass: string, tenantId: string): Promise<any> {
-    if (!tenantId) {
-      throw new BadRequestException('El ID de inquilino (Tenant) es requerido.');
+  async validateUser(emailOrDni: string, pass: string): Promise<any> {
+    // Buscar al usuario por email o DNI usando consultas parametrizadas seguras de Prisma
+    const user = await this.prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: emailOrDni },
+          { dni: emailOrDni },
+        ],
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Credenciales incorrectas.');
     }
 
     // Verificar si el inquilino (gimnasio) existe y está activo
     const tenant = await this.prisma.tenant.findUnique({
-      where: { id: tenantId },
+      where: { id: user.tenant_id },
     });
 
     if (!tenant) {
-      throw new UnauthorizedException('El gimnasio especificado no existe.');
+      throw new UnauthorizedException('El gimnasio asociado a tu cuenta no existe.');
     }
 
     if (!tenant.activo) {
       throw new UnauthorizedException(
         'El gimnasio (Tenant) se encuentra temporalmente inactivo o suspendido por administración.',
       );
-    }
-
-    // Buscar al usuario por email y tenant_id
-    const user = await this.prisma.user.findFirst({
-      where: {
-        email: email,
-        tenant_id: tenantId,
-      },
-    });
-
-    if (!user) {
-      throw new UnauthorizedException('Credenciales incorrectas.');
     }
 
     // Verificar el estado del usuario

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <!-- Warm Dark Background for Accent contrast -->
+  <rect width="100" height="100" rx="22" fill="#0E0E10"/>
+  
+  <!-- Dumbbell / Gym Icon -->
+  <g stroke="#D2FF3A" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <!-- Barbell Shaft -->
+    <line x1="20" y1="50" x2="80" y2="50" stroke-width="8"/>
+    
+    <!-- Outer Weight Plates -->
+    <rect x="12" y="35" width="8" height="30" rx="3" fill="#D2FF3A"/>
+    <rect x="80" y="35" width="8" height="30" rx="3" fill="#D2FF3A"/>
+    
+    <!-- Inner Weight Plates -->
+    <rect x="24" y="25" width="10" height="50" rx="4" fill="#D2FF3A" opacity="0.9"/>
+    <rect x="66" y="25" width="10" height="50" rx="4" fill="#D2FF3A" opacity="0.9"/>
+    
+    <!-- Collars -->
+    <rect x="36" y="42" width="4" height="16" rx="1" fill="#D2FF3A"/>
+    <rect x="60" y="42" width="4" height="16" rx="1" fill="#D2FF3A"/>
+  </g>
+  
+  <!-- Decorative Accent Glow Dot -->
+  <circle cx="50" cy="50" r="4" fill="#D2FF3A"/>
+</svg>

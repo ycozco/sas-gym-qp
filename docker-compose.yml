@@ -35,6 +35,9 @@ services:
         condition: service_healthy
     ports:
       - "3000:3000"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
     environment:
       - DATABASE_URL=postgresql://postgres:postgres_secure_password@db:5432/gymsmart?schema=public
       - PORT=3000

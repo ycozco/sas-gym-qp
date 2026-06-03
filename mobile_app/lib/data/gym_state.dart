@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:hive/hive.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:socket_io_client/socket_io_client.dart' as io;
 import 'dart:async';
 import '../models/gym_models.dart';
 import '../core/network/api_client.dart';
 import '../core/storage/secure_storage.dart';
+import '../core/services/websocket_service.dart';
+import '../core/services/sync_queue_service.dart';
 
 // TODO(arch-future): este ChangeNotifier global concentra sesion,
 // catalogos, red, websockets y caches offline. Una iteracion posterior
@@ -63,6 +64,16 @@ class GymState extends ChangeNotifier {
       _currentUser = null;
       _authError = 'Sesión expirada. Inicia sesión nuevamente.';
       notifyListeners();
+    };
+
+    ApiClient.onTenantSuspended = () {
+      final tenantId = _selectedClientId;
+      final index = _saClients.indexWhere((c) => c.id == tenantId);
+      if (index != -1) {
+        _saClients[index] = _saClients[index].copyWith(active: false);
+        _addLog('SaaS', 'Suscripción Bloqueada', 'El gimnasio fue suspendido por administración.', Colors.red);
+        notifyListeners();
+      }
     };
   }
 
@@ -268,21 +279,43 @@ class GymState extends ChangeNotifier {
 
       notifyListeners();
 
+      if (memberJson == null) {
+        return {
+          'verdict': verdict,
+          'reason': reason,
+          'member': null,
+        };
+      }
+
+      final String backendStatus = (memberJson['status'] as String? ?? '').toLowerCase();
+      final String mappedState = verdict == 'GREEN'
+          ? 'active'
+          : (verdict == 'AMBER'
+              ? 'grace'
+              : (backendStatus.contains('suspend')
+                  ? 'suspended'
+                  : (backendStatus.contains('inactiv') || backendStatus.contains('pend')
+                      ? 'inactive'
+                      : 'expired')));
+
+      final daysLeft = memberJson['daysLeft'] as int?;
+
       // Build a MemberRecord from backend response to feed the verdict screen
       MemberRecord tempRecord = MemberRecord(
         dni: dni,
         name: fullName,
-        phone: '',
-        email: '',
+        phone: memberJson['phone'] as String? ?? '',
+        email: memberJson['email'] as String? ?? '',
         startDate: 'Hoy',
-        goal: memberJson?['planName'] as String? ?? 'Membresía',
+        goal: memberJson['planName'] as String? ?? 'Membresía',
         sessions: 0,
         lastSeen: 'Hoy',
-        state: verdict == 'GREEN' ? 'active' : (verdict == 'AMBER' ? 'grace' : 'expired'),
+        state: mappedState,
         assignedTrainer: '',
         paymentHistory: [],
         physicalMeasurements: {},
         progressImages: [],
+        daysLeft: daysLeft,
       );
 
       return {
@@ -334,6 +367,16 @@ class GymState extends ChangeNotifier {
 
     if (member.state == 'expired') {
       _addLog('Escáner', 'Acceso denegado', 'Membresía de ${member.name} vencida', Colors.red);
+      return 'denied';
+    }
+
+    if (member.state == 'pending' || member.state == 'inactive') {
+      _addLog('Escáner', 'Acceso denegado', 'Membresía de ${member.name} en espera de verificación', Colors.red);
+      return 'denied';
+    }
+
+    if (member.state == 'suspended') {
+      _addLog('Escáner', 'Acceso denegado', 'Cuenta de ${member.name} suspendida administrativamente', Colors.red);
       return 'denied';
     }
 
@@ -524,6 +567,7 @@ class GymState extends ChangeNotifier {
     required List<Map<String, dynamic>> cartItems,
     required double total,
     required String paymentMethod,
+    List<Map<String, dynamic>>? payments,
   }) async {
     try {
       await ApiClient().dio.post(
@@ -533,6 +577,7 @@ class GymState extends ChangeNotifier {
           'cartItems': cartItems,
           'total': total,
           'paymentMethod': paymentMethod,
+          'payments': ?payments,
         },
       );
       
@@ -684,11 +729,15 @@ class GymState extends ChangeNotifier {
 
   // --- Búsqueda de Socios por Relevancia ---
 
-  Future<List<dynamic>> searchMembersBackend(String query) async {
+  Future<List<dynamic>> searchMembersBackend(String query, {int page = 1, int limit = 20}) async {
     try {
       final response = await ApiClient().dio.get(
         '/members/search',
-        queryParameters: {'q': query},
+        queryParameters: {
+          'q': query,
+          'page': page,
+          'limit': limit,
+        },
       );
       return response.data as List;
     } catch (e) {
@@ -764,7 +813,32 @@ class GymState extends ChangeNotifier {
     required List<Map<String, dynamic>> cartItems,
     required double total,
     required String paymentMethod,
+    List<Map<String, dynamic>>? payments,
   }) {
+    final String methodStr = payments != null
+        ? payments.map((p) => "${p['metodo']}: S/ ${p['monto']}").join(', ')
+        : paymentMethod;
+
+    if (memberDni == 'ANONIMO') {
+      for (var item in cartItems) {
+        final name = item['name'] as String;
+        final qty = item['qty'] as int;
+        final prodIndex = _products.indexWhere((p) => p.name == name);
+        if (prodIndex != -1) {
+          final prod = _products[prodIndex];
+          _products[prodIndex] = prod.copyWith(stock: (prod.stock - qty).clamp(0, 9999));
+        }
+      }
+      _addLog(
+        'Caja',
+        'Venta POS Anónima',
+        'Cliente Anónimo pagó S/ $total via $methodStr. Items: ${cartItems.map((c) => "${c['qty']}x ${c['name']}").join(", ")}',
+        const Color(0xFF00B85C),
+      );
+      notifyListeners();
+      return;
+    }
+
     final mIndex = _members.indexWhere((m) => m.dni == memberDni);
     if (mIndex == -1) return;
 
@@ -785,7 +859,7 @@ class GymState extends ChangeNotifier {
           planName: name,
           price: price * qty,
           date: _formatCurrentDate(),
-          method: paymentMethod,
+          method: methodStr,
           state: 'approved',
         ));
       } else {
@@ -806,7 +880,7 @@ class GymState extends ChangeNotifier {
     _addLog(
       'Caja',
       'Venta POS',
-      '${member.name} pagó S/ $total via $paymentMethod. Items: ${cartItems.map((c) => "${c['qty']}x ${c['name']}").join(", ")}',
+      '${member.name} pagó S/ $total via $methodStr. Items: ${cartItems.map((c) => "${c['qty']}x ${c['name']}").join(", ")}',
       const Color(0xFF00B85C),
     );
     notifyListeners();
@@ -1194,7 +1268,7 @@ class GymState extends ChangeNotifier {
   bool _isOnline = true;
   bool get isOnline => _isOnline;
   StreamSubscription? _connectivitySubscription;
-  io.Socket? _socket;
+  final WebSocketService _webSocketService = WebSocketService();
 
   void _initConnectivity() {
     // Verificar conectividad inicial
@@ -1214,8 +1288,11 @@ class GymState extends ChangeNotifier {
       _isOnline = online;
       _addLog('Red', 'Estado de Conexión', _isOnline ? 'Online (Conectado)' : 'Offline (Desconectado)', _isOnline ? Colors.green : Colors.red);
       notifyListeners();
-      if (_isOnline && isBackendMode) {
-        syncOfflineLogs();
+      if (_isOnline) {
+        if (isBackendMode) {
+          syncOfflineLogs();
+          SyncQueueService.processQueue();
+        }
       }
     }
   }
@@ -1227,52 +1304,27 @@ class GymState extends ChangeNotifier {
     super.dispose();
   }
 
-  // Socket.io Connection
-  void _connectSocket() async {
+  // WebSocket Connection
+  void _connectSocket() {
     _closeSocket();
     
-    final tenantId = await SecureStorage.getTenantId();
-    if (tenantId == null) return;
-
-    final token = await SecureStorage.getToken();
-    final baseUrl = ApiClient().dio.options.baseUrl.replaceAll('/api/v1', '');
-    try {
-      _socket = io.io(baseUrl, io.OptionBuilder()
-        .setTransports(['websocket'])
-        .setQuery({'token': token ?? ''})
-        .disableAutoConnect()
-        .build());
-
-      _socket?.connect();
-
-      _socket?.onConnect((_) {
-        debugPrint('WebSocket conectado con éxito');
-        _socket?.emit('join');
-      });
-
-      _socket?.on('tenant_suspended', (_) {
-        debugPrint('RECIBIDO: EVENTO DE SUSPENSIÓN SAAS');
-        // Bloquear gimnasio localmente cambiando el estado del saClient correspondiente
+    _webSocketService.onTenantSuspended = () async {
+      final tenantId = await SecureStorage.getTenantId();
+      if (tenantId != null) {
         final index = _saClients.indexWhere((c) => c.id == tenantId);
         if (index != -1) {
           _saClients[index] = _saClients[index].copyWith(active: false);
           _addLog('SaaS', 'Suscripción Bloqueada', 'El gimnasio fue suspendido por administración en tiempo real.', Colors.red);
           notifyListeners();
         }
-      });
-      
-      _socket?.onDisconnect((_) {
-        debugPrint('WebSocket desconectado');
-      });
-    } catch (e) {
-      debugPrint('Error en conexión WebSocket: $e');
-    }
+      }
+    };
+
+    _webSocketService.connect();
   }
 
   void _closeSocket() {
-    _socket?.disconnect();
-    _socket?.close();
-    _socket = null;
+    _webSocketService.disconnect();
   }
 
   // Carga de Rutinas
@@ -1411,13 +1463,40 @@ class GymState extends ChangeNotifier {
     }
   }
 
-  // Audit Logs Module
-  Future<void> loadAuditLogs() async {
+  int _auditLogsPage = 1;
+  bool _hasMoreAuditLogs = true;
+  bool _loadingMoreAuditLogs = false;
+
+  int get auditLogsPage => _auditLogsPage;
+  bool get hasMoreAuditLogs => _hasMoreAuditLogs;
+  bool get loadingMoreAuditLogs => _loadingMoreAuditLogs;
+
+  Future<void> loadAuditLogs({bool refresh = true}) async {
     if (isBackendMode) {
-      try {
-        final response = await ApiClient().dio.get('/reports/audit-logs');
-        final List<dynamic> data = response.data;
+      if (refresh) {
+        _auditLogsPage = 1;
+        _hasMoreAuditLogs = true;
         _auditLogs.clear();
+      } else {
+        if (!_hasMoreAuditLogs || _loadingMoreAuditLogs) return;
+        _loadingMoreAuditLogs = true;
+        notifyListeners();
+      }
+
+      try {
+        final response = await ApiClient().dio.get(
+          '/reports/audit-logs',
+          queryParameters: {
+            'page': _auditLogsPage,
+            'limit': 20,
+          },
+        );
+        final List<dynamic> data = response.data;
+        if (data.length < 20) {
+          _hasMoreAuditLogs = false;
+        } else {
+          _auditLogsPage++;
+        }
         for (var item in data) {
           final createdAt = item['created_at'] as String?;
           final timeStr = createdAt != null
@@ -1431,9 +1510,11 @@ class GymState extends ChangeNotifier {
             color: item['accion'] == 'DELETE' ? Colors.red : (item['accion'] == 'POST' ? Colors.green : Colors.blue),
           ));
         }
-        notifyListeners();
       } catch (e) {
         debugPrint('Error loading audit logs: $e');
+      } finally {
+        _loadingMoreAuditLogs = false;
+        notifyListeners();
       }
     }
   }

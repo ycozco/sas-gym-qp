@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { PaymentMethod, PaymentState, MembershipState } from '@prisma/client';
-import { IsString, IsArray, IsNumber, IsPositive } from 'class-validator';
+import { PaymentMethod, PaymentState, MembershipState, Role, UserState } from '@prisma/client';
+import { IsString, IsArray, IsNumber, IsPositive, IsOptional } from 'class-validator';
 
 export class ChargePosDto {
   @IsString()
@@ -16,6 +16,10 @@ export class ChargePosDto {
 
   @IsString()
   paymentMethod: string;
+
+  @IsOptional()
+  @IsArray()
+  payments?: any[];
 }
 
 @Injectable()
@@ -195,25 +199,72 @@ export class PaymentsService {
       throw new BadRequestException('Turno no iniciado o finalizado para este cajero.');
     }
 
+    const activeCaja = await this.prisma.caja.findFirst({
+      where: {
+        cajero_id: cashierId,
+        tenant_id: tenantId,
+        estado: 'abierta',
+      },
+    });
+
+    if (!activeCaja) {
+      throw new BadRequestException('El cajero no tiene una caja abierta.');
+    }
+
     // Buscar el socio por DNI
-    const member = await this.prisma.user.findFirst({
+    let member = await this.prisma.user.findFirst({
       where: {
         dni: dto.memberDni,
         tenant_id: tenantId,
       },
     });
 
-    if (!member) {
-      throw new NotFoundException('Socio no registrado.');
+    if (!member && dto.memberDni === 'ANONIMO') {
+      member = await this.prisma.user.create({
+        data: {
+          tenant_id: tenantId,
+          nombre_completo: 'Cliente Anónimo',
+          dni: 'ANONIMO',
+          email: `anonimo-${tenantId}@sasgym.com`,
+          password_hash: 'none',
+          rol: Role.MEMBER,
+          estado: UserState.ACTIVE,
+        },
+      });
     }
 
-    // Buscar si hay items de membresía en el carrito (ej: "Mensual Plata")
+    if (!member) {
+      member = await this.prisma.user.create({
+        data: {
+          tenant_id: tenantId,
+          nombre_completo: `Socio DNI ${dto.memberDni}`,
+          dni: dto.memberDni,
+          email: `dni-${dto.memberDni}-${tenantId}@sasgym.com`,
+          password_hash: 'none',
+          rol: Role.MEMBER,
+          estado: UserState.ACTIVE,
+        },
+      });
+      await this.prisma.memberProfile.create({
+        data: {
+          user_id: member.id,
+          nickname: `Socio_${dto.memberDni}`,
+          modo_activo: true,
+        },
+      });
+    }
+
+    // Buscar si hay items de membresía en el carrito (mensual, trimestral, pase diario)
     const membershipItem = dto.cartItems.find(
-      (item) => item.name.toLowerCase().includes('mensual') || item.name.toLowerCase().includes('trimestral'),
+      (item) =>
+        item.name.toLowerCase().includes('mensual') ||
+        item.name.toLowerCase().includes('trimestral') ||
+        item.name.toLowerCase().includes('pase') ||
+        item.name.toLowerCase().includes('día') ||
+        item.name.toLowerCase().includes('dia'),
     );
 
     let createdMembership = null;
-    let createdPayment = null;
 
     if (membershipItem) {
       // Registrar membresía directamente activa
@@ -221,6 +272,12 @@ export class PaymentsService {
       let duracionDias = 30;
       if (planNombre.toLowerCase().includes('trimestral')) {
         duracionDias = 90;
+      } else if (
+        planNombre.toLowerCase().includes('pase') ||
+        planNombre.toLowerCase().includes('día') ||
+        planNombre.toLowerCase().includes('dia')
+      ) {
+        duracionDias = 1;
       }
 
       createdMembership = await this.prisma.membership.create({
@@ -235,29 +292,56 @@ export class PaymentsService {
           fecha_vencimiento: new Date(Date.now() + duracionDias * 24 * 60 * 60 * 1000),
         },
       });
+    }
 
-      // Crear Pago Aprobado
-      let metodo: PaymentMethod = PaymentMethod.CASH;
-      if (dto.paymentMethod.toLowerCase() === 'yape') {
-        metodo = PaymentMethod.MANUAL_YAPE;
-      } else if (dto.paymentMethod.toLowerCase() === 'plin') {
-        metodo = PaymentMethod.MANUAL_PLIN;
-      } else if (dto.paymentMethod.toLowerCase() === 'tarjeta') {
-        metodo = PaymentMethod.GATEWAY;
+    // Registrar pagos (soporte para único y mixto)
+    const pagosArray = dto.payments && dto.payments.length > 0
+      ? dto.payments
+      : [{ metodo: dto.paymentMethod, monto: dto.total }];
+
+    let primaryPayment = null;
+    for (let i = 0; i < pagosArray.length; i++) {
+      const p = pagosArray[i];
+      let metodoEnum: PaymentMethod = PaymentMethod.CASH;
+      const mUpper = p.metodo.toUpperCase();
+      if (mUpper === 'YAPE' || mUpper === 'MANUAL_YAPE') metodoEnum = PaymentMethod.MANUAL_YAPE;
+      else if (mUpper === 'PLIN' || mUpper === 'MANUAL_PLIN') metodoEnum = PaymentMethod.MANUAL_PLIN;
+      else if (mUpper === 'TARJETA' || mUpper === 'GATEWAY' || mUpper === 'POS') metodoEnum = PaymentMethod.POS;
+      else if (mUpper === 'TRANSFER') metodoEnum = PaymentMethod.TRANSFER;
+
+      // El token de venta único se asocia al primer pago
+      const token = i === 0 ? `POS_${Date.now()}_${Math.floor(Math.random() * 1000)}` : null;
+
+      if (createdMembership) {
+        const payment = await this.prisma.payment.create({
+          data: {
+            tenant_id: tenantId,
+            membership_id: createdMembership.id,
+            registrado_por_id: cashierId,
+            monto: p.monto,
+            metodo: metodoEnum,
+            estado: PaymentState.APPROVED,
+            caja_id: activeCaja.id,
+            venta_token: token,
+          },
+        });
+        if (i === 0) primaryPayment = payment;
       }
 
-      createdPayment = await this.prisma.payment.create({
+      // Registrar movimiento de ingreso en la caja (siempre se registra para que la caja cuadre)
+      const descItems = dto.cartItems.map((c) => `${c['qty']}x ${c['name']}`).join(', ');
+      await this.prisma.movimientoCaja.create({
         data: {
-          tenant_id: tenantId,
-          membership_id: createdMembership.id,
-          registrado_por_id: cashierId,
-          monto: dto.total,
-          metodo: metodo,
-          estado: PaymentState.APPROVED,
+          caja_id: activeCaja.id,
+          tipo: 'ingreso',
+          monto: p.monto,
+          descripcion: `Venta POS (${p.metodo.toLowerCase()}): ${descItems} - Socio: ${member.nombre_completo}`,
         },
       });
+    }
 
-      // Activar socio
+    // Activar socio si compró membresía
+    if (createdMembership) {
       await this.prisma.user.update({
         where: { id: member.id },
         data: { estado: 'ACTIVE' },
@@ -268,7 +352,7 @@ export class PaymentsService {
       success: true,
       message: 'Venta registrada con éxito.',
       membership: createdMembership,
-      payment: createdPayment,
+      payment: primaryPayment,
     };
   }
 }
