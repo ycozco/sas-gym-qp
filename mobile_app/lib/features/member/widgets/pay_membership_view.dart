@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:image/image.dart' as img;
+import '../../../core/config/app_config.dart';
 import '../../../data/gym_state.dart';
 import '../../../widgets/app_shell.dart';
 import '../../../models/gym_models.dart';
@@ -64,7 +65,7 @@ class _PayMembershipViewState extends State<PayMembershipView> {
         _compressing = false;
       });
     } catch (e) {
-      debugPrint('Error picking/compressing file: $e');
+      AppLogger.debug('Error picking/compressing file', e);
       setState(() {
         _compressing = false;
       });
@@ -88,7 +89,7 @@ class _PayMembershipViewState extends State<PayMembershipView> {
       final compressed = img.encodeJpg(resized, quality: 80);
       return compressed;
     } catch (e) {
-      debugPrint('Compression error: $e');
+      AppLogger.debug('Compression error', e);
       return bytes;
     }
   }

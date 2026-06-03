@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import '../config/app_config.dart';
 import '../storage/secure_storage.dart';
 
 class ApiClient {
@@ -61,14 +62,6 @@ class ApiClient {
   }
 
   static String _getBaseUrl() {
-    if (kIsWeb) {
-      return 'http://localhost:3000/api/v1';
-    }
-    // Si corre en simulador Android, usar la IP alias del host
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      return 'http://10.0.2.2:3000/api/v1';
-    }
-    // Windows u otros entornos de escritorio / iOS
-    return 'http://localhost:3000/api/v1';
+    return AppConfig.resolveApiBaseUrl();
   }
 }

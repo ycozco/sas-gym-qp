@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/config/app_config.dart';
 import '../../../data/gym_state.dart';
 import '../../../widgets/app_shell.dart';
 
@@ -354,7 +355,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 40),
 
               // BOTONERA MODO DEMO
-              _buildDemoBypassSection(state),
+              if (AppConfig.enableDemoLogin) _buildDemoBypassSection(state),
             ],
           ),
         ),

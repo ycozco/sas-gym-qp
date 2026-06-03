@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:math';
+
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class SecureStorage {
@@ -5,6 +8,7 @@ class SecureStorage {
 
   static const _keyToken = 'jwt_token';
   static const _keyTenantId = 'tenant_id';
+  static const _keyHiveEncryption = 'hive_encryption_key';
 
   static Future<void> saveToken(String token) async {
     await _storage.write(key: _keyToken, value: token);
@@ -25,5 +29,17 @@ class SecureStorage {
   static Future<void> clearAll() async {
     await _storage.delete(key: _keyToken);
     await _storage.delete(key: _keyTenantId);
+  }
+
+  static Future<List<int>> getHiveEncryptionKey() async {
+    final existing = await _storage.read(key: _keyHiveEncryption);
+    if (existing != null) {
+      return base64Url.decode(existing);
+    }
+
+    final secureRandom = Random.secure();
+    final key = List<int>.generate(32, (_) => secureRandom.nextInt(256));
+    await _storage.write(key: _keyHiveEncryption, value: base64Url.encode(key));
+    return key;
   }
 }

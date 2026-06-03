@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:otp/otp.dart';
+import '../../../../core/config/app_config.dart';
 import '../../../../models/gym_models.dart';
 import '../../../../data/gym_state.dart';
 import '../../../../widgets/app_shell.dart';
@@ -175,24 +176,30 @@ class AdminScannerPage extends StatelessWidget {
   void _triggerScan(String input) async {
     String dni = input;
     String otpToken = '';
+    final hasQrPayload = input.contains('|');
     
-    if (input.contains('|')) {
+    if (hasQrPayload) {
       final parts = input.split('|');
       dni = parts[0];
       otpToken = parts[1];
+    } else if (state.isBackendMode) {
+      onTriggerVerdict('denied', null, dni);
+      return;
     } else {
-      final secret = '${dni}_secure_totp_secret_key_2026';
+      final secret = AppConfig.demoTotpSecretForDni(dni);
       final time = DateTime.now().millisecondsSinceEpoch;
-      try {
-        otpToken = OTP.generateTOTPCodeString(
-          secret,
-          time,
-          interval: 30,
-          length: 6,
-          algorithm: Algorithm.SHA1,
-        );
-      } catch (e) {
-        debugPrint('Error generating simulator TOTP: $e');
+      if (secret != null) {
+        try {
+          otpToken = OTP.generateTOTPCodeString(
+            secret,
+            time,
+            interval: 30,
+            length: 6,
+            algorithm: Algorithm.SHA1,
+          );
+        } catch (e) {
+          AppLogger.debug('Error generating simulator TOTP', e);
+        }
       }
     }
 

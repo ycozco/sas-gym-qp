@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image/image.dart' as img;
 import 'package:file_picker/file_picker.dart';
 import 'package:hive/hive.dart';
+import '../../../core/config/app_config.dart';
 import '../../../data/gym_seed.dart';
 import '../../../data/gym_state.dart';
 import '../../../models/gym_models.dart';
@@ -1230,7 +1231,7 @@ class _ReportObservationViewState extends State<ReportObservationView> {
         });
       }
     } catch (e) {
-      debugPrint('Error picking image: $e');
+      AppLogger.debug('Error picking image', e);
     }
   }
 
@@ -1240,7 +1241,7 @@ class _ReportObservationViewState extends State<ReportObservationView> {
       if (decoded == null) return null;
       return img.encodeJpg(decoded, quality: 80);
     } catch (e) {
-      debugPrint('Error compressing image: $e');
+      AppLogger.debug('Error compressing image', e);
       return null;
     }
   }

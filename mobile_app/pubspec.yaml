@@ -38,7 +38,7 @@ dependencies:
   flutter_secure_storage: ^10.3.1
   otp: ^3.1.2
   qr_flutter: ^4.1.0
-  image: ^4.8.0
+  image: ^4.9.1
   file_picker: ^11.0.2
   hive: ^2.2.3
   hive_flutter: ^1.1.0

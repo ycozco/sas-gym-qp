@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:otp/otp.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import '../../../core/config/app_config.dart';
 import '../../../data/gym_state.dart';
 import '../../../models/gym_models.dart';
 
@@ -54,6 +55,7 @@ class FullQRView extends StatefulWidget {
 class _FullQRViewState extends State<FullQRView> {
   int _secondsLeft = 30;
   String _qrData = '';
+  String? _qrError;
   Timer? _timer;
 
   @override
@@ -82,7 +84,17 @@ class _FullQRViewState extends State<FullQRView> {
     if (!mounted) return;
     final state = GymStateProvider.of(context);
     final userDni = state.currentUser?.dni ?? '11111111';
-    final secret = '${userDni}_secure_totp_secret_key_2026';
+    final profile = state.currentUser?.memberProfile;
+    final secret = profile?['qr_secret']?.toString() ??
+        profile?['qrSecret']?.toString() ??
+        AppConfig.demoTotpSecretForDni(userDni);
+    if (secret == null || secret.isEmpty) {
+      setState(() {
+        _qrData = '';
+        _qrError = 'QR no disponible. Solicita al backend emitir un secreto de acceso.';
+      });
+      return;
+    }
     final time = DateTime.now().millisecondsSinceEpoch;
     try {
       final token = OTP.generateTOTPCodeString(
@@ -94,9 +106,10 @@ class _FullQRViewState extends State<FullQRView> {
       );
       setState(() {
         _qrData = '$userDni|$token';
+        _qrError = null;
       });
     } catch (e) {
-      debugPrint('Error generating TOTP: $e');
+      AppLogger.debug('Error generating TOTP', e);
     }
   }
 
@@ -141,7 +154,18 @@ class _FullQRViewState extends State<FullQRView> {
                   border: Border.all(color: const Color(0xFFE2DDD5), width: 1.5),
                 ),
                 child: _qrData.isEmpty
-                    ? const Center(child: CircularProgressIndicator())
+                    ? Center(
+                        child: _qrError == null
+                            ? const CircularProgressIndicator()
+                            : Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: Text(
+                                  _qrError!,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(color: Colors.black, fontSize: 12),
+                                ),
+                              ),
+                      )
                     : QrImageView(
                         data: _qrData,
                         version: QrVersions.auto,

@@ -5,6 +5,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'dart:async';
 import '../models/gym_models.dart';
 import '../core/network/api_client.dart';
+import '../core/config/app_config.dart';
 import '../core/storage/secure_storage.dart';
 import '../core/services/websocket_service.dart';
 import '../core/services/sync_queue_service.dart';
@@ -16,7 +17,9 @@ import '../core/services/sync_queue_service.dart';
 // arquitectonica actual.
 class GymState extends ChangeNotifier {
   GymState({bool startBackground = true}) {
-    _initializeData();
+    if (AppConfig.isDemoMode) {
+      _initializeData();
+    }
     _initAuthListener();
     if (startBackground) {
       checkAuth();
@@ -93,6 +96,7 @@ class GymState extends ChangeNotifier {
       }
 
       final response = await ApiClient().dio.get('/auth/me');
+      _clearLocalDemoData();
       _currentUser = LoggedInUser.fromJson(response.data as Map<String, dynamic>);
       _selectedClientId = tenantId;
       _authError = null;
@@ -137,6 +141,7 @@ class GymState extends ChangeNotifier {
       await SecureStorage.saveTenantId(returnedTenantId);
 
       final profileResponse = await ApiClient().dio.get('/auth/me');
+      _clearLocalDemoData();
       _currentUser = LoggedInUser.fromJson(profileResponse.data as Map<String, dynamic>);
       _selectedClientId = returnedTenantId;
       _authError = null;
@@ -179,6 +184,12 @@ class GymState extends ChangeNotifier {
     _authLoading = true;
     notifyListeners();
     await SecureStorage.clearAll();
+    if (Hive.isBoxOpen('gym_cache')) {
+      await Hive.box('gym_cache').clear();
+    }
+    if (Hive.isBoxOpen('sync_queue_box')) {
+      await SyncQueueService.clearQueue();
+    }
     _currentUser = null;
     _authError = null;
     _authLoading = false;
@@ -236,6 +247,16 @@ class GymState extends ChangeNotifier {
   void selectClient(String clientId) {
     _selectedClientId = clientId;
     notifyListeners();
+  }
+
+  void _clearLocalDemoData() {
+    _members.clear();
+    _products.clear();
+    _cashiers.clear();
+    _auditLogs.clear();
+    _announcements.clear();
+    _observations.clear();
+    _saClients.clear();
   }
 
   bool get isBackendMode => _currentUser != null;
@@ -513,7 +534,7 @@ class GymState extends ChangeNotifier {
       await checkAuth();
       return true;
     } catch (e) {
-      debugPrint('Error uploading receipt to backend: $e');
+      AppLogger.debug('Error uploading receipt to backend', e);
       return false;
     }
   }
@@ -524,7 +545,7 @@ class GymState extends ChangeNotifier {
       final data = response.data as List;
       return List<Map<String, dynamic>>.from(data);
     } catch (e) {
-      debugPrint('Error fetching pending payments: $e');
+      AppLogger.debug('Error fetching pending payments', e);
       return [];
     }
   }
@@ -547,7 +568,7 @@ class GymState extends ChangeNotifier {
       await checkAuth();
       return true;
     } catch (e) {
-      debugPrint('Error resolving payment: $e');
+      AppLogger.debug('Error resolving payment', e);
       return false;
     }
   }
@@ -557,7 +578,7 @@ class GymState extends ChangeNotifier {
       final response = await ApiClient().dio.get('/payments/check-shift');
       return response.data['isActive'] as bool? ?? false;
     } catch (e) {
-      debugPrint('Error checking shift backend: $e');
+      AppLogger.debug('Error checking shift backend', e);
       return false;
     }
   }
@@ -570,15 +591,17 @@ class GymState extends ChangeNotifier {
     List<Map<String, dynamic>>? payments,
   }) async {
     try {
+      final data = <String, dynamic>{
+        'memberDni': memberDni,
+        'cartItems': cartItems,
+        'total': total,
+        'paymentMethod': paymentMethod,
+        ...?(payments == null ? null : {'payments': payments}),
+      };
+
       await ApiClient().dio.post(
         '/payments/pos-charge',
-        data: {
-          'memberDni': memberDni,
-          'cartItems': cartItems,
-          'total': total,
-          'paymentMethod': paymentMethod,
-          'payments': ?payments,
-        },
+        data: data,
       );
       
       // Update local state by adding log
@@ -586,7 +609,7 @@ class GymState extends ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      debugPrint('Error processing POS charge backend: $e');
+      AppLogger.debug('Error processing POS charge backend', e);
       rethrow;
     }
   }
@@ -606,7 +629,7 @@ class GymState extends ChangeNotifier {
       notifyListeners();
       return response.data as Map<String, dynamic>?;
     } catch (e) {
-      debugPrint('Error al abrir caja: $e');
+      AppLogger.debug('Error al abrir caja', e);
       rethrow;
     }
   }
@@ -616,7 +639,7 @@ class GymState extends ChangeNotifier {
       final response = await ApiClient().dio.get('/payments/caja/active');
       return response.data as Map<String, dynamic>?;
     } catch (e) {
-      debugPrint('Error al obtener caja activa: $e');
+      AppLogger.debug('Error al obtener caja activa', e);
       return null;
     }
   }
@@ -641,7 +664,7 @@ class GymState extends ChangeNotifier {
       notifyListeners();
       return response.data as Map<String, dynamic>?;
     } catch (e) {
-      debugPrint('Error al crear egreso de caja: $e');
+      AppLogger.debug('Error al crear egreso de caja', e);
       rethrow;
     }
   }
@@ -651,7 +674,7 @@ class GymState extends ChangeNotifier {
       final response = await ApiClient().dio.get('/payments/caja/details');
       return response.data as Map<String, dynamic>?;
     } catch (e) {
-      debugPrint('Error al obtener arqueo de caja: $e');
+      AppLogger.debug('Error al obtener arqueo de caja', e);
       return null;
     }
   }
@@ -679,7 +702,7 @@ class GymState extends ChangeNotifier {
       notifyListeners();
       return response.data as Map<String, dynamic>?;
     } catch (e) {
-      debugPrint('Error al cerrar caja: $e');
+      AppLogger.debug('Error al cerrar caja', e);
       rethrow;
     }
   }
@@ -722,7 +745,7 @@ class GymState extends ChangeNotifier {
       notifyListeners();
       return response.data as Map<String, dynamic>?;
     } catch (e) {
-      debugPrint('Error al registrar venta de membresía: $e');
+      AppLogger.debug('Error al registrar venta de membresia', e);
       rethrow;
     }
   }
@@ -741,7 +764,7 @@ class GymState extends ChangeNotifier {
       );
       return response.data as List;
     } catch (e) {
-      debugPrint('Error en búsqueda de socios: $e');
+      AppLogger.debug('Error en busqueda de socios', e);
       return [];
     }
   }
@@ -766,7 +789,7 @@ class GymState extends ChangeNotifier {
       );
       return response.data as Map<String, dynamic>?;
     } catch (e) {
-      debugPrint('Error al registrar huella digital: $e');
+      AppLogger.debug('Error al registrar huella digital', e);
       rethrow;
     }
   }
@@ -801,7 +824,7 @@ class GymState extends ChangeNotifier {
 
       return response.data as Map<String, dynamic>?;
     } catch (e) {
-      debugPrint('Error al verificar huella digital: $e');
+      AppLogger.debug('Error al verificar huella digital', e);
       rethrow;
     }
   }
@@ -1011,7 +1034,7 @@ class GymState extends ChangeNotifier {
         }
         notifyListeners();
       } catch (e) {
-        debugPrint('Error loading announcements: $e');
+        AppLogger.debug('Error loading announcements', e);
       }
     }
   }
@@ -1032,7 +1055,7 @@ class GymState extends ChangeNotifier {
         await loadAnnouncements();
         _addLog('Admin', 'Creó anuncio (API)', 'Nuevo aviso [$severity]: $title', const Color(0xFF7A5AE0));
       } catch (e) {
-        debugPrint('Error creating announcement on backend: $e');
+        AppLogger.debug('Error creating announcement on backend', e);
       }
     } else {
       _announcements.insert(0, Announcement(
@@ -1056,7 +1079,7 @@ class GymState extends ChangeNotifier {
         notifyListeners();
       }
     } catch (e) {
-      debugPrint('Error dismissing announcement: $e');
+      AppLogger.debug('Error dismissing announcement', e);
     }
   }
 
@@ -1339,7 +1362,7 @@ class GymState extends ChangeNotifier {
           return response.data as Map<String, dynamic>;
         }
       } catch (e) {
-        debugPrint('Error loading active routine from backend: $e');
+        AppLogger.debug('Error loading active routine from backend', e);
       }
     }
 
@@ -1363,7 +1386,7 @@ class GymState extends ChangeNotifier {
           _addLog('Entrenamiento', 'Log de esfuerzo', 'Sesión sincronizada con el servidor.', Colors.green);
           return true;
         } catch (e) {
-          debugPrint('Error posting workout log, saving offline: $e');
+          AppLogger.debug('Error posting workout log, saving offline', e);
         }
       }
       
@@ -1387,15 +1410,15 @@ class GymState extends ChangeNotifier {
     final List<dynamic>? queue = box.get('offline_workout_queue');
     if (queue == null || queue.isEmpty) return;
 
-    debugPrint('Sincronizando ${queue.length} logs de entrenamiento offline...');
+    AppLogger.debug('Sincronizando ${queue.length} logs de entrenamiento offline...');
     
     final List<dynamic> remaining = [];
     for (var session in queue) {
       try {
         await ApiClient().dio.post('/members/workout-log', data: session);
-        debugPrint('Log offline sincronizado correctamente.');
+        AppLogger.debug('Log offline sincronizado correctamente.');
       } catch (e) {
-        debugPrint('Fallo al sincronizar log offline, re-encolando: $e');
+        AppLogger.debug('Fallo al sincronizar log offline, re-encolando', e);
         remaining.add(session);
       }
     }
@@ -1428,7 +1451,7 @@ class GymState extends ChangeNotifier {
         }
         notifyListeners();
       } catch (e) {
-        debugPrint('Error loading observations: $e');
+        AppLogger.debug('Error loading observations', e);
       }
     }
   }
@@ -1458,7 +1481,7 @@ class GymState extends ChangeNotifier {
       await loadObservations(); // Refrescar bandeja
       return true;
     } catch (e) {
-      debugPrint('Error uploading observation: $e');
+      AppLogger.debug('Error uploading observation', e);
       return false;
     }
   }
@@ -1511,7 +1534,7 @@ class GymState extends ChangeNotifier {
           ));
         }
       } catch (e) {
-        debugPrint('Error loading audit logs: $e');
+        AppLogger.debug('Error loading audit logs', e);
       } finally {
         _loadingMoreAuditLogs = false;
         notifyListeners();
@@ -1538,7 +1561,7 @@ class GymState extends ChangeNotifier {
         }
         notifyListeners();
       } catch (e) {
-        debugPrint('Error loading saClients: $e');
+        AppLogger.debug('Error loading saClients', e);
       }
     }
   }
@@ -1562,7 +1585,7 @@ class GymState extends ChangeNotifier {
         );
         notifyListeners();
       } catch (e) {
-        debugPrint('Error toggling tenant status: $e');
+        AppLogger.debug('Error toggling tenant status', e);
       }
     } else {
       _saClients[index] = client.copyWith(active: nextState);

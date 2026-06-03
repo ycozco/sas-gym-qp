@@ -1,12 +1,20 @@
-import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
+import '../config/app_config.dart';
 import '../network/api_client.dart';
+import '../storage/secure_storage.dart';
 
 class SyncQueueService {
   static const String _boxName = 'sync_queue_box';
 
   static Future<void> init() async {
-    await Hive.openBox(_boxName);
+    final hiveKey = await SecureStorage.getHiveEncryptionKey();
+    try {
+      await Hive.openBox(_boxName, encryptionCipher: HiveAesCipher(hiveKey));
+    } catch (e) {
+      if (AppConfig.isProduction) rethrow;
+      AppLogger.debug('Encrypted sync_queue_box unavailable, opening dev fallback', e);
+      await Hive.openBox(_boxName);
+    }
   }
 
   static Box _getBox() {
@@ -28,7 +36,7 @@ class SyncQueueService {
     });
 
     await box.put('queue', queue);
-    debugPrint('Transacción encolada en SyncQueue: $endpoint - $description');
+    AppLogger.debug('Transaccion encolada en SyncQueue: $endpoint - $description');
   }
 
   // Obtener todos los items en la cola
@@ -51,7 +59,7 @@ class SyncQueueService {
     final queue = getQueue();
     if (queue.isEmpty) return true;
 
-    debugPrint('Procesando cola de sincronización offline: ${queue.length} pendientes...');
+    AppLogger.debug('Procesando cola de sincronizacion offline: ${queue.length} pendientes...');
     final List<Map<String, dynamic>> remaining = [];
     bool allSucceeded = true;
 
@@ -69,9 +77,9 @@ class SyncQueueService {
         } else if (method.toUpperCase() == 'DELETE') {
           await ApiClient().dio.delete(endpoint, data: data);
         }
-        debugPrint('Sincronización exitosa para tx: $id ($endpoint)');
+        AppLogger.debug('Sincronizacion exitosa para tx: $id ($endpoint)');
       } catch (e) {
-        debugPrint('Fallo al sincronizar tx $id ($endpoint): $e. Re-encolando.');
+        AppLogger.debug('Fallo al sincronizar tx $id ($endpoint). Re-encolando', e);
         remaining.add(tx);
         allSucceeded = false;
       }
