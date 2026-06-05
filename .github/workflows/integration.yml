@@ -1,0 +1,51 @@
+name: integration
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  docker-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Prepare backend env
+        run: cp backend/.env.example backend/.env
+
+      - name: Start stack
+        run: docker compose up --build -d
+
+      - name: Docker ps
+        run: docker compose ps
+
+      - name: Integration smoke
+        run: node scripts/integration-smoke.mjs
+
+      - name: Collect logs
+        if: always()
+        run: |
+          mkdir -p .artifacts
+          docker compose ps > .artifacts/docker-ps.txt
+          docker compose logs api > .artifacts/api.log || true
+          docker compose logs web > .artifacts/web.log || true
+          docker compose logs frontend-web > .artifacts/flutter-web.log || true
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-logs
+          path: .artifacts
+
+      - name: Stop stack
+        if: always()
+        run: docker compose down -v
