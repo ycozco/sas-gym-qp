@@ -9,6 +9,7 @@ import '../core/config/app_config.dart';
 import '../core/storage/secure_storage.dart';
 import '../core/services/websocket_service.dart';
 import '../core/services/sync_queue_service.dart';
+import '../theme/ui_preferences_controller.dart';
 
 // TODO(arch-future): este ChangeNotifier global concentra sesion,
 // catalogos, red, websockets y caches offline. Una iteracion posterior
@@ -17,6 +18,8 @@ import '../core/services/sync_queue_service.dart';
 // arquitectonica actual.
 class GymState extends ChangeNotifier {
   GymState({bool startBackground = true}) {
+    uiPreferences.addListener(_relayUiPreferenceChanges);
+    _initUiPreferences();
     if (AppConfig.isDemoMode) {
       _initializeData();
     }
@@ -24,6 +27,42 @@ class GymState extends ChangeNotifier {
     if (startBackground) {
       checkAuth();
       _initConnectivity();
+    }
+  }
+
+  final UiPreferencesController uiPreferences = UiPreferencesController();
+
+  ThemeMode get themeMode => uiPreferences.themeMode;
+  bool get themePreferenceSyncPending => uiPreferences.syncPending;
+
+  void _relayUiPreferenceChanges() {
+    notifyListeners();
+  }
+
+  Future<void> _initUiPreferences() async {
+    await uiPreferences.init();
+  }
+
+  Future<void> updateThemeMode(ThemeMode mode) async {
+    await uiPreferences.setThemeMode(mode, markSyncPending: isBackendMode);
+    await _syncThemePreferenceIfNeeded();
+  }
+
+  Future<void> _syncThemePreferenceIfNeeded() async {
+    if (!isBackendMode || !uiPreferences.syncPending) return;
+
+    try {
+      await ApiClient().dio.patch(
+        '/auth/me/preferences',
+        data: {
+          'themeMode': UiPreferencesController.themeModeToWire(
+            uiPreferences.themeMode,
+          ),
+        },
+      );
+      await uiPreferences.markSynced();
+    } catch (e) {
+      AppLogger.debug('Error syncing theme preference', e);
     }
   }
 
@@ -39,14 +78,16 @@ class GymState extends ChangeNotifier {
     final id = _selectedClientId.isEmpty ? 'gym_test' : _selectedClientId;
     final index = _saClients.indexWhere((c) => c.id == id);
     if (index == -1) {
-      _saClients.add(SaaSClient(
-        id: id,
-        name: 'Test Gym',
-        logo: '🧪',
-        location: 'Test',
-        membersCount: '0',
-        active: active,
-      ));
+      _saClients.add(
+        SaaSClient(
+          id: id,
+          name: 'Test Gym',
+          logo: '🧪',
+          location: 'Test',
+          membersCount: '0',
+          active: active,
+        ),
+      );
     } else {
       _saClients[index] = _saClients[index].copyWith(active: active);
     }
@@ -74,7 +115,12 @@ class GymState extends ChangeNotifier {
       final index = _saClients.indexWhere((c) => c.id == tenantId);
       if (index != -1) {
         _saClients[index] = _saClients[index].copyWith(active: false);
-        _addLog('SaaS', 'Suscripción Bloqueada', 'El gimnasio fue suspendido por administración.', Colors.red);
+        _addLog(
+          'SaaS',
+          'Suscripción Bloqueada',
+          'El gimnasio fue suspendido por administración.',
+          Colors.red,
+        );
         notifyListeners();
       }
     };
@@ -97,9 +143,16 @@ class GymState extends ChangeNotifier {
 
       final response = await ApiClient().dio.get('/auth/me');
       _clearLocalDemoData();
-      _currentUser = LoggedInUser.fromJson(response.data as Map<String, dynamic>);
+      _currentUser = LoggedInUser.fromJson(
+        response.data as Map<String, dynamic>,
+      );
       _selectedClientId = tenantId;
       _authError = null;
+      final hadPendingThemeSync = uiPreferences.syncPending;
+      await _syncThemePreferenceIfNeeded();
+      if (!hadPendingThemeSync) {
+        await uiPreferences.applyBackendTheme(_currentUser!.themePreference);
+      }
       _connectSocket();
       loadAnnouncements();
       if (_currentUser?.rol == GymRole.superadmin) {
@@ -108,6 +161,8 @@ class GymState extends ChangeNotifier {
         loadObservations();
         loadAuditLogs();
       }
+      loadTenantSettings();
+      loadMembershipPlans(includeInactive: _currentUser?.rol == GymRole.admin);
     } catch (e) {
       await SecureStorage.clearAll();
       _currentUser = null;
@@ -128,10 +183,7 @@ class GymState extends ChangeNotifier {
     try {
       final response = await ApiClient().dio.post(
         '/auth/login',
-        data: {
-          'emailOrDni': emailOrDni,
-          'password': password,
-        },
+        data: {'emailOrDni': emailOrDni, 'password': password},
       );
 
       final token = response.data['token'] as String;
@@ -142,10 +194,17 @@ class GymState extends ChangeNotifier {
 
       final profileResponse = await ApiClient().dio.get('/auth/me');
       _clearLocalDemoData();
-      _currentUser = LoggedInUser.fromJson(profileResponse.data as Map<String, dynamic>);
+      _currentUser = LoggedInUser.fromJson(
+        profileResponse.data as Map<String, dynamic>,
+      );
       _selectedClientId = returnedTenantId;
       _authError = null;
       _authLoading = false;
+      final hadPendingThemeSync = uiPreferences.syncPending;
+      await _syncThemePreferenceIfNeeded();
+      if (!hadPendingThemeSync) {
+        await uiPreferences.applyBackendTheme(_currentUser!.themePreference);
+      }
       _connectSocket();
       loadAnnouncements();
       if (_currentUser?.rol == GymRole.superadmin) {
@@ -154,6 +213,8 @@ class GymState extends ChangeNotifier {
         loadObservations();
         loadAuditLogs();
       }
+      loadTenantSettings();
+      loadMembershipPlans(includeInactive: _currentUser?.rol == GymRole.admin);
       notifyListeners();
       return true;
     } on DioException catch (e) {
@@ -162,7 +223,9 @@ class GymState extends ChangeNotifier {
         final data = e.response!.data;
         if (data is Map && data.containsKey('message')) {
           final errMessage = data['message'];
-          message = errMessage is List ? errMessage.join('\n') : errMessage.toString();
+          message = errMessage is List
+              ? errMessage.join('\n')
+              : errMessage.toString();
         }
       }
       _authError = message;
@@ -215,6 +278,13 @@ class GymState extends ChangeNotifier {
   // Settings
   int graceDays = 1;
   int alertDays = 5;
+  TenantSettings? _tenantSettings;
+  final List<MembershipPlan> _membershipPlans = [];
+
+  TenantSettings? get tenantSettings => _tenantSettings;
+  List<MembershipPlan> get membershipPlans => List.unmodifiable(_membershipPlans);
+  MembershipPlan? get defaultMembershipPlan =>
+      _membershipPlans.isEmpty ? null : _membershipPlans.first;
 
   // Collections
   final List<MemberRecord> _members = [];
@@ -226,7 +296,8 @@ class GymState extends ChangeNotifier {
   final List<SaaSClient> _saClients = [];
 
   // Getters
-  List<MemberRecord> get members => _members.where((m) => m.state != 'baja_logica').toList();
+  List<MemberRecord> get members =>
+      _members.where((m) => m.state != 'baja_logica').toList();
   List<MemberRecord> get allMembersIncludingSoftDeleted => _members;
   List<ProductItem> get products => _products;
   List<CashierAccount> get cashiers => _cashiers;
@@ -239,7 +310,14 @@ class GymState extends ChangeNotifier {
   bool get isCurrentGymActive {
     final client = _saClients.firstWhere(
       (c) => c.id == _selectedClientId,
-      orElse: () => SaaSClient(id: '', name: '', logo: '', location: '', membersCount: '0', active: true),
+      orElse: () => SaaSClient(
+        id: '',
+        name: '',
+        logo: '',
+        location: '',
+        membersCount: '0',
+        active: true,
+      ),
     );
     return client.active;
   }
@@ -268,10 +346,7 @@ class GymState extends ChangeNotifier {
     try {
       final response = await ApiClient().dio.post(
         '/attendance/verify',
-        data: {
-          'dni': dni,
-          'otpToken': otpToken,
-        },
+        data: {'dni': dni, 'otpToken': otpToken},
       );
       final data = response.data;
       final verdict = data['verdict'] as String? ?? 'RED';
@@ -283,8 +358,13 @@ class GymState extends ChangeNotifier {
           : (verdict == 'AMBER' ? const Color(0xFFFFB300) : Colors.red);
 
       final fullName = memberJson?['fullName'] as String? ?? 'Socio';
-      _addLog('Escáner', 'Registro de ingreso (API)', '$fullName: $reason', logColor);
-      
+      _addLog(
+        'Escáner',
+        'Registro de ingreso (API)',
+        '$fullName: $reason',
+        logColor,
+      );
+
       // Update local state if the user was checked in
       if (verdict == 'GREEN' || verdict == 'AMBER') {
         final localIdx = _members.indexWhere((m) => m.dni == dni);
@@ -301,23 +381,21 @@ class GymState extends ChangeNotifier {
       notifyListeners();
 
       if (memberJson == null) {
-        return {
-          'verdict': verdict,
-          'reason': reason,
-          'member': null,
-        };
+        return {'verdict': verdict, 'reason': reason, 'member': null};
       }
 
-      final String backendStatus = (memberJson['status'] as String? ?? '').toLowerCase();
+      final String backendStatus = (memberJson['status'] as String? ?? '')
+          .toLowerCase();
       final String mappedState = verdict == 'GREEN'
           ? 'active'
           : (verdict == 'AMBER'
-              ? 'grace'
-              : (backendStatus.contains('suspend')
-                  ? 'suspended'
-                  : (backendStatus.contains('inactiv') || backendStatus.contains('pend')
-                      ? 'inactive'
-                      : 'expired')));
+                ? 'grace'
+                : (backendStatus.contains('suspend')
+                      ? 'suspended'
+                      : (backendStatus.contains('inactiv') ||
+                                backendStatus.contains('pend')
+                            ? 'inactive'
+                            : 'expired')));
 
       final daysLeft = memberJson['daysLeft'] as int?;
 
@@ -339,11 +417,7 @@ class GymState extends ChangeNotifier {
         daysLeft: daysLeft,
       );
 
-      return {
-        'verdict': verdict,
-        'reason': reason,
-        'member': tempRecord,
-      };
+      return {'verdict': verdict, 'reason': reason, 'member': tempRecord};
     } on DioException catch (e) {
       String reason = 'Error de conexión o token inválido.';
       if (e.response != null && e.response!.data != null) {
@@ -354,15 +428,21 @@ class GymState extends ChangeNotifier {
           reason = data['message'].toString();
         }
       }
-      _addLog('Escáner', 'Error API', 'Fallo al verificar: $reason', Colors.red);
+      _addLog(
+        'Escáner',
+        'Error API',
+        'Fallo al verificar: $reason',
+        Colors.red,
+      );
       notifyListeners();
-      return {
-        'verdict': 'RED',
-        'reason': reason,
-        'member': null,
-      };
+      return {'verdict': 'RED', 'reason': reason, 'member': null};
     } catch (e) {
-      _addLog('Escáner', 'Error API', 'Fallo al verificar asistencia: $e', Colors.red);
+      _addLog(
+        'Escáner',
+        'Error API',
+        'Fallo al verificar asistencia: $e',
+        Colors.red,
+      );
       notifyListeners();
       return {
         'verdict': 'RED',
@@ -372,32 +452,152 @@ class GymState extends ChangeNotifier {
     }
   }
 
+  Future<Map<String, dynamic>> simulateAttendanceAccessBackend({
+    required String dni,
+  }) async {
+    try {
+      final response = await ApiClient().dio.post(
+        '/attendance/simulation-access',
+        data: {'dni': dni},
+      );
+      return _mapAttendanceResponse(dni, response.data);
+    } catch (e) {
+      _addLog(
+        'Escaner',
+        'Simulacion de ingreso',
+        'No se pudo simular el QR temporal.',
+        Colors.red,
+      );
+      notifyListeners();
+      return {
+        'verdict': 'RED',
+        'reason': 'No se pudo simular el QR temporal.',
+        'member': null,
+      };
+    }
+  }
+
+  Map<String, dynamic> _mapAttendanceResponse(String dni, dynamic data) {
+    final verdict = data['verdict'] as String? ?? 'RED';
+    final reason = data['reason'] as String? ?? 'Error de validacion';
+    final memberJson = data['member'] as Map<String, dynamic>?;
+
+    final Color logColor = verdict == 'GREEN'
+        ? const Color(0xFF00B85C)
+        : (verdict == 'AMBER' ? const Color(0xFFFFB300) : Colors.red);
+
+    final fullName = memberJson?['fullName'] as String? ?? 'Socio';
+    _addLog(
+      'Escaner',
+      'Registro de ingreso (API)',
+      '$fullName: $reason',
+      logColor,
+    );
+
+    if (verdict == 'GREEN' || verdict == 'AMBER') {
+      final localIdx = _members.indexWhere((m) => m.dni == dni);
+      if (localIdx != -1) {
+        _members[localIdx] = _members[localIdx].copyWith(
+          sessions: _members[localIdx].sessions + 1,
+          lastSeen: 'Hoy',
+          todayCheckIn: true,
+          isActiveInGym: true,
+        );
+      }
+    }
+
+    notifyListeners();
+
+    if (memberJson == null) {
+      return {'verdict': verdict, 'reason': reason, 'member': null};
+    }
+
+    final String backendStatus = (memberJson['status'] as String? ?? '')
+        .toLowerCase();
+    final String mappedState = verdict == 'GREEN'
+        ? 'active'
+        : (verdict == 'AMBER'
+              ? 'grace'
+              : (backendStatus.contains('suspend')
+                    ? 'suspended'
+                    : (backendStatus.contains('inactiv') ||
+                              backendStatus.contains('pend')
+                          ? 'inactive'
+                          : 'expired')));
+
+    final daysLeft = memberJson['daysLeft'] as int?;
+
+    final tempRecord = MemberRecord(
+      dni: dni,
+      name: fullName,
+      phone: memberJson['phone'] as String? ?? '',
+      email: memberJson['email'] as String? ?? '',
+      startDate: 'Hoy',
+      goal: memberJson['planName'] as String? ?? 'Membresia',
+      sessions: 0,
+      lastSeen: 'Hoy',
+      state: mappedState,
+      assignedTrainer: '',
+      paymentHistory: [],
+      physicalMeasurements: {},
+      progressImages: [],
+      daysLeft: daysLeft,
+    );
+
+    return {'verdict': verdict, 'reason': reason, 'member': tempRecord};
+  }
+
   // --- Attendance scanning ---
   String recordAttendance(String memberDni) {
     final index = _members.indexWhere((m) => m.dni == memberDni);
     if (index == -1) {
-      _addLog('Escáner', 'Acceso denegado', 'DNI $memberDni no registrado', Colors.red);
+      _addLog(
+        'Escáner',
+        'Acceso denegado',
+        'DNI $memberDni no registrado',
+        Colors.red,
+      );
       return 'not_found';
     }
 
     final member = _members[index];
     if (member.state == 'baja_logica') {
-      _addLog('Escáner', 'Acceso denegado', '${member.name} está inactivo (baja lógica)', Colors.red);
+      _addLog(
+        'Escáner',
+        'Acceso denegado',
+        '${member.name} está inactivo (baja lógica)',
+        Colors.red,
+      );
       return 'denied';
     }
 
     if (member.state == 'expired') {
-      _addLog('Escáner', 'Acceso denegado', 'Membresía de ${member.name} vencida', Colors.red);
+      _addLog(
+        'Escáner',
+        'Acceso denegado',
+        'Membresía de ${member.name} vencida',
+        Colors.red,
+      );
       return 'denied';
     }
 
     if (member.state == 'pending' || member.state == 'inactive') {
-      _addLog('Escáner', 'Acceso denegado', 'Membresía de ${member.name} en espera de verificación', Colors.red);
+      _addLog(
+        'Escáner',
+        'Acceso denegado',
+        'Membresía de ${member.name} en espera de verificación',
+        Colors.red,
+      );
       return 'denied';
     }
 
     if (member.state == 'suspended') {
-      _addLog('Escáner', 'Acceso denegado', 'Cuenta de ${member.name} suspendida administrativamente', Colors.red);
+      _addLog(
+        'Escáner',
+        'Acceso denegado',
+        'Cuenta de ${member.name} suspendida administrativamente',
+        Colors.red,
+      );
       return 'denied';
     }
 
@@ -432,7 +632,12 @@ class GymState extends ChangeNotifier {
         todayCheckIn: false,
         isActiveInGym: false,
       );
-      _addLog('Escáner', 'Registro de salida', '${member.name} salió del gimnasio', const Color(0xFF5C5C5C));
+      _addLog(
+        'Escáner',
+        'Registro de salida',
+        '${member.name} salió del gimnasio',
+        const Color(0xFF5C5C5C),
+      );
       notifyListeners();
     }
   }
@@ -459,10 +664,16 @@ class GymState extends ChangeNotifier {
       receiptUrl: receiptName,
     );
 
-    final updatedHistory = List<PaymentRecord>.from(member.paymentHistory)..add(newPayment);
+    final updatedHistory = List<PaymentRecord>.from(member.paymentHistory)
+      ..add(newPayment);
     _members[index] = member.copyWith(paymentHistory: updatedHistory);
 
-    _addLog('Socio', 'Subió comprobante', '${member.name} cargó comprobante manual para $planName (S/ $price)', const Color(0xFF0066FF));
+    _addLog(
+      'Socio',
+      'Subió comprobante',
+      '${member.name} cargó comprobante manual para $planName (S/ $price)',
+      const Color(0xFF0066FF),
+    );
     notifyListeners();
   }
 
@@ -476,7 +687,8 @@ class GymState extends ChangeNotifier {
 
     final payment = member.paymentHistory[pIndex];
     final updatedPayment = payment.copyWith(state: 'approved');
-    final updatedHistory = List<PaymentRecord>.from(member.paymentHistory)..[pIndex] = updatedPayment;
+    final updatedHistory = List<PaymentRecord>.from(member.paymentHistory)
+      ..[pIndex] = updatedPayment;
 
     _members[mIndex] = member.copyWith(
       paymentHistory: updatedHistory,
@@ -484,7 +696,12 @@ class GymState extends ChangeNotifier {
       lastSeen: 'Hoy',
     );
 
-    _addLog('Admin', 'Aprobó pago', 'Pago $paymentId de ${member.name} aprobado. Membresía activada.', const Color(0xFF00B85C));
+    _addLog(
+      'Admin',
+      'Aprobó pago',
+      'Pago $paymentId de ${member.name} aprobado. Membresía activada.',
+      const Color(0xFF00B85C),
+    );
     notifyListeners();
   }
 
@@ -498,11 +715,17 @@ class GymState extends ChangeNotifier {
 
     final payment = member.paymentHistory[pIndex];
     final updatedPayment = payment.copyWith(state: 'rejected');
-    final updatedHistory = List<PaymentRecord>.from(member.paymentHistory)..[pIndex] = updatedPayment;
+    final updatedHistory = List<PaymentRecord>.from(member.paymentHistory)
+      ..[pIndex] = updatedPayment;
 
     _members[mIndex] = member.copyWith(paymentHistory: updatedHistory);
 
-    _addLog('Admin', 'Rechazó pago', 'Pago $paymentId de ${member.name} rechazado.', Colors.red);
+    _addLog(
+      'Admin',
+      'Rechazó pago',
+      'Pago $paymentId de ${member.name} rechazado.',
+      Colors.red,
+    );
     notifyListeners();
   }
 
@@ -519,16 +742,10 @@ class GymState extends ChangeNotifier {
         'monto': price.toString(),
         'metodo': method,
         'planNombre': planName,
-        'file': MultipartFile.fromBytes(
-          fileBytes,
-          filename: fileName,
-        ),
+        'file': MultipartFile.fromBytes(fileBytes, filename: fileName),
       });
 
-      await ApiClient().dio.post(
-        '/payments/upload-receipt',
-        data: formData,
-      );
+      await ApiClient().dio.post('/payments/upload-receipt', data: formData);
 
       // Reload auth info to refresh state
       await checkAuth();
@@ -558,12 +775,9 @@ class GymState extends ChangeNotifier {
     try {
       await ApiClient().dio.post(
         '/payments/$paymentId/resolve',
-        data: {
-          'status': status,
-          'comments': comments,
-        },
+        data: {'status': status, 'comments': comments},
       );
-      
+
       // Reload auth / local state if needed
       await checkAuth();
       return true;
@@ -599,13 +813,15 @@ class GymState extends ChangeNotifier {
         ...?(payments == null ? null : {'payments': payments}),
       };
 
-      await ApiClient().dio.post(
-        '/payments/pos-charge',
-        data: data,
-      );
-      
+      await ApiClient().dio.post('/payments/pos-charge', data: data);
+
       // Update local state by adding log
-      _addLog('Caja', 'Cobró POS (API)', 'Cobró S/ $total a DNI $memberDni via $paymentMethod', const Color(0xFF00B85C));
+      _addLog(
+        'Caja',
+        'Cobró POS (API)',
+        'Cobró S/ $total a DNI $memberDni via $paymentMethod',
+        const Color(0xFF00B85C),
+      );
       notifyListeners();
       return true;
     } catch (e) {
@@ -616,7 +832,10 @@ class GymState extends ChangeNotifier {
 
   // --- Turnos y Sesiones de Caja ---
 
-  Future<Map<String, dynamic>?> openCajaBackend(double montoApertura, String? observaciones) async {
+  Future<Map<String, dynamic>?> openCajaBackend(
+    double montoApertura,
+    String? observaciones,
+  ) async {
     try {
       final response = await ApiClient().dio.post(
         '/payments/caja/open',
@@ -625,7 +844,12 @@ class GymState extends ChangeNotifier {
           'observaciones': observaciones ?? '',
         },
       );
-      _addLog('Caja', 'Apertura de Caja (API)', 'Abrió caja con saldo S/ $montoApertura', const Color(0xFF0066FF));
+      _addLog(
+        'Caja',
+        'Apertura de Caja (API)',
+        'Abrió caja con saldo S/ $montoApertura',
+        const Color(0xFF0066FF),
+      );
       notifyListeners();
       return response.data as Map<String, dynamic>?;
     } catch (e) {
@@ -660,7 +884,12 @@ class GymState extends ChangeNotifier {
           'descripcionAdicional': descripcionAdicional ?? '',
         },
       );
-      _addLog('Caja', 'Egreso de Caja (API)', 'Registró egreso de S/ $monto por: $motivo', Colors.red);
+      _addLog(
+        'Caja',
+        'Egreso de Caja (API)',
+        'Registró egreso de S/ $monto por: $motivo',
+        Colors.red,
+      );
       notifyListeners();
       return response.data as Map<String, dynamic>?;
     } catch (e) {
@@ -698,7 +927,12 @@ class GymState extends ChangeNotifier {
         },
       );
       final diferencia = response.data['diferencia'] ?? 0.0;
-      _addLog('Caja', 'Cierre de Caja (API)', 'Cerró caja. Diferencia: S/ $diferencia', const Color(0xFF5C5C5C));
+      _addLog(
+        'Caja',
+        'Cierre de Caja (API)',
+        'Cerró caja. Diferencia: S/ $diferencia',
+        const Color(0xFF5C5C5C),
+      );
       notifyListeners();
       return response.data as Map<String, dynamic>?;
     } catch (e) {
@@ -711,6 +945,7 @@ class GymState extends ChangeNotifier {
 
   Future<Map<String, dynamic>?> registerMembershipSaleBackend({
     required String userId,
+    String? planId,
     required String planNombre,
     required int duracionDias,
     required double monto,
@@ -723,25 +958,34 @@ class GymState extends ChangeNotifier {
     String? observaciones,
   }) async {
     try {
+      final data = {
+        'userId': userId,
+        'planNombre': planNombre,
+        'duracionDias': duracionDias,
+        'monto': monto,
+        'descuentoPorcentaje': descuentoPorcentaje,
+        'descuentoMonto': descuentoMonto,
+        'ventaToken': ventaToken,
+        'pagos': pagos,
+        'fechaInicio': fechaInicio,
+        'fechaVencimiento': fechaVencimiento,
+        'observaciones': observaciones ?? '',
+      };
+      if (planId != null) {
+        data['planId'] = planId;
+      }
       final response = await ApiClient().dio.post(
         '/payments/membership-sale',
-        data: {
-          'userId': userId,
-          'planNombre': planNombre,
-          'duracionDias': duracionDias,
-          'monto': monto,
-          'descuentoPorcentaje': descuentoPorcentaje,
-          'descuentoMonto': descuentoMonto,
-          'ventaToken': ventaToken,
-          'pagos': pagos,
-          'fechaInicio': fechaInicio,
-          'fechaVencimiento': fechaVencimiento,
-          'observaciones': observaciones ?? '',
-        },
+        data: data,
       );
       final plan = response.data['planNombre'] ?? planNombre;
       final pagado = response.data['montoPagado'] ?? monto;
-      _addLog('Caja', 'Venta Membresía (API)', 'Membresía $plan registrada. Monto: S/ $pagado', const Color(0xFF00B85C));
+      _addLog(
+        'Caja',
+        'Venta Membresía (API)',
+        'Membresía $plan registrada. Monto: S/ $pagado',
+        const Color(0xFF00B85C),
+      );
       notifyListeners();
       return response.data as Map<String, dynamic>?;
     } catch (e) {
@@ -752,15 +996,15 @@ class GymState extends ChangeNotifier {
 
   // --- Búsqueda de Socios por Relevancia ---
 
-  Future<List<dynamic>> searchMembersBackend(String query, {int page = 1, int limit = 20}) async {
+  Future<List<dynamic>> searchMembersBackend(
+    String query, {
+    int page = 1,
+    int limit = 20,
+  }) async {
     try {
       final response = await ApiClient().dio.get(
         '/members/search',
-        queryParameters: {
-          'q': query,
-          'page': page,
-          'limit': limit,
-        },
+        queryParameters: {'q': query, 'page': page, 'limit': limit},
       );
       return response.data as List;
     } catch (e) {
@@ -811,7 +1055,8 @@ class GymState extends ChangeNotifier {
         },
       );
       final verdict = response.data['verdict'] as String? ?? 'RED';
-      final reason = response.data['reason'] as String? ?? 'Error de validación';
+      final reason =
+          response.data['reason'] as String? ?? 'Error de validación';
       final memberJson = response.data['member'] as Map<String, dynamic>?;
 
       final Color logColor = verdict == 'GREEN'
@@ -819,7 +1064,12 @@ class GymState extends ChangeNotifier {
           : (verdict == 'AMBER' ? const Color(0xFFFFB300) : Colors.red);
 
       final fullName = memberJson?['fullName'] as String? ?? 'Socio';
-      _addLog('Biometría', 'Ingreso Huella (API)', '$fullName: $reason', logColor);
+      _addLog(
+        'Biometría',
+        'Ingreso Huella (API)',
+        '$fullName: $reason',
+        logColor,
+      );
       notifyListeners();
 
       return response.data as Map<String, dynamic>?;
@@ -849,7 +1099,9 @@ class GymState extends ChangeNotifier {
         final prodIndex = _products.indexWhere((p) => p.name == name);
         if (prodIndex != -1) {
           final prod = _products[prodIndex];
-          _products[prodIndex] = prod.copyWith(stock: (prod.stock - qty).clamp(0, 9999));
+          _products[prodIndex] = prod.copyWith(
+            stock: (prod.stock - qty).clamp(0, 9999),
+          );
         }
       }
       _addLog(
@@ -877,20 +1129,24 @@ class GymState extends ChangeNotifier {
       // Check if it's a membership plan
       if (name.contains('Membresía') || name.contains('Plan')) {
         boughtMembership = true;
-        updatedHistory.add(PaymentRecord(
-          id: 'PAY-${DateTime.now().millisecondsSinceEpoch}',
-          planName: name,
-          price: price * qty,
-          date: _formatCurrentDate(),
-          method: methodStr,
-          state: 'approved',
-        ));
+        updatedHistory.add(
+          PaymentRecord(
+            id: 'PAY-${DateTime.now().millisecondsSinceEpoch}',
+            planName: name,
+            price: price * qty,
+            date: _formatCurrentDate(),
+            method: methodStr,
+            state: 'approved',
+          ),
+        );
       } else {
         // Decrease product stock
         final prodIndex = _products.indexWhere((p) => p.name == name);
         if (prodIndex != -1) {
           final prod = _products[prodIndex];
-          _products[prodIndex] = prod.copyWith(stock: (prod.stock - qty).clamp(0, 9999));
+          _products[prodIndex] = prod.copyWith(
+            stock: (prod.stock - qty).clamp(0, 9999),
+          );
         }
       }
     }
@@ -912,7 +1168,12 @@ class GymState extends ChangeNotifier {
   // --- CRUD members ---
   void addMember(MemberRecord member) {
     _members.add(member);
-    _addLog('Admin', 'Creó socio', 'Socio registrado: ${member.name} (DNI ${member.dni})', const Color(0xFF7A5AE0));
+    _addLog(
+      'Admin',
+      'Creó socio',
+      'Socio registrado: ${member.name} (DNI ${member.dni})',
+      const Color(0xFF7A5AE0),
+    );
     notifyListeners();
   }
 
@@ -920,7 +1181,12 @@ class GymState extends ChangeNotifier {
     final index = _members.indexWhere((m) => m.dni == dni);
     if (index != -1) {
       _members[index] = updated;
-      _addLog('Admin', 'Editó socio', 'Socio ${updated.name} actualizado.', const Color(0xFFFFB300));
+      _addLog(
+        'Admin',
+        'Editó socio',
+        'Socio ${updated.name} actualizado.',
+        const Color(0xFFFFB300),
+      );
       notifyListeners();
     }
   }
@@ -932,14 +1198,30 @@ class GymState extends ChangeNotifier {
     final member = _members[index];
     if (member.state == 'baja_logica') {
       // Restore to active or expired
-      final hasActivePayment = member.paymentHistory.any((p) => p.state == 'approved');
+      final hasActivePayment = member.paymentHistory.any(
+        (p) => p.state == 'approved',
+      );
       final restoredState = hasActivePayment ? 'active' : 'expired';
       _members[index] = member.copyWith(state: restoredState);
-      _addLog('Admin', 'Restauró socio', 'Usuario ${member.name} reactivado.', const Color(0xFF00B85C));
+      _addLog(
+        'Admin',
+        'Restauró socio',
+        'Usuario ${member.name} reactivado.',
+        const Color(0xFF00B85C),
+      );
     } else {
       // Soft-delete
-      _members[index] = member.copyWith(state: 'baja_logica', todayCheckIn: false, isActiveInGym: false);
-      _addLog('Admin', 'Baja lógica', 'Usuario ${member.name} desactivado (baja lógica).', const Color(0xFFFF7A1A));
+      _members[index] = member.copyWith(
+        state: 'baja_logica',
+        todayCheckIn: false,
+        isActiveInGym: false,
+      );
+      _addLog(
+        'Admin',
+        'Baja lógica',
+        'Usuario ${member.name} desactivado (baja lógica).',
+        const Color(0xFFFF7A1A),
+      );
     }
     notifyListeners();
   }
@@ -947,7 +1229,12 @@ class GymState extends ChangeNotifier {
   // --- CRUD products ---
   void addProduct(ProductItem product) {
     _products.add(product);
-    _addLog('Caja', 'Creó producto', 'Producto agregado: ${product.name} (Stock: ${product.stock})', const Color(0xFF0066FF));
+    _addLog(
+      'Caja',
+      'Creó producto',
+      'Producto agregado: ${product.name} (Stock: ${product.stock})',
+      const Color(0xFF0066FF),
+    );
     notifyListeners();
   }
 
@@ -955,7 +1242,12 @@ class GymState extends ChangeNotifier {
     final index = _products.indexWhere((p) => p.name == oldName);
     if (index != -1) {
       _products[index] = updated;
-      _addLog('Admin', 'Editó producto', 'Producto ${updated.name} modificado.', const Color(0xFFFFB300));
+      _addLog(
+        'Admin',
+        'Editó producto',
+        'Producto ${updated.name} modificado.',
+        const Color(0xFFFFB300),
+      );
       notifyListeners();
     }
   }
@@ -964,7 +1256,12 @@ class GymState extends ChangeNotifier {
     final index = _products.indexWhere((p) => p.name == productName);
     if (index != -1) {
       _products.removeAt(index);
-      _addLog('Admin', 'Eliminó producto', 'Eliminado definitivamente de inventario: $productName', Colors.red);
+      _addLog(
+        'Admin',
+        'Eliminó producto',
+        'Eliminado definitivamente de inventario: $productName',
+        Colors.red,
+      );
       notifyListeners();
     }
   }
@@ -983,7 +1280,12 @@ class GymState extends ChangeNotifier {
     }
 
     _cashiers[index] = cashier.copyWith(permissions: updatedPermissions);
-    _addLog('Admin', 'Permisos cajero', 'Modificó permisos de $cashierName: $permission', const Color(0xFF7A5AE0));
+    _addLog(
+      'Admin',
+      'Permisos cajero',
+      'Modificó permisos de $cashierName: $permission',
+      const Color(0xFF7A5AE0),
+    );
     notifyListeners();
   }
 
@@ -993,32 +1295,164 @@ class GymState extends ChangeNotifier {
 
     final cashier = _cashiers[index];
     _cashiers[index] = cashier.copyWith(active: !cashier.active);
-    _addLog('Admin', 'Estado cajero', '$cashierName marcado como ${!cashier.active ? 'inactivo' : 'activo'}', const Color(0xFF7A5AE0));
+    _addLog(
+      'Admin',
+      'Estado cajero',
+      '$cashierName marcado como ${!cashier.active ? 'inactivo' : 'activo'}',
+      const Color(0xFF7A5AE0),
+    );
     notifyListeners();
+  }
+
+  // --- Tenant settings and membership plans ---
+  Future<void> loadTenantSettings() async {
+    if (!isBackendMode) return;
+    try {
+      final response = await ApiClient().dio.get('/tenants/me');
+      _tenantSettings = TenantSettings.fromJson(
+        response.data as Map<String, dynamic>,
+      );
+      graceDays = _tenantSettings!.graceDays;
+      alertDays = _tenantSettings!.alertDays;
+      notifyListeners();
+    } catch (e) {
+      AppLogger.debug('Error loading tenant settings', e);
+    }
+  }
+
+  Future<void> saveTenantSettings({
+    String? name,
+    String? logoUrl,
+    String? address,
+    String? phone,
+    String? schedule,
+    String? description,
+    String? primaryColor,
+    String? secondaryColor,
+    String? accentColor,
+    int? graceDays,
+    int? alertDays,
+  }) async {
+    if (!isBackendMode) {
+      if (graceDays != null && alertDays != null) {
+        updateGymSettings(graceDays, alertDays);
+      }
+      return;
+    }
+    final data = <String, dynamic>{};
+    if (name != null) data['nombre'] = name;
+    if (logoUrl != null) data['logoUrl'] = logoUrl;
+    if (address != null) data['direccion'] = address;
+    if (phone != null) data['telefono'] = phone;
+    if (schedule != null) data['horario'] = schedule;
+    if (description != null) data['descripcion'] = description;
+    if (primaryColor != null) data['colorPrimario'] = primaryColor;
+    if (secondaryColor != null) data['colorSecundario'] = secondaryColor;
+    if (accentColor != null) data['colorAcento'] = accentColor;
+    if (graceDays != null) data['diasGracia'] = graceDays;
+    if (alertDays != null) data['diasAlertaVencimiento'] = alertDays;
+
+    final response = await ApiClient().dio.patch(
+      '/tenants/me/settings',
+      data: data,
+    );
+    _tenantSettings = TenantSettings.fromJson(
+      response.data as Map<String, dynamic>,
+    );
+    this.graceDays = _tenantSettings!.graceDays;
+    this.alertDays = _tenantSettings!.alertDays;
+    _addLog(
+      'Admin',
+      'Personalizacion tenant',
+      'Actualizo configuracion del gimnasio.',
+      const Color(0xFF7A5AE0),
+    );
+    notifyListeners();
+  }
+
+  Future<void> loadMembershipPlans({bool includeInactive = false}) async {
+    if (!isBackendMode) return;
+    try {
+      final response = await ApiClient().dio.get(
+        '/membership-plans',
+        queryParameters: {'includeInactive': includeInactive},
+      );
+      final items = (response.data as List)
+          .map((item) => MembershipPlan.fromJson(item as Map<String, dynamic>))
+          .toList();
+      _membershipPlans
+        ..clear()
+        ..addAll(items);
+      notifyListeners();
+    } catch (e) {
+      AppLogger.debug('Error loading membership plans', e);
+    }
+  }
+
+  Future<void> saveMembershipPlan({
+    String? id,
+    required String name,
+    required int durationDays,
+    required double price,
+    String? description,
+    String? color,
+    int order = 0,
+    bool active = true,
+  }) async {
+    final data = {
+      'nombre': name,
+      'descripcion': description ?? '',
+      'duracionDias': durationDays,
+      'precio': price,
+      'color': color ?? '#2F6BFF',
+      'orden': order,
+      'activo': active,
+    };
+    if (id == null || id.isEmpty) {
+      await ApiClient().dio.post('/membership-plans', data: data);
+    } else {
+      await ApiClient().dio.patch('/membership-plans/$id', data: data);
+    }
+    await loadMembershipPlans(includeInactive: true);
+  }
+
+  Future<void> deactivateMembershipPlan(String id) async {
+    await ApiClient().dio.delete('/membership-plans/$id');
+    await loadMembershipPlans(includeInactive: true);
   }
 
   // --- Settings ---
   void updateGymSettings(int graceDays, int alertDays) {
     this.graceDays = graceDays;
     this.alertDays = alertDays;
-    _addLog('Admin', 'Ajustes gimnasio', 'Días gracia: $graceDays, alertas: $alertDays', const Color(0xFF7A5AE0));
+    _addLog(
+      'Admin',
+      'Ajustes gimnasio',
+      'Días gracia: $graceDays, alertas: $alertDays',
+      const Color(0xFF7A5AE0),
+    );
     notifyListeners();
   }
-
-
 
   // --- Observations ---
   void addObservation(String category, String description, String memberName) {
     final id = 'OBS-${DateTime.now().millisecondsSinceEpoch}';
     final date = _formatCurrentDate();
-    _observations.add(GymObservation(
-      id: id,
-      memberName: memberName,
-      category: category,
-      description: description,
-      date: date,
-    ));
-    _addLog('Socio', 'Reportó problema', 'Socio $memberName reportó en $category: $description', const Color(0xFFFF7A1A));
+    _observations.add(
+      GymObservation(
+        id: id,
+        memberName: memberName,
+        category: category,
+        description: description,
+        date: date,
+      ),
+    );
+    _addLog(
+      'Socio',
+      'Reportó problema',
+      'Socio $memberName reportó en $category: $description',
+      const Color(0xFFFF7A1A),
+    );
     notifyListeners();
   }
 
@@ -1046,25 +1480,32 @@ class GymState extends ChangeNotifier {
         if (tag == 'AVISO' || tag == 'WARNING') severity = 'WARNING';
         if (tag == 'ALERTA' || tag == 'DANGER') severity = 'DANGER';
 
-        await ApiClient().dio.post('/announcements', data: {
-          'titulo': title,
-          'descripcion': detail,
-          'severidad': severity,
-        });
-        
+        await ApiClient().dio.post(
+          '/announcements',
+          data: {'titulo': title, 'descripcion': detail, 'severidad': severity},
+        );
+
         await loadAnnouncements();
-        _addLog('Admin', 'Creó anuncio (API)', 'Nuevo aviso [$severity]: $title', const Color(0xFF7A5AE0));
+        _addLog(
+          'Admin',
+          'Creó anuncio (API)',
+          'Nuevo aviso [$severity]: $title',
+          const Color(0xFF7A5AE0),
+        );
       } catch (e) {
         AppLogger.debug('Error creating announcement on backend', e);
       }
     } else {
-      _announcements.insert(0, Announcement(
-        tag: tag,
-        title: title,
-        detail: detail,
-        time: 'Ahora',
-      ));
-      _addLog('Admin', 'Creó anuncio', 'Nuevo aviso [$tag]: $title', const Color(0xFF7A5AE0));
+      _announcements.insert(
+        0,
+        Announcement(tag: tag, title: title, detail: detail, time: 'Ahora'),
+      );
+      _addLog(
+        'Admin',
+        'Creó anuncio',
+        'Nuevo aviso [$tag]: $title',
+        const Color(0xFF7A5AE0),
+      );
       notifyListeners();
     }
   }
@@ -1072,7 +1513,9 @@ class GymState extends ChangeNotifier {
   Future<void> dismissAnnouncement(String key) async {
     try {
       final box = Hive.box('gym_cache');
-      final List<dynamic> dismissed = List.from(box.get('dismissed_banner_ids', defaultValue: []));
+      final List<dynamic> dismissed = List.from(
+        box.get('dismissed_banner_ids', defaultValue: []),
+      );
       if (!dismissed.contains(key)) {
         dismissed.add(key);
         await box.put('dismissed_banner_ids', dismissed);
@@ -1084,14 +1527,22 @@ class GymState extends ChangeNotifier {
   }
 
   // --- Helpers ---
-  void _addLog(String actor, String action, String detail, [Color color = const Color(0xFF5C5C5C)]) {
-    _auditLogs.insert(0, AuditEntry(
-      time: _formatCurrentTime(),
-      action: action,
-      detail: detail,
-      actor: actor,
-      color: color,
-    ));
+  void _addLog(
+    String actor,
+    String action,
+    String detail, [
+    Color color = const Color(0xFF5C5C5C),
+  ]) {
+    _auditLogs.insert(
+      0,
+      AuditEntry(
+        time: _formatCurrentTime(),
+        action: action,
+        detail: detail,
+        actor: actor,
+        color: color,
+      ),
+    );
   }
 
   String _formatCurrentTime() {
@@ -1105,55 +1556,206 @@ class GymState extends ChangeNotifier {
   }
 
   String _getMonthName(int month) {
-    const months = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+    const months = [
+      'ene',
+      'feb',
+      'mar',
+      'abr',
+      'may',
+      'jun',
+      'jul',
+      'ago',
+      'sep',
+      'oct',
+      'nov',
+      'dic',
+    ];
     return months[month - 1];
   }
 
   void _initializeData() {
     // SaaS clients
     _saClients.addAll([
-      SaaSClient(id: 'gym_santiago', name: 'SAS Gym Santiago', logo: '🏋️', location: 'Av. Providencia, Santiago', membersCount: '154', active: true),
-      SaaSClient(id: 'gym_lima', name: 'SAS Gym Lima Centro', logo: '💪', location: 'Jr. Carabaya, Lima', membersCount: '89', active: true),
-      SaaSClient(id: 'gym_bogota', name: 'SAS Gym Bogotá Norte', logo: '⚡', location: 'Cl. 85, Bogotá', membersCount: '124', active: false),
+      SaaSClient(
+        id: 'gym_santiago',
+        name: 'SAS Gym Santiago',
+        logo: '🏋️',
+        location: 'Av. Providencia, Santiago',
+        membersCount: '154',
+        active: true,
+      ),
+      SaaSClient(
+        id: 'gym_lima',
+        name: 'SAS Gym Lima Centro',
+        logo: '💪',
+        location: 'Jr. Carabaya, Lima',
+        membersCount: '89',
+        active: true,
+      ),
+      SaaSClient(
+        id: 'gym_bogota',
+        name: 'SAS Gym Bogotá Norte',
+        logo: '⚡',
+        location: 'Cl. 85, Bogotá',
+        membersCount: '124',
+        active: false,
+      ),
     ]);
 
     // Initial products
     _products.addAll([
-      ProductItem(name: 'Botella de agua 600ml', category: 'Bebidas', price: 3.0, stock: 124, icon: '💧'),
-      ProductItem(name: 'Proteína whey · porción', category: 'Suplementos', price: 12.0, stock: 38, icon: '💪'),
-      ProductItem(name: 'Pre-entreno · scoop', category: 'Suplementos', price: 8.0, stock: 22, icon: '⚡'),
-      ProductItem(name: 'Barra energética', category: 'Snacks', price: 5.0, stock: 56, icon: '🍫'),
-      ProductItem(name: 'Polo oficial SaaaS', category: 'Merch', price: 45.0, stock: 18, icon: '👕'),
-      ProductItem(name: 'Toalla deportiva', category: 'Accesorios', price: 15.0, stock: 12, icon: '🏃'),
+      ProductItem(
+        name: 'Botella de agua 600ml',
+        category: 'Bebidas',
+        price: 3.0,
+        stock: 124,
+        icon: '💧',
+      ),
+      ProductItem(
+        name: 'Proteína whey · porción',
+        category: 'Suplementos',
+        price: 12.0,
+        stock: 38,
+        icon: '💪',
+      ),
+      ProductItem(
+        name: 'Pre-entreno · scoop',
+        category: 'Suplementos',
+        price: 8.0,
+        stock: 22,
+        icon: '⚡',
+      ),
+      ProductItem(
+        name: 'Barra energética',
+        category: 'Snacks',
+        price: 5.0,
+        stock: 56,
+        icon: '🍫',
+      ),
+      ProductItem(
+        name: 'Polo oficial SaaaS',
+        category: 'Merch',
+        price: 45.0,
+        stock: 18,
+        icon: '👕',
+      ),
+      ProductItem(
+        name: 'Toalla deportiva',
+        category: 'Accesorios',
+        price: 15.0,
+        stock: 12,
+        icon: '🏃',
+      ),
     ]);
 
     // Initial cashiers
     _cashiers.addAll([
-      CashierAccount(name: 'Mariana Quispe', shift: '06:00 - 14:00', permissions: ['Cobros', 'Asistencia', 'Ventas', 'Productos', 'Usuarios'], active: true),
-      CashierAccount(name: 'Luis Yupanqui', shift: '14:00 - 22:00', permissions: ['Cobros', 'Asistencia', 'Ventas', 'Productos'], active: true),
-      CashierAccount(name: 'Valeria Ruiz', shift: '18:00 - 22:00', permissions: ['Cobros', 'Usuarios'], active: false),
+      CashierAccount(
+        name: 'Mariana Quispe',
+        shift: '06:00 - 14:00',
+        permissions: [
+          'Cobros',
+          'Asistencia',
+          'Ventas',
+          'Productos',
+          'Usuarios',
+        ],
+        active: true,
+      ),
+      CashierAccount(
+        name: 'Luis Yupanqui',
+        shift: '14:00 - 22:00',
+        permissions: ['Cobros', 'Asistencia', 'Ventas', 'Productos'],
+        active: true,
+      ),
+      CashierAccount(
+        name: 'Valeria Ruiz',
+        shift: '18:00 - 22:00',
+        permissions: ['Cobros', 'Usuarios'],
+        active: false,
+      ),
     ]);
 
     // Initial announcements
     _announcements.addAll([
-      Announcement(tag: 'EVENTO', title: 'Clases gratis sábado', detail: 'Funcional al aire libre 8am · Parque Kennedy', time: 'Hace 2h'),
-      Announcement(tag: 'AVISO', title: 'Mantenimiento jueves', detail: 'Máquina Smith fuera de servicio de 6 a 9pm', time: 'Ayer'),
+      Announcement(
+        tag: 'EVENTO',
+        title: 'Clases gratis sábado',
+        detail: 'Funcional al aire libre 8am · Parque Kennedy',
+        time: 'Hace 2h',
+      ),
+      Announcement(
+        tag: 'AVISO',
+        title: 'Mantenimiento jueves',
+        detail: 'Máquina Smith fuera de servicio de 6 a 9pm',
+        time: 'Ayer',
+      ),
     ]);
 
     // Initial observations / complaints
     _observations.addAll([
-      GymObservation(id: 'OBS-1', memberName: 'Diego Castro', category: 'Equipamiento', description: 'La polea alta del lado izquierdo suena extraño y vibra mucho.', date: '20 de may'),
-      GymObservation(id: 'OBS-2', memberName: 'Rosa Mendieta', category: 'Limpieza', description: 'Falta jabón líquido en el baño de mujeres del segundo piso.', date: '19 de may'),
+      GymObservation(
+        id: 'OBS-1',
+        memberName: 'Diego Castro',
+        category: 'Equipamiento',
+        description:
+            'La polea alta del lado izquierdo suena extraño y vibra mucho.',
+        date: '20 de may',
+      ),
+      GymObservation(
+        id: 'OBS-2',
+        memberName: 'Rosa Mendieta',
+        category: 'Limpieza',
+        description:
+            'Falta jabón líquido en el baño de mujeres del segundo piso.',
+        date: '19 de may',
+      ),
     ]);
 
     // Audit logs
     _auditLogs.addAll([
-      AuditEntry(time: '11:30', action: 'Cobró membresía', detail: 'Rosa Mendieta · S/ 120 · Yape', actor: 'Caja · Mariana Q.', color: const Color(0xFF00B85C)),
-      AuditEntry(time: '10:45', action: 'Creó cajero', detail: 'Nuevo usuario de caja con turno 06:00 - 14:00', actor: 'Admin · Sandra A.', color: const Color(0xFF7A5AE0)),
-      AuditEntry(time: '10:22', action: 'Actualizó precio', detail: 'Whey porción S/ 12 → S/ 13', actor: 'Admin · Sandra A.', color: const Color(0xFF7A5AE0)),
-      AuditEntry(time: '09:48', action: 'Baja lógica', detail: 'Usuario Pedro Quispe desactivado sin borrar historial', actor: 'Caja · Mariana Q.', color: const Color(0xFFFF7A1A)),
-      AuditEntry(time: '09:14', action: 'Editó usuario', detail: 'Ana Torres · celular actualizado', actor: 'Caja · Mariana Q.', color: const Color(0xFFFFB300)),
-      AuditEntry(time: '08:42', action: 'Publicó rutina', detail: 'Push · Pecho + Hombros a 3 alumnos', actor: 'Trainer · Carlos M.', color: const Color(0xFF0066FF)),
+      AuditEntry(
+        time: '11:30',
+        action: 'Cobró membresía',
+        detail: 'Rosa Mendieta · S/ 120 · Yape',
+        actor: 'Caja · Mariana Q.',
+        color: const Color(0xFF00B85C),
+      ),
+      AuditEntry(
+        time: '10:45',
+        action: 'Creó cajero',
+        detail: 'Nuevo usuario de caja con turno 06:00 - 14:00',
+        actor: 'Admin · Sandra A.',
+        color: const Color(0xFF7A5AE0),
+      ),
+      AuditEntry(
+        time: '10:22',
+        action: 'Actualizó precio',
+        detail: 'Whey porción S/ 12 → S/ 13',
+        actor: 'Admin · Sandra A.',
+        color: const Color(0xFF7A5AE0),
+      ),
+      AuditEntry(
+        time: '09:48',
+        action: 'Baja lógica',
+        detail: 'Usuario Pedro Quispe desactivado sin borrar historial',
+        actor: 'Caja · Mariana Q.',
+        color: const Color(0xFFFF7A1A),
+      ),
+      AuditEntry(
+        time: '09:14',
+        action: 'Editó usuario',
+        detail: 'Ana Torres · celular actualizado',
+        actor: 'Caja · Mariana Q.',
+        color: const Color(0xFFFFB300),
+      ),
+      AuditEntry(
+        time: '08:42',
+        action: 'Publicó rutina',
+        detail: 'Push · Pecho + Hombros a 3 alumnos',
+        actor: 'Trainer · Carlos M.',
+        color: const Color(0xFF0066FF),
+      ),
     ]);
 
     // Initial members with richer data
@@ -1170,11 +1772,31 @@ class GymState extends ChangeNotifier {
         state: 'active',
         assignedTrainer: 'Carlos M.',
         isActiveInGym: true,
-        physicalMeasurements: {'peso': 78.5, 'altura': 1.78, 'pecho': 98.0, 'cintura': 82.0, 'cadera': 94.0},
+        physicalMeasurements: {
+          'peso': 78.5,
+          'altura': 1.78,
+          'pecho': 98.0,
+          'cintura': 82.0,
+          'cadera': 94.0,
+        },
         progressImages: [],
         paymentHistory: [
-          PaymentRecord(id: 'PAY-101', planName: 'Plan Mensual Oro', price: 150.0, date: '01 de may', method: 'Yape', state: 'approved'),
-          PaymentRecord(id: 'PAY-100', planName: 'Plan Mensual Oro', price: 150.0, date: '01 de abr', method: 'Yape', state: 'approved'),
+          PaymentRecord(
+            id: 'PAY-101',
+            planName: 'Plan Mensual Oro',
+            price: 150.0,
+            date: '01 de may',
+            method: 'Yape',
+            state: 'approved',
+          ),
+          PaymentRecord(
+            id: 'PAY-100',
+            planName: 'Plan Mensual Oro',
+            price: 150.0,
+            date: '01 de abr',
+            method: 'Yape',
+            state: 'approved',
+          ),
         ],
       ),
       MemberRecord(
@@ -1189,10 +1811,23 @@ class GymState extends ChangeNotifier {
         state: 'active',
         assignedTrainer: 'Carlos M.',
         isActiveInGym: false,
-        physicalMeasurements: {'peso': 62.1, 'altura': 1.64, 'pecho': 88.0, 'cintura': 68.0, 'cadera': 99.0},
+        physicalMeasurements: {
+          'peso': 62.1,
+          'altura': 1.64,
+          'pecho': 88.0,
+          'cintura': 68.0,
+          'cadera': 99.0,
+        },
         progressImages: [],
         paymentHistory: [
-          PaymentRecord(id: 'PAY-102', planName: 'Plan Trimestral Platinium', price: 400.0, date: '15 de feb', method: 'Tarjeta', state: 'approved'),
+          PaymentRecord(
+            id: 'PAY-102',
+            planName: 'Plan Trimestral Platinium',
+            price: 400.0,
+            date: '15 de feb',
+            method: 'Tarjeta',
+            state: 'approved',
+          ),
         ],
       ),
 
@@ -1208,10 +1843,23 @@ class GymState extends ChangeNotifier {
         state: 'expired',
         assignedTrainer: 'Carlos M.',
         isActiveInGym: false,
-        physicalMeasurements: {'peso': 89.2, 'altura': 1.82, 'pecho': 106.0, 'cintura': 88.0, 'cadera': 101.0},
+        physicalMeasurements: {
+          'peso': 89.2,
+          'altura': 1.82,
+          'pecho': 106.0,
+          'cintura': 88.0,
+          'cadera': 101.0,
+        },
         progressImages: [],
         paymentHistory: [
-          PaymentRecord(id: 'PAY-103', planName: 'Plan Mensual Plata', price: 120.0, date: '10 de mar', method: 'Plin', state: 'approved'),
+          PaymentRecord(
+            id: 'PAY-103',
+            planName: 'Plan Mensual Plata',
+            price: 120.0,
+            date: '10 de mar',
+            method: 'Plin',
+            state: 'approved',
+          ),
         ],
       ),
       MemberRecord(
@@ -1226,10 +1874,23 @@ class GymState extends ChangeNotifier {
         state: 'active',
         assignedTrainer: 'Carlos M.',
         isActiveInGym: false,
-        physicalMeasurements: {'peso': 55.4, 'altura': 1.58, 'pecho': 84.0, 'cintura': 64.0, 'cadera': 90.0},
+        physicalMeasurements: {
+          'peso': 55.4,
+          'altura': 1.58,
+          'pecho': 84.0,
+          'cintura': 64.0,
+          'cadera': 90.0,
+        },
         progressImages: [],
         paymentHistory: [
-          PaymentRecord(id: 'PAY-104', planName: 'Plan Mensual Plata', price: 120.0, date: '05 de may', method: 'Yape', state: 'approved'),
+          PaymentRecord(
+            id: 'PAY-104',
+            planName: 'Plan Mensual Plata',
+            price: 120.0,
+            date: '05 de may',
+            method: 'Yape',
+            state: 'approved',
+          ),
         ],
       ),
       MemberRecord(
@@ -1244,10 +1905,23 @@ class GymState extends ChangeNotifier {
         state: 'grace',
         assignedTrainer: 'Carlos M.',
         isActiveInGym: false,
-        physicalMeasurements: {'peso': 58.0, 'altura': 1.60, 'pecho': 86.0, 'cintura': 67.0, 'cadera': 92.0},
+        physicalMeasurements: {
+          'peso': 58.0,
+          'altura': 1.60,
+          'pecho': 86.0,
+          'cintura': 67.0,
+          'cadera': 92.0,
+        },
         progressImages: [],
         paymentHistory: [
-          PaymentRecord(id: 'PAY-105', planName: 'Plan Mensual Oro', price: 150.0, date: '20 de abr', method: 'Tarjeta', state: 'approved'),
+          PaymentRecord(
+            id: 'PAY-105',
+            planName: 'Plan Mensual Oro',
+            price: 150.0,
+            date: '20 de abr',
+            method: 'Tarjeta',
+            state: 'approved',
+          ),
         ],
       ),
       MemberRecord(
@@ -1262,10 +1936,23 @@ class GymState extends ChangeNotifier {
         state: 'baja_logica',
         assignedTrainer: 'Carlos M.',
         isActiveInGym: false,
-        physicalMeasurements: {'peso': 73.0, 'altura': 1.70, 'pecho': 92.0, 'cintura': 85.0, 'cadera': 96.0},
+        physicalMeasurements: {
+          'peso': 73.0,
+          'altura': 1.70,
+          'pecho': 92.0,
+          'cintura': 85.0,
+          'cadera': 96.0,
+        },
         progressImages: [],
         paymentHistory: [
-          PaymentRecord(id: 'PAY-106', planName: 'Plan Mensual Plata', price: 120.0, date: '01 de may', method: 'Yape', state: 'approved'),
+          PaymentRecord(
+            id: 'PAY-106',
+            planName: 'Plan Mensual Plata',
+            price: 120.0,
+            date: '01 de may',
+            method: 'Yape',
+            state: 'approved',
+          ),
         ],
       ),
       MemberRecord(
@@ -1300,7 +1987,9 @@ class GymState extends ChangeNotifier {
       _updateConnectionStatus(hasConnection);
     });
 
-    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((event) {
+    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((
+      event,
+    ) {
       final hasConnection = !event.contains(ConnectivityResult.none);
       _updateConnectionStatus(hasConnection);
     });
@@ -1309,10 +1998,16 @@ class GymState extends ChangeNotifier {
   void _updateConnectionStatus(bool online) {
     if (_isOnline != online) {
       _isOnline = online;
-      _addLog('Red', 'Estado de Conexión', _isOnline ? 'Online (Conectado)' : 'Offline (Desconectado)', _isOnline ? Colors.green : Colors.red);
+      _addLog(
+        'Red',
+        'Estado de Conexión',
+        _isOnline ? 'Online (Conectado)' : 'Offline (Desconectado)',
+        _isOnline ? Colors.green : Colors.red,
+      );
       notifyListeners();
       if (_isOnline) {
         if (isBackendMode) {
+          _syncThemePreferenceIfNeeded();
           syncOfflineLogs();
           SyncQueueService.processQueue();
         }
@@ -1322,6 +2017,8 @@ class GymState extends ChangeNotifier {
 
   @override
   void dispose() {
+    uiPreferences.removeListener(_relayUiPreferenceChanges);
+    uiPreferences.dispose();
     _connectivitySubscription?.cancel();
     _closeSocket();
     super.dispose();
@@ -1330,14 +2027,19 @@ class GymState extends ChangeNotifier {
   // WebSocket Connection
   void _connectSocket() {
     _closeSocket();
-    
+
     _webSocketService.onTenantSuspended = () async {
       final tenantId = await SecureStorage.getTenantId();
       if (tenantId != null) {
         final index = _saClients.indexWhere((c) => c.id == tenantId);
         if (index != -1) {
           _saClients[index] = _saClients[index].copyWith(active: false);
-          _addLog('SaaS', 'Suscripción Bloqueada', 'El gimnasio fue suspendido por administración en tiempo real.', Colors.red);
+          _addLog(
+            'SaaS',
+            'Suscripción Bloqueada',
+            'El gimnasio fue suspendido por administración en tiempo real.',
+            Colors.red,
+          );
           notifyListeners();
         }
       }
@@ -1353,7 +2055,7 @@ class GymState extends ChangeNotifier {
   // Carga de Rutinas
   Future<Map<String, dynamic>?> loadActiveRoutine() async {
     final box = Hive.box('gym_cache');
-    
+
     if (isBackendMode && _isOnline) {
       try {
         final response = await ApiClient().dio.get('/routines/active');
@@ -1383,24 +2085,39 @@ class GymState extends ChangeNotifier {
       if (_isOnline) {
         try {
           await ApiClient().dio.post('/members/workout-log', data: session);
-          _addLog('Entrenamiento', 'Log de esfuerzo', 'Sesión sincronizada con el servidor.', Colors.green);
+          _addLog(
+            'Entrenamiento',
+            'Log de esfuerzo',
+            'Sesión sincronizada con el servidor.',
+            Colors.green,
+          );
           return true;
         } catch (e) {
           AppLogger.debug('Error posting workout log, saving offline', e);
         }
       }
-      
+
       // Guardar en cola offline de Hive
       final box = Hive.box('gym_cache');
       final List<dynamic> queue = box.get('offline_workout_queue') ?? [];
       queue.add(session);
       await box.put('offline_workout_queue', queue);
-      _addLog('Entrenamiento', 'Log de esfuerzo (Offline)', 'Sin conexión. Sesión guardada localmente.', Colors.orange);
+      _addLog(
+        'Entrenamiento',
+        'Log de esfuerzo (Offline)',
+        'Sin conexión. Sesión guardada localmente.',
+        Colors.orange,
+      );
       notifyListeners();
       return false;
     } else {
       // Demo mode fallback
-      _addLog('Entrenamiento', 'Log de esfuerzo (Demo)', 'Sesión registrada en modo demo.', Colors.green);
+      _addLog(
+        'Entrenamiento',
+        'Log de esfuerzo (Demo)',
+        'Sesión registrada en modo demo.',
+        Colors.green,
+      );
       return true;
     }
   }
@@ -1410,8 +2127,10 @@ class GymState extends ChangeNotifier {
     final List<dynamic>? queue = box.get('offline_workout_queue');
     if (queue == null || queue.isEmpty) return;
 
-    AppLogger.debug('Sincronizando ${queue.length} logs de entrenamiento offline...');
-    
+    AppLogger.debug(
+      'Sincronizando ${queue.length} logs de entrenamiento offline...',
+    );
+
     final List<dynamic> remaining = [];
     for (var session in queue) {
       try {
@@ -1425,9 +2144,19 @@ class GymState extends ChangeNotifier {
 
     await box.put('offline_workout_queue', remaining);
     if (remaining.isEmpty) {
-      _addLog('Sincronización', 'Entrenamientos Offline', 'Todos los logs pendientes fueron enviados.', Colors.green);
+      _addLog(
+        'Sincronización',
+        'Entrenamientos Offline',
+        'Todos los logs pendientes fueron enviados.',
+        Colors.green,
+      );
     } else {
-      _addLog('Sincronización', 'Entrenamientos Offline', 'Fallo al enviar algunos logs (re-encolados).', Colors.orange);
+      _addLog(
+        'Sincronización',
+        'Entrenamientos Offline',
+        'Fallo al enviar algunos logs (re-encolados).',
+        Colors.orange,
+      );
     }
     notifyListeners();
   }
@@ -1440,14 +2169,25 @@ class GymState extends ChangeNotifier {
         final List<dynamic> data = response.data;
         _observations.clear();
         for (var item in data) {
-          _observations.add(GymObservation(
-            id: item['id'],
-            category: item['texto'].toString().split(']')[0].replaceAll('[', ''),
-            description: item['texto'].toString().split(']').skip(1).join(']'),
-            memberName: item['autor_rol'] == 'MEMBER' ? 'Socio' : 'Entrenador',
-            date: item['created_at'].toString().split('T')[0],
-            imageUrl: item['foto_url'],
-          ));
+          _observations.add(
+            GymObservation(
+              id: item['id'],
+              category: item['texto']
+                  .toString()
+                  .split(']')[0]
+                  .replaceAll('[', ''),
+              description: item['texto']
+                  .toString()
+                  .split(']')
+                  .skip(1)
+                  .join(']'),
+              memberName: item['autor_rol'] == 'MEMBER'
+                  ? 'Socio'
+                  : 'Entrenador',
+              date: item['created_at'].toString().split('T')[0],
+              imageUrl: item['foto_url'],
+            ),
+          );
         }
         notifyListeners();
       } catch (e) {
@@ -1509,10 +2249,7 @@ class GymState extends ChangeNotifier {
       try {
         final response = await ApiClient().dio.get(
           '/reports/audit-logs',
-          queryParameters: {
-            'page': _auditLogsPage,
-            'limit': 20,
-          },
+          queryParameters: {'page': _auditLogsPage, 'limit': 20},
         );
         final List<dynamic> data = response.data;
         if (data.length < 20) {
@@ -1525,13 +2262,22 @@ class GymState extends ChangeNotifier {
           final timeStr = createdAt != null
               ? createdAt.split('T').last.substring(0, 5)
               : _formatCurrentTime();
-          _auditLogs.add(AuditEntry(
-            time: timeStr,
-            actor: item['rol'] == 'SUPER_ADMIN' ? 'SuperAdmin' : (item['rol'] == 'ADMIN' ? 'Admin' : 'Cajero'),
-            action: '${item['entidad'].toString().toUpperCase()} - ${item['accion']}',
-            detail: item['detalles'] != null ? item['detalles'].toString() : 'Detalles de la operación',
-            color: item['accion'] == 'DELETE' ? Colors.red : (item['accion'] == 'POST' ? Colors.green : Colors.blue),
-          ));
+          _auditLogs.add(
+            AuditEntry(
+              time: timeStr,
+              actor: item['rol'] == 'SUPER_ADMIN'
+                  ? 'SuperAdmin'
+                  : (item['rol'] == 'ADMIN' ? 'Admin' : 'Cajero'),
+              action:
+                  '${item['entidad'].toString().toUpperCase()} - ${item['accion']}',
+              detail: item['detalles'] != null
+                  ? item['detalles'].toString()
+                  : 'Detalles de la operación',
+              color: item['accion'] == 'DELETE'
+                  ? Colors.red
+                  : (item['accion'] == 'POST' ? Colors.green : Colors.blue),
+            ),
+          );
         }
       } catch (e) {
         AppLogger.debug('Error loading audit logs', e);
@@ -1550,14 +2296,16 @@ class GymState extends ChangeNotifier {
         final List<dynamic> data = response.data;
         _saClients.clear();
         for (var item in data) {
-          _saClients.add(SaaSClient(
-            id: item['id'],
-            name: item['nombre'],
-            logo: item['logo_url'] ?? '🏋️',
-            location: item['direccion'] ?? 'Ubicación',
-            membersCount: '154',
-            active: item['activo'],
-          ));
+          _saClients.add(
+            SaaSClient(
+              id: item['id'],
+              name: item['nombre'],
+              logo: item['logo_url'] ?? '🏋️',
+              location: item['direccion'] ?? 'Ubicación',
+              membersCount: '154',
+              active: item['activo'],
+            ),
+          );
         }
         notifyListeners();
       } catch (e) {
@@ -1608,7 +2356,8 @@ class GymStateProvider extends InheritedNotifier<GymState> {
   });
 
   static GymState of(BuildContext context) {
-    final provider = context.dependOnInheritedWidgetOfExactType<GymStateProvider>();
+    final provider = context
+        .dependOnInheritedWidgetOfExactType<GymStateProvider>();
     assert(provider != null, 'No GymStateProvider found in context');
     return provider!.notifier!;
   }

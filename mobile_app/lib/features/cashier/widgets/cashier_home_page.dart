@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../models/gym_models.dart';
 import '../../../../data/gym_state.dart';
+import '../../../../theme/app_theme_tokens.dart';
 import '../../../../widgets/app_shell.dart';
 
 class CashierHomePage extends StatelessWidget {
@@ -15,7 +16,10 @@ class CashierHomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final myLogs = state.auditLogs.where((log) => log.actor.contains('Caja')).toList();
+    final colors = context.sasColors;
+    final myLogs = state.auditLogs
+        .where((log) => log.actor.contains('Caja'))
+        .toList();
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
@@ -23,8 +27,13 @@ class CashierHomePage extends StatelessWidget {
         RoleHeroHeader(
           palette: palette,
           title: 'Caja y Accesos',
-          subtitle: 'Valida ingresos, cobra operaciones y deja trazabilidad inmediata.',
-          trailing: StatusPill(label: 'TURNO EN CURSO', color: palette.accent, solid: true),
+          subtitle:
+              'Valida ingresos, cobra operaciones y deja trazabilidad inmediata.',
+          trailing: StatusPill(
+            label: 'TURNO EN CURSO',
+            color: palette.accent,
+            solid: true,
+          ),
         ),
         const SizedBox(height: 18),
         _TurnSummary(palette: palette, logs: myLogs),
@@ -56,46 +65,52 @@ class CashierHomePage extends StatelessWidget {
         const SectionHeader(title: 'Operación Auditada'),
         Container(
           padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFE6E2D8)),
-          ),
+          decoration: themedCardDecoration(context),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Row(
+              Row(
                 children: [
-                  Icon(Icons.security_rounded, color: Colors.blueGrey, size: 18),
-                  SizedBox(width: 8),
+                  Icon(Icons.security_rounded, color: colors.info, size: 18),
+                  const SizedBox(width: 8),
                   Text(
                     'Operas bajo perfil de Cajero Autorizado.',
-                    style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: Color(0xFF111111)),
+                    style: TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.bold,
+                      color: colors.textPrimary,
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: 8),
               Text(
                 'Todas las transacciones de ventas y aprobaciones de asistencia son registradas con tu firma digital en la bitácora global del administrador.',
-                style: TextStyle(fontSize: 12.5, color: Colors.black.withValues(alpha: 0.6), height: 1.4),
+                style: TextStyle(
+                  fontSize: 12.5,
+                  color: colors.textSecondary,
+                  height: 1.4,
+                ),
               ),
             ],
           ),
         ),
         const SizedBox(height: 24),
-        SectionHeader(title: 'Mis logs de auditoría', action: '${myLogs.length} hoy'),
+        SectionHeader(
+          title: 'Mis logs de auditoría',
+          action: '${myLogs.length} hoy',
+        ),
         if (myLogs.isEmpty)
           Container(
             padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFE6E2D8)),
-            ),
-            child: const Center(
+            decoration: themedCardDecoration(context),
+            child: Center(
               child: Text(
                 'No has registrado movimientos en este turno.',
-                style: TextStyle(color: Color(0xFF6E6E6E), fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: colors.textSecondary,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           )
@@ -105,7 +120,9 @@ class CashierHomePage extends StatelessWidget {
               return Padding(
                 padding: const EdgeInsets.only(bottom: 10),
                 child: LogTile(
-                  icon: entry.action.contains('Cobró') || entry.action.contains('Venta')
+                  icon:
+                      entry.action.contains('Cobró') ||
+                          entry.action.contains('Venta')
                       ? Icons.point_of_sale_rounded
                       : Icons.qr_code_scanner_rounded,
                   title: entry.action,
@@ -130,7 +147,10 @@ class _TurnSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final chargeLogs = logs.where((l) => l.action.contains('Cobró') || l.action.contains('Venta'));
+    final colors = context.sasColors;
+    final chargeLogs = logs.where(
+      (l) => l.action.contains('Cobró') || l.action.contains('Venta'),
+    );
     double revenue = 0;
     final reg = RegExp(r'S/\s*([0-9.]+)');
     for (var l in chargeLogs) {
@@ -142,24 +162,48 @@ class _TurnSummary extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: const Color(0xFF111111),
-        borderRadius: BorderRadius.circular(16),
-      ),
+      decoration: themedCardDecoration(context, color: colors.surfaceElevated),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Text('SALDO DEL TURNO', style: TextStyle(fontSize: 11, letterSpacing: 1.1, fontWeight: FontWeight.w900, color: palette.accent)),
+              Text(
+                'SALDO DEL TURNO',
+                style: TextStyle(
+                  fontSize: 11,
+                  letterSpacing: 1.1,
+                  fontWeight: FontWeight.w900,
+                  color: palette.accent,
+                ),
+              ),
               const Spacer(),
-              StatusPill(label: 'CIERRA 14:00', color: palette.accent, solid: true),
+              StatusPill(
+                label: 'CIERRA 14:00',
+                color: palette.accent,
+                solid: true,
+              ),
             ],
           ),
           const SizedBox(height: 12),
-          Text('S/ ${revenue.toStringAsFixed(2)}', style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: -0.8)),
+          Text(
+            'S/ ${revenue.toStringAsFixed(2)}',
+            style: TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.w900,
+              color: colors.textPrimary,
+              letterSpacing: -0.8,
+            ),
+          ),
           const SizedBox(height: 6),
-          Text('${chargeLogs.length} transacciones registradas en este turno.', style: const TextStyle(fontSize: 13, color: Color(0xFFB7B7B7), fontWeight: FontWeight.w500)),
+          Text(
+            '${chargeLogs.length} transacciones registradas en este turno.',
+            style: TextStyle(
+              fontSize: 13,
+              color: colors.textSecondary,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ],
       ),
     );

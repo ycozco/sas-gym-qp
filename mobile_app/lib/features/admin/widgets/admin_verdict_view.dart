@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../../models/gym_models.dart';
+import '../../../../theme/app_theme_tokens.dart';
 import '../../../../widgets/app_shell.dart';
 
 class AdminVerdictView extends StatefulWidget {
@@ -12,6 +13,7 @@ class AdminVerdictView extends StatefulWidget {
     required this.dni,
     required this.onBack,
     required this.onChargeDirect,
+    this.membershipPlans = const [],
     this.onCreateNewClient,
   });
 
@@ -21,6 +23,7 @@ class AdminVerdictView extends StatefulWidget {
   final String dni;
   final VoidCallback onBack;
   final Function(String dni, {String? planName, double? price}) onChargeDirect;
+  final List<MembershipPlan> membershipPlans;
   final Function(String)? onCreateNewClient;
 
   @override
@@ -57,6 +60,7 @@ class _AdminVerdictViewState extends State<AdminVerdictView> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.sasColors;
     Color bg;
     IconData icon;
     String statusTitle;
@@ -64,18 +68,18 @@ class _AdminVerdictViewState extends State<AdminVerdictView> {
     bool showDirectPlans = false;
 
     if (widget.result == 'granted') {
-      bg = const Color(0xFF00B85C); // Green
+      bg = colors.success;
       icon = Icons.check_circle_outline_rounded;
       statusTitle = 'ACCESO CONCEDIDO';
       statusSubtitle = 'Socio activo. El registro de asistencia fue grabado exitosamente.';
     } else if (widget.result == 'grace') {
-      bg = const Color(0xFFFFB300); // Yellow
+      bg = colors.warning;
       icon = Icons.warning_amber_rounded;
       statusTitle = 'INGRESO EN GRACIA';
       statusSubtitle = 'Check-in autorizado temporalmente en periodo de gracia. Se requiere renovación del plan.';
       showDirectPlans = widget.member != null;
     } else if (widget.result == 'denied') {
-      bg = const Color(0xFFFF3B30); // Red
+      bg = colors.danger;
       icon = Icons.cancel_outlined;
       statusTitle = 'ACCESO DENEGADO';
       if (widget.member != null) {
@@ -93,7 +97,7 @@ class _AdminVerdictViewState extends State<AdminVerdictView> {
       }
     } else {
       // not_found
-      bg = const Color(0xFF5C5C5C); // Grey
+      bg = colors.textSecondary;
       icon = Icons.search_off_rounded;
       statusTitle = 'DNI INVÁLIDO';
       statusSubtitle = 'DNI inválido - Usuario no registrado en este gimnasio.';
@@ -128,7 +132,7 @@ class _AdminVerdictViewState extends State<AdminVerdictView> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: colors.surface,
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
@@ -157,36 +161,36 @@ class _AdminVerdictViewState extends State<AdminVerdictView> {
                                 children: [
                                   Text(
                                     widget.member!.name,
-                                    style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w900, fontSize: 15.5),
+                                    style: TextStyle(color: colors.textPrimary, fontWeight: FontWeight.w900, fontSize: 15.5),
                                   ),
                                   const SizedBox(height: 3),
                                   Text(
                                     'DNI: ${widget.member!.dni}',
-                                    style: const TextStyle(color: Colors.grey, fontSize: 12.5, fontWeight: FontWeight.w600),
+                                    style: TextStyle(color: colors.textSecondary, fontSize: 12.5, fontWeight: FontWeight.w600),
                                   ),
                                 ],
                               ),
                             ),
                           ],
                         ),
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 12.0),
-                          child: Divider(height: 1, color: Color(0xFFE2DDD5)),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 12.0),
+                          child: Divider(height: 1, color: colors.border),
                         ),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text(
+                            Text(
                               'Estado:',
-                              style: TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.bold),
+                              style: TextStyle(color: colors.textSecondary, fontSize: 13, fontWeight: FontWeight.bold),
                             ),
                             StatusPill(
                               label: widget.member!.state == 'active'
                                   ? 'ACTIVO'
                                   : (widget.member!.state == 'grace' ? 'DÍAS DE GRACIA' : 'VENCIDO'),
                               color: widget.member!.state == 'active'
-                                  ? const Color(0xFF00B85C)
-                                  : (widget.member!.state == 'grace' ? const Color(0xFFFFB300) : Colors.red),
+                                  ? colors.success
+                                  : (widget.member!.state == 'grace' ? colors.warning : colors.danger),
                               solid: true,
                             ),
                           ],
@@ -195,13 +199,13 @@ class _AdminVerdictViewState extends State<AdminVerdictView> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text(
+                            Text(
                               'Plan Actual/Último:',
-                              style: TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.bold),
+                              style: TextStyle(color: colors.textSecondary, fontSize: 13, fontWeight: FontWeight.bold),
                             ),
                             Text(
                               widget.member!.goal.isNotEmpty ? widget.member!.goal : 'Sin Plan',
-                              style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 13.5),
+                              style: TextStyle(color: colors.textPrimary, fontWeight: FontWeight.bold, fontSize: 13.5),
                             ),
                           ],
                         ),
@@ -209,9 +213,9 @@ class _AdminVerdictViewState extends State<AdminVerdictView> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text(
+                            Text(
                               'Vigencia:',
-                              style: TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.bold),
+                              style: TextStyle(color: colors.textSecondary, fontSize: 13, fontWeight: FontWeight.bold),
                             ),
                             if (widget.member!.daysLeft != null)
                               Text(
@@ -220,16 +224,16 @@ class _AdminVerdictViewState extends State<AdminVerdictView> {
                                     : (widget.member!.daysLeft! == 0 ? 'Vence hoy' : 'Vencido hace ${widget.member!.daysLeft!.abs()} días'),
                                 style: TextStyle(
                                   color: widget.member!.daysLeft! > 0
-                                      ? const Color(0xFF00B85C)
-                                      : (widget.member!.daysLeft! == 0 ? Colors.amber : Colors.red),
+                                      ? colors.success
+                                      : (widget.member!.daysLeft! == 0 ? colors.warning : colors.danger),
                                   fontWeight: FontWeight.w900,
                                   fontSize: 13.5,
                                 ),
                               )
                             else
-                              const Text(
+                              Text(
                                 'Indeterminada',
-                                style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold, fontSize: 13),
+                                style: TextStyle(color: colors.textSecondary, fontWeight: FontWeight.bold, fontSize: 13),
                               ),
                           ],
                         ),
@@ -255,11 +259,12 @@ class _AdminVerdictViewState extends State<AdminVerdictView> {
                           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 0.5),
                         ),
                         const SizedBox(height: 10),
-                        _buildDirectPlanTile(context, 'Plan Mensual Oro', 150.0),
-                        const SizedBox(height: 6),
-                        _buildDirectPlanTile(context, 'Plan Mensual Plata', 120.0),
-                        const SizedBox(height: 6),
-                        _buildDirectPlanTile(context, 'Plan Trimestral Platinium', 400.0),
+                        ..._directPlans().expand(
+                          (plan) => [
+                            _buildDirectPlanTile(context, plan.name, plan.price),
+                            const SizedBox(height: 6),
+                          ],
+                        ),
                       ],
                     ),
                   ),
@@ -347,6 +352,16 @@ class _AdminVerdictViewState extends State<AdminVerdictView> {
         ),
       ),
     );
+  }
+
+  List<MembershipPlan> _directPlans() {
+    final activePlans = widget.membershipPlans.where((p) => p.active).toList();
+    if (activePlans.isNotEmpty) return activePlans.take(4).toList();
+    return const [
+      MembershipPlan(id: '', name: 'Plan Mensual Oro', durationDays: 30, price: 150),
+      MembershipPlan(id: '', name: 'Plan Mensual Plata', durationDays: 30, price: 120),
+      MembershipPlan(id: '', name: 'Plan Trimestral Platinium', durationDays: 90, price: 400),
+    ];
   }
 
   Widget _buildDirectPlanTile(BuildContext context, String name, double price) {

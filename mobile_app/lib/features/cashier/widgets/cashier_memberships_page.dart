@@ -461,16 +461,19 @@ class _CashierMembershipsPageState extends State<CashierMembershipsPage> {
   }
 
   void _showAssignPlanDialog(BuildContext context, MemberRecord member, {String? defaultPlan, double? defaultPrice}) {
-    final plansMap = {
-      'Plan Mensual Oro': 150.0,
-      'Plan Mensual Plata': 120.0,
-      'Plan Trimestral': 400.0,
-      'Pase por un Día': 25.0,
-    };
-    String selectedPlan = (defaultPlan != null && plansMap.containsKey(defaultPlan))
-        ? defaultPlan
-        : 'Plan Mensual Oro';
-    double price = defaultPrice ?? plansMap[selectedPlan]!;
+    final plans = widget.state.membershipPlans.isNotEmpty
+        ? widget.state.membershipPlans.where((p) => p.active).toList()
+        : const [
+            MembershipPlan(id: '', name: 'Plan Mensual Oro', durationDays: 30, price: 150),
+            MembershipPlan(id: '', name: 'Plan Mensual Plata', durationDays: 30, price: 120),
+            MembershipPlan(id: '', name: 'Plan Trimestral Platinium', durationDays: 90, price: 400),
+            MembershipPlan(id: '', name: 'Pase por un Dia', durationDays: 1, price: 25),
+          ];
+    MembershipPlan selectedPlan = plans.firstWhere(
+      (p) => p.name == defaultPlan,
+      orElse: () => plans.first,
+    );
+    double price = defaultPrice ?? selectedPlan.price;
     String paymentMethod = 'Efectivo';
 
     showDialog(
@@ -489,16 +492,21 @@ class _CashierMembershipsPageState extends State<CashierMembershipsPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   DropdownButtonFormField<String>(
-                    initialValue: selectedPlan,
+                    initialValue: selectedPlan.id.isNotEmpty ? selectedPlan.id : selectedPlan.name,
                     decoration: const InputDecoration(labelText: 'Plan de Membresía'),
-                    items: plansMap.keys.map((p) {
-                      return DropdownMenuItem(value: p, child: Text('$p (S/ ${plansMap[p]})'));
+                    items: plans.map((p) {
+                      final value = p.id.isNotEmpty ? p.id : p.name;
+                      return DropdownMenuItem(value: value, child: Text('${p.name} (S/ ${p.price})'));
                     }).toList(),
                     onChanged: (val) {
                       if (val != null) {
+                        final nextPlan = plans.firstWhere(
+                          (p) => (p.id.isNotEmpty ? p.id : p.name) == val,
+                          orElse: () => selectedPlan,
+                        );
                         setPlanState(() {
-                          selectedPlan = val;
-                          price = plansMap[val]!;
+                          selectedPlan = nextPlan;
+                          price = nextPlan.price;
                         });
                       }
                     },
@@ -538,7 +546,7 @@ class _CashierMembershipsPageState extends State<CashierMembershipsPage> {
                         final ok = await widget.state.chargePOSBackend(
                           memberDni: member.dni,
                           cartItems: [
-                            {'name': selectedPlan, 'price': price, 'qty': 1, 'icon': '🎟️'}
+                            {'planId': selectedPlan.id, 'name': selectedPlan.name, 'price': price, 'qty': 1, 'icon': 'membership'}
                           ],
                           total: price,
                           paymentMethod: paymentMethod,
@@ -561,7 +569,7 @@ class _CashierMembershipsPageState extends State<CashierMembershipsPage> {
                       widget.state.chargePOS(
                         memberDni: member.dni,
                         cartItems: [
-                          {'name': selectedPlan, 'price': price, 'qty': 1, 'icon': '🎟️'}
+                          {'planId': selectedPlan.id, 'name': selectedPlan.name, 'price': price, 'qty': 1, 'icon': 'membership'}
                         ],
                         total: price,
                         paymentMethod: paymentMethod,

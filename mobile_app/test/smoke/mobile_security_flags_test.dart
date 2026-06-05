@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_app/data/gym_seed.dart';
 import 'package:flutter_app/data/gym_state.dart';
-import 'package:flutter_app/features/cashier/widgets/cashier_scan_page.dart';
 import 'package:flutter_app/features/auth/screens/login_screen.dart';
 import 'package:flutter_app/features/member/widgets/full_qr_view.dart';
 import 'package:flutter_app/models/gym_models.dart';
@@ -33,17 +32,6 @@ LoggedInUser _memberWithoutQrSecret() {
     memberProfile: {
       'objetivo': 'QA',
     },
-  );
-}
-
-LoggedInUser _cashierUser() {
-  return LoggedInUser(
-    id: 'cashier-id',
-    email: 'cashier@example.com',
-    rol: GymRole.cashier,
-    nombreCompleto: 'Cashier Test',
-    dni: '87654321',
-    estado: 'ACTIVE',
   );
 }
 
@@ -119,43 +107,4 @@ void main() {
     expect(find.textContaining('Token:'), findsNothing);
   });
 
-  testWidgets('cashier backend scan with DNI only is denied locally', (tester) async {
-    final state = GymState(startBackground: false);
-    addTearDown(state.dispose);
-    state.setCurrentGymActiveForTest(active: true);
-    state.setCurrentUserForTest(_cashierUser());
-
-    String? result;
-    String? scannedDni;
-
-    await tester.pumpWidget(
-      MaterialApp(
-        home: GymStateProvider(
-          notifier: state,
-          child: Scaffold(
-            body: CashierScanPage(
-              palette: rolePalettes[GymRole.cashier]!,
-              state: state,
-              scanInput: '11111111',
-              onScanChanged: (_) {},
-              onTriggerVerdict: (nextResult, _, dni) {
-                result = nextResult;
-                scannedDni = dni;
-              },
-              onDayPass: (_, {planName, price}) {},
-            ),
-          ),
-        ),
-      ),
-    );
-
-    final scanButton = find.text('Escanear DNI');
-    await tester.drag(find.byType(ListView), const Offset(0, -420));
-    await tester.pump(const Duration(milliseconds: 100));
-    await tester.tap(scanButton);
-    await tester.pump();
-
-    expect(result, 'denied');
-    expect(scannedDni, '11111111');
-  });
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../data/gym_state.dart';
+import '../../../theme/app_theme_tokens.dart';
 import '../../../widgets/app_shell.dart';
 import '../../../models/gym_models.dart';
 
@@ -56,6 +57,7 @@ class _AdminAuditLogsPageState extends State<AdminAuditLogsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.sasColors;
     final filteredLogs = widget.state.auditLogs.where((log) {
       final matchesSearch = log.action.toLowerCase().contains(widget.searchQuery.toLowerCase()) ||
           log.detail.toLowerCase().contains(widget.searchQuery.toLowerCase());
@@ -86,14 +88,14 @@ class _AdminAuditLogsPageState extends State<AdminAuditLogsPage> {
                     hintText: 'Filtrar por acción o detalle...',
                     prefixIcon: const Icon(Icons.search_rounded),
                     filled: true,
-                    fillColor: const Color(0xFF16161A),
+                    fillColor: colors.surface,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFF232329)),
+                      borderSide: BorderSide(color: colors.border),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFF232329)),
+                      borderSide: BorderSide(color: colors.border),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -106,15 +108,15 @@ class _AdminAuditLogsPageState extends State<AdminAuditLogsPage> {
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
-                      _actorChip('Todos', 'all'),
+                      _actorChip(context, 'Todos', 'all'),
                       const SizedBox(width: 6),
-                      _actorChip('Caja', 'Caja'),
+                      _actorChip(context, 'Caja', 'Caja'),
                       const SizedBox(width: 6),
-                      _actorChip('Entrenador', 'Trainer'),
+                      _actorChip(context, 'Entrenador', 'Trainer'),
                       const SizedBox(width: 6),
-                      _actorChip('Admin', 'Admin'),
+                      _actorChip(context, 'Admin', 'Admin'),
                       const SizedBox(width: 6),
-                      _actorChip('SuperAdmin', 'SuperAdmin'),
+                      _actorChip(context, 'SuperAdmin', 'SuperAdmin'),
                     ],
                   ),
                 ),
@@ -124,7 +126,7 @@ class _AdminAuditLogsPageState extends State<AdminAuditLogsPage> {
           const SizedBox(height: 10),
           Expanded(
             child: filteredLogs.isEmpty
-                ? const Center(child: Text('No hay logs coincidentes.'))
+                ? Center(child: Text('No hay logs coincidentes.', style: TextStyle(color: colors.textSecondary)))
                 : ListView.builder(
                     controller: _scrollController,
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
@@ -173,7 +175,8 @@ class _AdminAuditLogsPageState extends State<AdminAuditLogsPage> {
     );
   }
 
-  Widget _actorChip(String label, String value) {
+  Widget _actorChip(BuildContext context, String label, String value) {
+    final colors = context.sasColors;
     final isSelected = widget.filterActor == value;
     return ChoiceChip(
       label: Text(label),
@@ -183,12 +186,12 @@ class _AdminAuditLogsPageState extends State<AdminAuditLogsPage> {
       },
       selectedColor: widget.palette.accent.withValues(alpha: 0.18),
       labelStyle: TextStyle(
-        color: isSelected ? widget.palette.accent : Colors.white60,
+        color: isSelected ? widget.palette.accent : colors.textSecondary,
         fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
         fontSize: 11,
       ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      backgroundColor: const Color(0xFF1D1D22),
+      backgroundColor: colors.surfaceAlt,
     );
   }
 }

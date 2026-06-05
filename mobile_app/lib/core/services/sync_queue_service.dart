@@ -28,11 +28,15 @@ class SyncQueueService {
     Duration ttl = defaultTtl,
   }) async {
     if (financial && (idempotencyKey == null || idempotencyKey.isEmpty)) {
-      throw ArgumentError('Financial offline operations require an idempotencyKey.');
+      throw ArgumentError(
+        'Financial offline operations require an idempotencyKey.',
+      );
     }
 
     final box = _getBox();
-    final queue = List<Map<dynamic, dynamic>>.from(box.get('queue', defaultValue: []));
+    final queue = List<Map<dynamic, dynamic>>.from(
+      box.get('queue', defaultValue: []),
+    );
     final now = DateTime.now();
     final txId = now.microsecondsSinceEpoch.toString();
 
@@ -52,7 +56,9 @@ class SyncQueueService {
     });
 
     await box.put('queue', queue);
-    AppLogger.debug('Transaccion encolada en SyncQueue: $endpoint - $description');
+    AppLogger.debug(
+      'Transaccion encolada en SyncQueue: $endpoint - $description',
+    );
   }
 
   static List<Map<String, dynamic>> getQueue() {
@@ -69,13 +75,21 @@ class SyncQueueService {
   }
 
   static Future<bool> processQueue({
-    Future<void> Function(String method, String endpoint, Map<String, dynamic> data, String idempotencyKey)? sender,
+    Future<void> Function(
+      String method,
+      String endpoint,
+      Map<String, dynamic> data,
+      String idempotencyKey,
+    )?
+    sender,
     DateTime? now,
   }) async {
     final queue = getQueue();
     if (queue.isEmpty) return true;
 
-    AppLogger.debug('Procesando cola de sincronizacion offline: ${queue.length} pendientes...');
+    AppLogger.debug(
+      'Procesando cola de sincronizacion offline: ${queue.length} pendientes...',
+    );
     final List<Map<String, dynamic>> remaining = [];
     bool allSucceeded = true;
     final currentTime = now ?? DateTime.now();
@@ -90,13 +104,17 @@ class SyncQueueService {
       final expiresAt = DateTime.tryParse(tx['expiresAt']?.toString() ?? '');
 
       if (expiresAt != null && currentTime.isAfter(expiresAt)) {
-        AppLogger.debug('Transaccion offline expirada y descartada: $id ($endpoint)');
+        AppLogger.debug(
+          'Transaccion offline expirada y descartada: $id ($endpoint)',
+        );
         allSucceeded = false;
         continue;
       }
 
       if (attempts >= maxAttempts) {
-        AppLogger.debug('Transaccion offline excedio max attempts: $id ($endpoint)');
+        AppLogger.debug(
+          'Transaccion offline excedio max attempts: $id ($endpoint)',
+        );
         allSucceeded = false;
         continue;
       }
@@ -105,18 +123,29 @@ class SyncQueueService {
         if (sender != null) {
           await sender(method, endpoint, data, idempotencyKey);
         } else {
-          final options = Options(headers: {'X-Idempotency-Key': idempotencyKey});
+          final options = Options(
+            headers: {'X-Idempotency-Key': idempotencyKey},
+          );
           if (method.toUpperCase() == 'POST') {
             await ApiClient().dio.post(endpoint, data: data, options: options);
+          } else if (method.toUpperCase() == 'PATCH') {
+            await ApiClient().dio.patch(endpoint, data: data, options: options);
           } else if (method.toUpperCase() == 'PUT') {
             await ApiClient().dio.put(endpoint, data: data, options: options);
           } else if (method.toUpperCase() == 'DELETE') {
-            await ApiClient().dio.delete(endpoint, data: data, options: options);
+            await ApiClient().dio.delete(
+              endpoint,
+              data: data,
+              options: options,
+            );
           }
         }
         AppLogger.debug('Sincronizacion exitosa para tx: $id ($endpoint)');
       } catch (e) {
-        AppLogger.debug('Fallo al sincronizar tx $id ($endpoint). Re-encolando', e);
+        AppLogger.debug(
+          'Fallo al sincronizar tx $id ($endpoint). Re-encolando',
+          e,
+        );
         tx['attempts'] = attempts + 1;
         tx['lastAttemptAt'] = currentTime.toIso8601String();
         tx['lastError'] = e.toString();

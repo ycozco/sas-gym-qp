@@ -62,6 +62,7 @@ class AppConfig {
   }
 
   static String? demoTotpSecretForDni(String dni) {
+    if (isProduction) return null;
     if (!enableQrSimulator) return null;
     return '${dni}_secure_totp_secret_key_2026';
   }

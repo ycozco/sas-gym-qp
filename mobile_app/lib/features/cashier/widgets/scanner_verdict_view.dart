@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../models/gym_models.dart';
+import '../../../theme/app_theme_tokens.dart';
 import '../../../widgets/app_shell.dart';
 
 class ScannerVerdictView extends StatefulWidget {
@@ -12,6 +13,7 @@ class ScannerVerdictView extends StatefulWidget {
     required this.dni,
     required this.onBack,
     required this.onChargeDirect,
+    this.membershipPlans = const [],
     this.onCreateNewClient,
   });
 
@@ -21,6 +23,7 @@ class ScannerVerdictView extends StatefulWidget {
   final String dni;
   final VoidCallback onBack;
   final Function(String dni, {String? planName, double? price}) onChargeDirect;
+  final List<MembershipPlan> membershipPlans;
   final Function(String)? onCreateNewClient;
 
   @override
@@ -57,6 +60,7 @@ class _ScannerVerdictViewState extends State<ScannerVerdictView> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.sasColors;
     Color bg;
     IconData icon;
     String statusTitle;
@@ -64,18 +68,18 @@ class _ScannerVerdictViewState extends State<ScannerVerdictView> {
     bool showDirectPlans = false;
 
     if (widget.result == 'granted') {
-      bg = const Color(0xFF00B85C); // Emerald Green
+      bg = colors.success;
       icon = Icons.check_circle_outline_rounded;
       statusTitle = 'ACCESO CONCEDIDO';
       statusSubtitle = 'Miembro activo y habilitado para entrenar hoy.';
     } else if (widget.result == 'grace') {
-      bg = const Color(0xFFFFB300); // Amber Yellow
+      bg = colors.warning;
       icon = Icons.warning_amber_rounded;
       statusTitle = 'INGRESO EN GRACIA';
       statusSubtitle = 'Habilitado temporalmente. Plan requiere renovación inmediata.';
       showDirectPlans = widget.member != null;
     } else if (widget.result == 'denied') {
-      bg = const Color(0xFFFF3B30); // Vibrant Red
+      bg = colors.danger;
       icon = Icons.cancel_outlined;
       statusTitle = 'ACCESO DENEGADO';
       if (widget.member != null) {
@@ -93,7 +97,7 @@ class _ScannerVerdictViewState extends State<ScannerVerdictView> {
       }
     } else {
       // not_found / error
-      bg = const Color(0xFF5C5C5C); // Dark Grey
+      bg = colors.textSecondary;
       icon = Icons.search_off_rounded;
       statusTitle = 'SOCIO NO REGISTRADO';
       statusSubtitle = 'DNI ${widget.dni} no figura en el sistema de este local.';
@@ -142,7 +146,7 @@ class _ScannerVerdictViewState extends State<ScannerVerdictView> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: colors.surface,
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
@@ -172,38 +176,38 @@ class _ScannerVerdictViewState extends State<ScannerVerdictView> {
                                 children: [
                                   Text(
                                     widget.member!.name,
-                                    style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: Colors.black, letterSpacing: -0.2),
+                                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: colors.textPrimary, letterSpacing: -0.2),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
                                     'DNI: ${widget.member!.dni}',
-                                    style: const TextStyle(color: Colors.grey, fontSize: 12.5, fontWeight: FontWeight.w600),
+                                    style: TextStyle(color: colors.textSecondary, fontSize: 12.5, fontWeight: FontWeight.w600),
                                   ),
                                 ],
                               ),
                             ),
                           ],
                         ),
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 12.0),
-                          child: Divider(height: 1, color: Color(0xFFE2DDD5)),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 12.0),
+                          child: Divider(height: 1, color: colors.border),
                         ),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text(
+                            Text(
                               'Estado:',
-                              style: TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.bold),
+                              style: TextStyle(color: colors.textSecondary, fontSize: 13, fontWeight: FontWeight.bold),
                             ),
                             StatusPill(
                               label: widget.member!.state == 'active'
                                   ? 'ACTIVO'
                                   : (widget.member!.state == 'grace' ? 'DÍAS DE GRACIA' : 'VENCIDO'),
                               color: widget.member!.state == 'active'
-                                  ? const Color(0xFF00B85C)
-                                  : (widget.member!.state == 'grace' ? const Color(0xFFFFB300) : Colors.red),
+                                  ? colors.success
+                                  : (widget.member!.state == 'grace' ? colors.warning : colors.danger),
                               solid: true,
                             ),
                           ],
@@ -212,13 +216,13 @@ class _ScannerVerdictViewState extends State<ScannerVerdictView> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text(
+                            Text(
                               'Plan Actual/Último:',
-                              style: TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.bold),
+                              style: TextStyle(color: colors.textSecondary, fontSize: 13, fontWeight: FontWeight.bold),
                             ),
                             Text(
                               widget.member!.goal.isNotEmpty ? widget.member!.goal : 'Sin Plan',
-                              style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 13.5),
+                              style: TextStyle(color: colors.textPrimary, fontWeight: FontWeight.bold, fontSize: 13.5),
                             ),
                           ],
                         ),
@@ -226,9 +230,9 @@ class _ScannerVerdictViewState extends State<ScannerVerdictView> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text(
+                            Text(
                               'Vigencia:',
-                              style: TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.bold),
+                              style: TextStyle(color: colors.textSecondary, fontSize: 13, fontWeight: FontWeight.bold),
                             ),
                             if (widget.member!.daysLeft != null)
                               Text(
@@ -237,16 +241,16 @@ class _ScannerVerdictViewState extends State<ScannerVerdictView> {
                                     : (widget.member!.daysLeft! == 0 ? 'Vence hoy' : 'Vencido hace ${widget.member!.daysLeft!.abs()} días'),
                                 style: TextStyle(
                                   color: widget.member!.daysLeft! > 0
-                                      ? const Color(0xFF00B85C)
-                                      : (widget.member!.daysLeft! == 0 ? Colors.amber : Colors.red),
+                                      ? colors.success
+                                      : (widget.member!.daysLeft! == 0 ? colors.warning : colors.danger),
                                   fontWeight: FontWeight.w900,
                                   fontSize: 13.5,
                                 ),
                               )
                             else
-                              const Text(
+                              Text(
                                 'Indeterminada',
-                                style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold, fontSize: 13),
+                                style: TextStyle(color: colors.textSecondary, fontWeight: FontWeight.bold, fontSize: 13),
                               ),
                           ],
                         ),
@@ -287,25 +291,16 @@ class _ScannerVerdictViewState extends State<ScannerVerdictView> {
                           ),
                           const SizedBox(height: 8),
                         ],
-                        _buildDirectPlanTile(
-                          context,
-                          name: 'Plan Mensual Oro',
-                          price: 150.0,
-                          details: 'Acceso total + asesoría',
-                        ),
-                        const SizedBox(height: 8),
-                        _buildDirectPlanTile(
-                          context,
-                          name: 'Plan Mensual Plata',
-                          price: 120.0,
-                          details: 'Acceso a máquinas y pesos',
-                        ),
-                        const SizedBox(height: 8),
-                        _buildDirectPlanTile(
-                          context,
-                          name: 'Plan Trimestral Platinium',
-                          price: 400.0,
-                          details: 'Ahorro + 3 meses continuos',
+                        ..._directPlans().expand(
+                          (plan) => [
+                            _buildDirectPlanTile(
+                              context,
+                              name: plan.name,
+                              price: plan.price,
+                              details: plan.description ?? '${plan.durationDays} dias',
+                            ),
+                            const SizedBox(height: 8),
+                          ],
                         ),
                       ],
                     ),
@@ -398,6 +393,16 @@ class _ScannerVerdictViewState extends State<ScannerVerdictView> {
     );
   }
 
+  List<MembershipPlan> _directPlans() {
+    final activePlans = widget.membershipPlans.where((p) => p.active).toList();
+    if (activePlans.isNotEmpty) return activePlans.take(4).toList();
+    return const [
+      MembershipPlan(id: '', name: 'Plan Mensual Oro', durationDays: 30, price: 150),
+      MembershipPlan(id: '', name: 'Plan Mensual Plata', durationDays: 30, price: 120),
+      MembershipPlan(id: '', name: 'Plan Trimestral Platinium', durationDays: 90, price: 400),
+    ];
+  }
+
   Widget _buildDirectPlanTile(
     BuildContext context, {
     required String name,
@@ -405,15 +410,16 @@ class _ScannerVerdictViewState extends State<ScannerVerdictView> {
     required String details,
     bool isSuggested = false,
   }) {
+    final colors = context.sasColors;
     return Container(
       decoration: BoxDecoration(
-        color: isSuggested ? const Color(0xFFFFF4EA) : Colors.white,
+        color: isSuggested ? colors.warning.withValues(alpha: 0.16) : colors.surface,
         borderRadius: BorderRadius.circular(12),
-        border: isSuggested ? Border.all(color: Colors.orange, width: 1.5) : null,
+        border: isSuggested ? Border.all(color: colors.warning, width: 1.5) : Border.all(color: colors.border),
         boxShadow: isSuggested
             ? [
                 BoxShadow(
-                  color: Colors.orange.withValues(alpha: 0.25),
+                  color: colors.warning.withValues(alpha: 0.25),
                   blurRadius: 8,
                   spreadRadius: 1,
                 )
@@ -427,19 +433,19 @@ class _ScannerVerdictViewState extends State<ScannerVerdictView> {
         child: ListTile(
           dense: true,
           contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-          leading: isSuggested ? const Icon(Icons.star_rounded, color: Colors.orange, size: 20) : null,
+          leading: isSuggested ? Icon(Icons.star_rounded, color: colors.warning, size: 20) : null,
           title: Row(
             children: [
               Text(
                 name,
-                style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.black, fontSize: 13.5),
+                style: TextStyle(fontWeight: FontWeight.w900, color: colors.textPrimary, fontSize: 13.5),
               ),
               if (isSuggested) ...[
                 const SizedBox(width: 6),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
-                    color: Colors.orange,
+                    color: colors.warning,
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: const Text(
@@ -452,7 +458,7 @@ class _ScannerVerdictViewState extends State<ScannerVerdictView> {
           ),
           subtitle: Text(
             details,
-            style: TextStyle(color: isSuggested ? Colors.black87 : Colors.grey, fontSize: 11),
+            style: TextStyle(color: isSuggested ? colors.textPrimary : colors.textSecondary, fontSize: 11),
           ),
           trailing: Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),

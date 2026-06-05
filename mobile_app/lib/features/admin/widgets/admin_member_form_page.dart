@@ -37,12 +37,16 @@ class _AdminMemberFormPageState extends State<AdminMemberFormPage> {
   @override
   void initState() {
     super.initState();
-    _dniCtrl = TextEditingController(text: widget.member?.dni ?? widget.prefilledDni ?? '');
+    _dniCtrl = TextEditingController(
+      text: widget.member?.dni ?? widget.prefilledDni ?? '',
+    );
     _nameCtrl = TextEditingController(text: widget.member?.name ?? '');
     _phoneCtrl = TextEditingController(text: widget.member?.phone ?? '');
     _emailCtrl = TextEditingController(text: widget.member?.email ?? '');
     _goalCtrl = TextEditingController(text: widget.member?.goal ?? '');
-    _trainerCtrl = TextEditingController(text: widget.member?.assignedTrainer ?? '');
+    _trainerCtrl = TextEditingController(
+      text: widget.member?.assignedTrainer ?? '',
+    );
     _status = widget.member?.state ?? 'expired';
   }
 
@@ -89,20 +93,28 @@ class _AdminMemberFormPageState extends State<AdminMemberFormPage> {
                     controller: _dniCtrl,
                     keyboardType: TextInputType.number,
                     enabled: !isEdit, // DNI cannot be changed once created
-                    decoration: const InputDecoration(labelText: 'DNI / Documento *'),
-                    validator: (val) => val == null || val.trim().isEmpty ? 'Requerido' : null,
+                    decoration: const InputDecoration(
+                      labelText: 'DNI / Documento *',
+                    ),
+                    validator: (val) =>
+                        val == null || val.trim().isEmpty ? 'Requerido' : null,
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: _nameCtrl,
-                    decoration: const InputDecoration(labelText: 'Nombre Completo *'),
-                    validator: (val) => val == null || val.trim().isEmpty ? 'Requerido' : null,
+                    decoration: const InputDecoration(
+                      labelText: 'Nombre Completo *',
+                    ),
+                    validator: (val) =>
+                        val == null || val.trim().isEmpty ? 'Requerido' : null,
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: _phoneCtrl,
                     keyboardType: TextInputType.phone,
-                    decoration: const InputDecoration(labelText: 'Teléfono / Celular'),
+                    decoration: const InputDecoration(
+                      labelText: 'Teléfono / Celular',
+                    ),
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
@@ -113,21 +125,33 @@ class _AdminMemberFormPageState extends State<AdminMemberFormPage> {
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: _goalCtrl,
-                    decoration: const InputDecoration(labelText: 'Objetivo (ej: Bajar peso / Plan)'),
+                    decoration: const InputDecoration(
+                      labelText: 'Objetivo (ej: Bajar peso / Plan)',
+                    ),
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: _trainerCtrl,
-                    decoration: const InputDecoration(labelText: 'Entrenador Asignado'),
+                    decoration: const InputDecoration(
+                      labelText: 'Entrenador Asignado',
+                    ),
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
                     initialValue: _status,
-                    decoration: const InputDecoration(labelText: 'Estado Inicial'),
+                    decoration: const InputDecoration(
+                      labelText: 'Estado Inicial',
+                    ),
                     items: const [
                       DropdownMenuItem(value: 'active', child: Text('Activo')),
-                      DropdownMenuItem(value: 'expired', child: Text('Vencido')),
-                      DropdownMenuItem(value: 'grace', child: Text('Periodo de Gracia')),
+                      DropdownMenuItem(
+                        value: 'expired',
+                        child: Text('Vencido'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'grace',
+                        child: Text('Periodo de Gracia'),
+                      ),
                     ],
                     onChanged: (val) {
                       if (val != null) {
@@ -165,7 +189,10 @@ class _AdminMemberFormPageState extends State<AdminMemberFormPage> {
                     );
                     widget.state.updateMember(widget.member!.dni, updated);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Socio actualizado exitosamente.'), backgroundColor: Color(0xFF00B85C)),
+                      const SnackBar(
+                        content: Text('Socio actualizado exitosamente.'),
+                        backgroundColor: Color(0xFF00B85C),
+                      ),
                     );
                   } else {
                     final newM = MemberRecord(
@@ -185,7 +212,10 @@ class _AdminMemberFormPageState extends State<AdminMemberFormPage> {
                     );
                     widget.state.addMember(newM);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Nuevo socio registrado con éxito.'), backgroundColor: Color(0xFF00B85C)),
+                      const SnackBar(
+                        content: Text('Nuevo socio registrado con éxito.'),
+                        backgroundColor: Color(0xFF00B85C),
+                      ),
                     );
                   }
                   widget.onBack();
@@ -193,7 +223,10 @@ class _AdminMemberFormPageState extends State<AdminMemberFormPage> {
               },
               child: Text(
                 isEdit ? 'Guardar Cambios' : 'Registrar Socio',
-                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 15,
+                ),
               ),
             ),
           ],

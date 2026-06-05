@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../models/gym_models.dart';
 import '../../../../data/gym_state.dart';
+import '../../../../theme/app_theme_tokens.dart';
 import '../../../../widgets/app_shell.dart';
 
 class AdminDashboardPage extends StatelessWidget {
@@ -23,14 +24,19 @@ class AdminDashboardPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.sasColors;
     // Count pending payments
     int pendingCount = 0;
     for (var m in state.allMembersIncludingSoftDeleted) {
-      pendingCount += m.paymentHistory.where((p) => p.state == 'pending').length;
+      pendingCount += m.paymentHistory
+          .where((p) => p.state == 'pending')
+          .length;
     }
 
     // Dynamic metrics
-    final activeCount = state.members.where((m) => m.state == 'active' || m.state == 'grace').length;
+    final activeCount = state.members
+        .where((m) => m.state == 'active' || m.state == 'grace')
+        .length;
     final totalMembersCount = state.members.length;
     final insideNowCount = state.members.where((m) => m.isActiveInGym).length;
 
@@ -51,8 +57,13 @@ class AdminDashboardPage extends StatelessWidget {
         RoleHeroHeader(
           palette: palette,
           title: 'Centro de Control',
-          subtitle: 'Administra socios, caja, auditoría y configuración global del gimnasio.',
-          trailing: StatusPill(label: 'ADMIN', color: palette.accent, solid: true),
+          subtitle:
+              'Administra socios, caja, auditoría y configuración global del gimnasio.',
+          trailing: StatusPill(
+            label: 'ADMIN',
+            color: palette.accent,
+            solid: true,
+          ),
         ),
         const SizedBox(height: 18),
 
@@ -64,11 +75,17 @@ class AdminDashboardPage extends StatelessWidget {
               decoration: BoxDecoration(
                 color: const Color(0xFF2C0F14),
                 borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: Colors.redAccent.withValues(alpha: 0.3)),
+                border: Border.all(
+                  color: Colors.redAccent.withValues(alpha: 0.3),
+                ),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.pending_actions_rounded, color: Colors.redAccent, size: 24),
+                  const Icon(
+                    Icons.pending_actions_rounded,
+                    color: Colors.redAccent,
+                    size: 24,
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -76,17 +93,28 @@ class AdminDashboardPage extends StatelessWidget {
                       children: [
                         Text(
                           'Bandeja de Pagos ($pendingCount pendientes)',
-                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFFFF5252)),
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFFFF5252),
+                          ),
                         ),
                         const SizedBox(height: 2),
                         const Text(
                           'Hay comprobantes manuales de socios esperando tu validación.',
-                          style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w500, color: Color(0xFFFF8A80)),
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFFFF8A80),
+                          ),
                         ),
                       ],
                     ),
                   ),
-                  const Icon(Icons.chevron_right_rounded, color: Colors.redAccent),
+                  const Icon(
+                    Icons.chevron_right_rounded,
+                    color: Colors.redAccent,
+                  ),
                 ],
               ),
             ),
@@ -131,7 +159,8 @@ class AdminDashboardPage extends StatelessWidget {
               child: AdminMetric(
                 label: 'Cuentas Caja',
                 value: '${state.cashiers.length}',
-                note: '${state.cashiers.where((c) => c.active).length} activas hoy',
+                note:
+                    '${state.cashiers.where((c) => c.active).length} activas hoy',
                 accent: Colors.blueAccent,
               ),
             ),
@@ -190,10 +219,15 @@ class AdminDashboardPage extends StatelessWidget {
         const SectionHeader(title: 'Resumen de Control'),
         Container(
           padding: const EdgeInsets.all(16),
-          decoration: adminCardDecoration(),
-          child: const Text(
+          decoration: adminCardDecoration(context),
+          child: Text(
             'Como administrador, controlas de forma global los cajeros, autorizaciones de dinero, el catálogo de productos y el alta o baja física/lógica de usuarios. Monitorea las acciones en tiempo real mediante la Bitácora de Auditoría.',
-            style: TextStyle(fontSize: 13, height: 1.4, fontWeight: FontWeight.w500, color: Colors.white70),
+            style: TextStyle(
+              fontSize: 13,
+              height: 1.4,
+              fontWeight: FontWeight.w500,
+              color: colors.textSecondary,
+            ),
           ),
         ),
       ],
@@ -217,30 +251,54 @@ class AdminMetric extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.sasColors;
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: adminCardDecoration(),
+      decoration: adminCardDecoration(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(fontSize: 12, color: Colors.white60, fontWeight: FontWeight.w600)),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: colors.textSecondary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
           const SizedBox(height: 8),
           Text(
             value,
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: -0.6, color: accent),
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w900,
+              letterSpacing: -0.6,
+              color: accent,
+            ),
           ),
           const SizedBox(height: 6),
-          Text(note, style: const TextStyle(fontSize: 11, color: Colors.white38, fontWeight: FontWeight.w500)),
+          Text(
+            note,
+            style: TextStyle(
+              fontSize: 11,
+              color: colors.textMuted,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ],
       ),
     );
   }
 }
 
-BoxDecoration adminCardDecoration() {
+BoxDecoration adminCardDecoration([BuildContext? context]) {
+  final colors = context?.sasColors;
   return BoxDecoration(
-    color: const Color(0xFF16161A),
+    color: colors?.surface ?? const Color(0xFF16161A),
     borderRadius: BorderRadius.circular(16),
-    border: Border.all(color: const Color(0xFF2E2E38), width: 1.0),
+    border: Border.all(
+      color: colors?.border ?? const Color(0xFF2E2E38),
+      width: 1.0,
+    ),
   );
 }

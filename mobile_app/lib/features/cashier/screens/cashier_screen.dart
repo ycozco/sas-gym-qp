@@ -101,6 +101,7 @@ class _CashierScreenState extends State<CashierScreen> {
           member: member,
           dni: dni,
           onBack: _back,
+          membershipPlans: state.membershipPlans,
           onChargeDirect: (memberDni, {planName, price}) {
             _redirectScannerToMembership(memberDni, planName: planName, price: price);
           },

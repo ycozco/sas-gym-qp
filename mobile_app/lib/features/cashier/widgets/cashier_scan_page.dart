@@ -3,6 +3,7 @@ import 'package:otp/otp.dart';
 import '../../../../core/config/app_config.dart';
 import '../../../../models/gym_models.dart';
 import '../../../../data/gym_state.dart';
+import '../../../../theme/app_theme_tokens.dart';
 import '../../../../widgets/app_shell.dart';
 
 class CashierScanPage extends StatelessWidget {
@@ -27,6 +28,7 @@ class CashierScanPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.sasColors;
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
       children: [
@@ -95,9 +97,9 @@ class CashierScanPage extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: colors.surface,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFE6E2D8)),
+            border: Border.all(color: colors.border),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -109,7 +111,7 @@ class CashierScanPage extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 'Selecciona un socio preconfigurado o digita un DNI para probar las reglas de acceso reactivas.',
-                style: TextStyle(color: Colors.black.withValues(alpha: 0.6), fontSize: 12.5),
+                style: TextStyle(color: colors.textSecondary, fontSize: 12.5),
               ),
               const SizedBox(height: 16),
               // Preset scan test buttons
@@ -125,7 +127,7 @@ class CashierScanPage extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 20),
-              const Divider(height: 1, color: Color(0xFFE8E4D9)),
+              Divider(height: 1, color: colors.border),
               const SizedBox(height: 20),
               // Custom DNI field
               Row(
@@ -133,15 +135,15 @@ class CashierScanPage extends StatelessWidget {
                   Expanded(
                     child: Container(
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF6F6F6),
+                        color: colors.surfaceAlt,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: const Color(0xFFE2DDD5)),
+                        border: Border.all(color: colors.border),
                       ),
                       padding: const EdgeInsets.symmetric(horizontal: 14),
                       child: TextField(
                         keyboardType: TextInputType.number,
                         onChanged: onScanChanged,
-                        style: const TextStyle(fontSize: 14),
+                        style: TextStyle(fontSize: 14, color: colors.textPrimary),
                         decoration: const InputDecoration(
                           hintText: 'Digitar DNI del socio...',
                           border: InputBorder.none,
@@ -211,7 +213,7 @@ class CashierScanPage extends StatelessWidget {
                         ),
                         Text(
                           'Emite un acceso diario rápido — S/ 25.00',
-                          style: TextStyle(color: Colors.black.withValues(alpha: 0.55), fontSize: 12),
+                          style: TextStyle(color: colors.textSecondary, fontSize: 12),
                         ),
                       ],
                     ),
@@ -234,7 +236,7 @@ class CashierScanPage extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 16),
-              const Divider(height: 1, color: Color(0xFFE8E4D9)),
+              Divider(height: 1, color: colors.border),
               const SizedBox(height: 16),
               Row(
                 children: [
@@ -273,8 +275,9 @@ class CashierScanPage extends StatelessWidget {
     required String subtitle,
     required VoidCallback onTap,
   }) {
+    final colors = context.sasColors;
     return Material(
-      color: Colors.white,
+      color: colors.surface,
       borderRadius: BorderRadius.circular(12),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -282,7 +285,7 @@ class CashierScanPage extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
-            border: Border.all(color: const Color(0xFFE6E2D8)),
+            border: Border.all(color: colors.border),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Column(
@@ -290,8 +293,8 @@ class CashierScanPage extends StatelessWidget {
             children: [
               Icon(icon, color: palette.accent, size: 26),
               const SizedBox(height: 6),
-              Text(label, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12.5)),
-              Text(subtitle, style: const TextStyle(color: Colors.grey, fontSize: 10.5)),
+              Text(label, style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12.5, color: colors.textPrimary)),
+              Text(subtitle, style: TextStyle(color: colors.textSecondary, fontSize: 10.5)),
             ],
           ),
         ),
@@ -301,17 +304,18 @@ class CashierScanPage extends StatelessWidget {
 
   void _showDayPassDniDialog(BuildContext context) {
     final controller = TextEditingController();
+    final colors = context.sasColors;
     showDialog(
       context: context,
       builder: (ctx) {
         return AlertDialog(
-          backgroundColor: Colors.white,
+          backgroundColor: colors.surface,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Row(
             children: [
               Icon(Icons.badge_rounded, color: palette.accent, size: 26),
               const SizedBox(width: 10),
-              const Text('Pase con DNI', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17)),
+              Text('Pase con DNI', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17, color: colors.textPrimary)),
             ],
           ),
           content: SizedBox(
@@ -320,9 +324,9 @@ class CashierScanPage extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Ingresa el DNI del cliente. Si no existe en el sistema se registrará automáticamente como nuevo socio.',
-                  style: TextStyle(color: Colors.grey, fontSize: 13),
+                  style: TextStyle(color: colors.textSecondary, fontSize: 13),
                 ),
                 const SizedBox(height: 16),
                 TextField(
@@ -342,7 +346,7 @@ class CashierScanPage extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
+              child: Text('Cancelar', style: TextStyle(color: colors.textSecondary)),
             ),
             ElevatedButton(
               style: roleFilledPillButtonStyle(
@@ -378,12 +382,34 @@ class CashierScanPage extends StatelessWidget {
   }
 
   void _triggerScan(String input) async {
-    String dni = input;
+    String rawInput = input.trim();
+    if (rawInput.isEmpty) return;
+
+    if (state.isBackendMode && !rawInput.contains('|')) {
+      final res = await state.simulateAttendanceAccessBackend(dni: rawInput);
+      final verdict = res['verdict'];
+      final member = res['member'] as MemberRecord?;
+
+      String resultStr = 'denied';
+      if (verdict == 'GREEN') resultStr = 'granted';
+      if (verdict == 'AMBER') resultStr = 'grace';
+      if (verdict == 'RED' && member == null) {
+        final reason = res['reason']?.toString() ?? '';
+        if (reason.contains('no registrado') || reason.contains('DNI invÃ¡lido')) {
+          resultStr = 'not_found';
+        }
+      }
+
+      onTriggerVerdict(resultStr, member, rawInput);
+      return;
+    }
+
+    String dni = rawInput;
     String otpToken = '';
-    final hasQrPayload = input.contains('|');
+    final hasQrPayload = rawInput.contains('|');
     
     if (hasQrPayload) {
-      final parts = input.split('|');
+      final parts = rawInput.split('|');
       dni = parts[0];
       otpToken = parts[1];
     } else if (state.isBackendMode) {

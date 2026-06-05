@@ -2,13 +2,30 @@ import 'package:flutter/material.dart';
 
 import '../data/gym_seed.dart';
 import '../models/gym_models.dart';
+import '../theme/app_theme_tokens.dart';
+
+Color readableOn(Color background) {
+  return background.computeLuminance() > 0.45
+      ? const Color(0xFF0B0B0B)
+      : Colors.white;
+}
+
+BoxDecoration themedCardDecoration(
+  BuildContext context, {
+  double radius = 16,
+  Color? color,
+  Color? borderColor,
+}) {
+  final colors = context.sasColors;
+  return BoxDecoration(
+    color: color ?? colors.surface,
+    borderRadius: BorderRadius.circular(radius),
+    border: Border.all(color: borderColor ?? colors.border, width: 1.0),
+  );
+}
 
 class RoleSurface extends StatelessWidget {
-  const RoleSurface({
-    super.key,
-    required this.palette,
-    required this.child,
-  });
+  const RoleSurface({super.key, required this.palette, required this.child});
 
   final RolePalette palette;
   final Widget child;
@@ -16,12 +33,13 @@ class RoleSurface extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colors = context.sasColors;
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: isDark
-              ? [const Color(0xFF0E0E11), const Color(0xFF131317)]
-              : [palette.surfaceTint, Colors.white],
+              ? [colors.background, colors.surface]
+              : [palette.surfaceTint, colors.background],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -39,7 +57,9 @@ class RoleSurface extends StatelessWidget {
                 gradient: palette.gradient,
                 boxShadow: [
                   BoxShadow(
-                    color: palette.accent.withValues(alpha: isDark ? 0.08 : 0.18),
+                    color: palette.accent.withValues(
+                      alpha: isDark ? 0.08 : 0.18,
+                    ),
                     blurRadius: 60,
                     spreadRadius: 12,
                   ),
@@ -66,13 +86,8 @@ class RoleSurface extends StatelessWidget {
   }
 }
 
-
 class RoleTabs extends StatelessWidget {
-  const RoleTabs({
-    super.key,
-    required this.selected,
-    required this.onChanged,
-  });
+  const RoleTabs({super.key, required this.selected, required this.onChanged});
 
   final GymRole selected;
   final ValueChanged<GymRole> onChanged;
@@ -113,12 +128,13 @@ class _RoleTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = rolePalettes[role]!;
+    final colors = context.sasColors;
     return AnimatedContainer(
       duration: const Duration(milliseconds: 180),
       decoration: BoxDecoration(
-        color: selected ? palette.accent : Colors.white,
+        color: selected ? palette.accent : colors.surface,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: selected ? palette.accent : const Color(0xFFE6E2D8)),
+        border: Border.all(color: selected ? palette.accent : colors.border),
         boxShadow: [
           if (selected)
             BoxShadow(
@@ -140,7 +156,7 @@ class _RoleTab extends StatelessWidget {
               Text(
                 role.label,
                 style: TextStyle(
-                  color: selected ? palette.accentInk : const Color(0xFF202020),
+                  color: selected ? palette.accentInk : colors.textPrimary,
                   fontSize: 12.5,
                   fontWeight: FontWeight.w700,
                 ),
@@ -149,7 +165,9 @@ class _RoleTab extends StatelessWidget {
               Text(
                 role.subtitle,
                 style: TextStyle(
-                  color: selected ? palette.accentInk.withValues(alpha: 0.85) : const Color(0xFF757575),
+                  color: selected
+                      ? palette.accentInk.withValues(alpha: 0.85)
+                      : colors.textSecondary,
                   fontSize: 10.5,
                   fontWeight: FontWeight.w500,
                 ),
@@ -176,16 +194,16 @@ class SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final actionColor = isDark ? Colors.white70 : const Color(0xFF5C5C5C);
+    final colors = context.sasColors;
+    final actionColor = colors.textSecondary;
     final titleStyle = Theme.of(context).textTheme.titleMedium?.copyWith(
-          fontWeight: FontWeight.w800,
-          letterSpacing: -0.2,
-        );
+      fontWeight: FontWeight.w800,
+      letterSpacing: -0.2,
+    );
     final actionStyle = Theme.of(context).textTheme.labelMedium?.copyWith(
-          color: actionColor,
-          fontWeight: FontWeight.w700,
-        );
+      color: actionColor,
+      fontWeight: FontWeight.w700,
+    );
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -194,16 +212,13 @@ class SectionHeader extends StatelessWidget {
           Expanded(
             child: Text(
               title,
-              style: titleStyle?.copyWith(color: isDark ? Colors.white : Colors.black),
+              style: titleStyle?.copyWith(color: colors.textPrimary),
             ),
           ),
           if (action != null)
             GestureDetector(
               onTap: onTap,
-              child: Text(
-                action!,
-                style: actionStyle,
-              ),
+              child: Text(action!, style: actionStyle),
             ),
         ],
       ),
@@ -227,9 +242,9 @@ class RoleHeroHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final surfaceColor = isDark ? const Color(0xFF16161A) : Colors.white;
-    final borderColor = isDark ? const Color(0xFF232329) : const Color(0xFFE8E4D9);
+    final colors = context.sasColors;
+    final surfaceColor = colors.surface;
+    final borderColor = colors.border;
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -265,24 +280,21 @@ class RoleHeroHeader extends StatelessWidget {
                 Text(
                   title,
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: isDark ? Colors.white : const Color(0xFF0B0B0B),
-                        fontWeight: FontWeight.w800,
-                      ),
+                    color: colors.textPrimary,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   subtitle,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: isDark ? Colors.white70 : const Color(0xFF5C5C5C),
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: colors.textSecondary),
                 ),
               ],
             ),
           ),
-          if (trailing != null) ...[
-            const SizedBox(width: 12),
-            trailing!,
-          ],
+          if (trailing != null) ...[const SizedBox(width: 12), trailing!],
         ],
       ),
     );
@@ -292,7 +304,10 @@ class RoleHeroHeader extends StatelessWidget {
 ButtonStyle roleFilledPillButtonStyle({
   required Color backgroundColor,
   required Color foregroundColor,
-  EdgeInsetsGeometry padding = const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+  EdgeInsetsGeometry padding = const EdgeInsets.symmetric(
+    horizontal: 18,
+    vertical: 14,
+  ),
   double minimumHeight = 48,
   BorderSide? side,
 }) {
@@ -310,7 +325,10 @@ ButtonStyle roleFilledPillButtonStyle({
 ButtonStyle roleOutlinedPillButtonStyle({
   required Color foregroundColor,
   Color? backgroundColor,
-  EdgeInsetsGeometry padding = const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+  EdgeInsetsGeometry padding = const EdgeInsets.symmetric(
+    horizontal: 18,
+    vertical: 14,
+  ),
   double minimumHeight = 48,
   BorderSide? side,
 }) {
@@ -320,20 +338,27 @@ ButtonStyle roleOutlinedPillButtonStyle({
     padding: padding,
     minimumSize: Size(0, minimumHeight),
     shape: const StadiumBorder(),
-    side: side ?? BorderSide(color: foregroundColor.withValues(alpha: 0.24), width: 1.4),
+    side:
+        side ??
+        BorderSide(color: foregroundColor.withValues(alpha: 0.24), width: 1.4),
   );
 }
 
 ButtonStyle roleTextPillButtonStyle({
   required Color foregroundColor,
-  EdgeInsetsGeometry padding = const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+  EdgeInsetsGeometry padding = const EdgeInsets.symmetric(
+    horizontal: 14,
+    vertical: 12,
+  ),
   BorderSide? side,
 }) {
   return TextButton.styleFrom(
     foregroundColor: foregroundColor,
     padding: padding,
     shape: const StadiumBorder(),
-    side: side ?? BorderSide(color: foregroundColor.withValues(alpha: 0.24), width: 1.2),
+    side:
+        side ??
+        BorderSide(color: foregroundColor.withValues(alpha: 0.24), width: 1.2),
   );
 }
 
@@ -356,11 +381,12 @@ class MetricTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardColor = isDark ? const Color(0xFF16161A) : Colors.white;
-    final borderColor = isDark ? const Color(0xFF232329) : const Color(0xFFE8E4D9);
-    final labelColor = isDark ? Colors.white60 : const Color(0xFF6B6B6B);
-    final valueColor = isDark ? Colors.white : Colors.black;
-    final noteColor = isDark ? Colors.white38 : const Color(0xFF858585);
+    final colors = context.sasColors;
+    final cardColor = colors.surface;
+    final borderColor = colors.border;
+    final labelColor = colors.textSecondary;
+    final valueColor = colors.textPrimary;
+    final noteColor = colors.textMuted;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -370,7 +396,9 @@ class MetricTile extends StatelessWidget {
         border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
-            color: isDark ? Colors.black.withValues(alpha: 0.15) : const Color(0x11000000),
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.15)
+                : const Color(0x11000000),
             blurRadius: 18,
             offset: const Offset(0, 10),
           ),
@@ -384,12 +412,17 @@ class MetricTile extends StatelessWidget {
             height: 40,
             decoration: BoxDecoration(
               color: accent.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, size: 20, color: accent),
           ),
           const SizedBox(height: 16),
-          Text(label, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: labelColor)),
+          Text(
+            label,
+            style: Theme.of(
+              context,
+            ).textTheme.labelMedium?.copyWith(color: labelColor),
+          ),
           const SizedBox(height: 6),
           Text(
             value,
@@ -400,7 +433,13 @@ class MetricTile extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 6),
-          Text(note, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: noteColor, fontWeight: FontWeight.w500)),
+          Text(
+            note,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: noteColor,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ],
       ),
     );
@@ -408,11 +447,7 @@ class MetricTile extends StatelessWidget {
 }
 
 class BounceInteractive extends StatefulWidget {
-  const BounceInteractive({
-    super.key,
-    required this.child,
-    this.onTap,
-  });
+  const BounceInteractive({super.key, required this.child, this.onTap});
 
   final Widget child;
   final VoidCallback? onTap;
@@ -421,7 +456,8 @@ class BounceInteractive extends StatefulWidget {
   State<BounceInteractive> createState() => _BounceInteractiveState();
 }
 
-class _BounceInteractiveState extends State<BounceInteractive> with SingleTickerProviderStateMixin {
+class _BounceInteractiveState extends State<BounceInteractive>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
 
@@ -432,9 +468,10 @@ class _BounceInteractiveState extends State<BounceInteractive> with SingleTicker
       vsync: this,
       duration: const Duration(milliseconds: 100),
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.97).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.97,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
   }
 
   @override
@@ -469,10 +506,7 @@ class _BounceInteractiveState extends State<BounceInteractive> with SingleTicker
       onTapUp: _onTapUp,
       onTapCancel: _onTapCancel,
       behavior: HitTestBehavior.opaque,
-      child: ScaleTransition(
-        scale: _scaleAnimation,
-        child: widget.child,
-      ),
+      child: ScaleTransition(scale: _scaleAnimation, child: widget.child),
     );
   }
 }
@@ -495,11 +529,11 @@ class ActionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardColor = isDark ? const Color(0xFF16161A) : Colors.white;
-    final borderColor = isDark ? const Color(0xFF232329) : const Color(0xFFE8E4D9);
-    final labelColor = isDark ? Colors.white : Colors.black;
-    final noteColor = isDark ? Colors.white54 : const Color(0xFF777777);
+    final colors = context.sasColors;
+    final cardColor = colors.surface;
+    final borderColor = colors.border;
+    final labelColor = colors.textPrimary;
+    final noteColor = colors.textSecondary;
 
     return BounceInteractive(
       onTap: onTap,
@@ -570,7 +604,7 @@ class StatusPill extends StatelessWidget {
       child: Text(
         label,
         style: TextStyle(
-          color: solid ? Colors.white : color,
+          color: solid ? readableOn(color) : color,
           fontSize: 11,
           fontWeight: FontWeight.w700,
         ),
@@ -599,12 +633,12 @@ class LogTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardColor = isDark ? const Color(0xFF16161A) : Colors.white;
-    final borderColor = isDark ? const Color(0xFF232329) : const Color(0xFFE8E4D9);
-    final titleColor = isDark ? Colors.white : Colors.black;
-    final detailColor = isDark ? Colors.white60 : const Color(0xFF696969);
-    final timeColor = isDark ? Colors.white30 : const Color(0xFF8B8B8B);
+    final colors = context.sasColors;
+    final cardColor = colors.surface;
+    final borderColor = colors.border;
+    final titleColor = colors.textPrimary;
+    final detailColor = colors.textSecondary;
+    final timeColor = colors.textMuted;
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -633,23 +667,27 @@ class LogTile extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        title, 
+                        title,
                         style: TextStyle(
-                          fontSize: 13.5, 
+                          fontSize: 13.5,
                           fontWeight: FontWeight.w700,
                           color: titleColor,
                         ),
                       ),
                     ),
-                    if (locked) const StatusPill(label: 'SOLO LECTURA', color: Color(0xFF5C5C5C)),
+                    if (locked)
+                      const StatusPill(
+                        label: 'SOLO LECTURA',
+                        color: Color(0xFF5C5C5C),
+                      ),
                   ],
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  detail, 
+                  detail,
                   style: TextStyle(
-                    fontSize: 11.8, 
-                    color: detailColor, 
+                    fontSize: 11.8,
+                    color: detailColor,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -658,10 +696,10 @@ class LogTile extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           Text(
-            time, 
+            time,
             style: TextStyle(
-              fontSize: 11.5, 
-              color: timeColor, 
+              fontSize: 11.5,
+              color: timeColor,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -696,11 +734,11 @@ class RoleNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final navBgColor = isDark ? const Color(0xFF16161A) : Colors.white;
-    final labelColor = isDark ? Colors.white30 : const Color(0xFF999999);
-    // Selected label uses accent on light bg, accentInk on indicator bg
-    final selectedLabelColor = isDark ? accent : accent;
+    final colors = context.sasColors;
+    final navBgColor = colors.surface;
+    final labelColor = colors.textMuted;
+    // Selected label uses the role accent; selected icon sits on the accent indicator.
+    final selectedLabelColor = accent;
     final selectedIconColor = accentInk; // icon sits on top of accent indicator
 
     return NavigationBarTheme(
@@ -716,7 +754,10 @@ class RoleNavBar extends StatelessWidget {
         }),
         iconTheme: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
-          return IconThemeData(color: selected ? selectedIconColor : labelColor, size: 20);
+          return IconThemeData(
+            color: selected ? selectedIconColor : labelColor,
+            size: 20,
+          );
         }),
       ),
       child: NavigationBar(

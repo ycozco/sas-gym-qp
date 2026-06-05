@@ -3,6 +3,7 @@ import 'package:otp/otp.dart';
 import '../../../../core/config/app_config.dart';
 import '../../../../models/gym_models.dart';
 import '../../../../data/gym_state.dart';
+import '../../../../theme/app_theme_tokens.dart';
 import '../../../../widgets/app_shell.dart';
 import 'admin_dashboard_page.dart';
 
@@ -26,6 +27,7 @@ class AdminScannerPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.sasColors;
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
       children: [
@@ -90,15 +92,15 @@ class AdminScannerPage extends StatelessWidget {
         // Simulator Dashboard Form
         Container(
           padding: const EdgeInsets.all(20),
-          decoration: adminCardDecoration(),
+          decoration: adminCardDecoration(context),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text('Simulación de Accesos', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 'Selecciona un socio de prueba para validar reactivamente las reglas de admisión.',
-                style: TextStyle(color: Colors.white54, fontSize: 12.5, height: 1.4),
+                style: TextStyle(color: colors.textSecondary, fontSize: 12.5, height: 1.4),
               ),
               const SizedBox(height: 16),
               Wrap(
@@ -112,25 +114,25 @@ class AdminScannerPage extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 20),
-              const Divider(height: 1, color: Color(0xFF2E2E38)),
+              Divider(height: 1, color: colors.border),
               const SizedBox(height: 20),
               Row(
                 children: [
                   Expanded(
                     child: Container(
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1C1C22),
+                        color: colors.surfaceAlt,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFF2E2E38)),
+                        border: Border.all(color: colors.border),
                       ),
                       padding: const EdgeInsets.symmetric(horizontal: 14),
                       child: TextField(
                         keyboardType: TextInputType.number,
                         onChanged: onScanInputChanged,
-                        style: const TextStyle(fontSize: 14, color: Colors.white),
-                        decoration: const InputDecoration(
+                        style: TextStyle(fontSize: 14, color: colors.textPrimary),
+                        decoration: InputDecoration(
                           hintText: 'Digitar DNI del socio...',
-                          hintStyle: TextStyle(color: Colors.white30),
+                          hintStyle: TextStyle(color: colors.textMuted),
                           border: InputBorder.none,
                           isDense: true,
                         ),
@@ -174,12 +176,34 @@ class AdminScannerPage extends StatelessWidget {
   }
 
   void _triggerScan(String input) async {
-    String dni = input;
+    String rawInput = input.trim();
+    if (rawInput.isEmpty) return;
+
+    if (state.isBackendMode && !rawInput.contains('|')) {
+      final res = await state.simulateAttendanceAccessBackend(dni: rawInput);
+      final verdict = res['verdict'];
+      final member = res['member'] as MemberRecord?;
+
+      String resultStr = 'denied';
+      if (verdict == 'GREEN') resultStr = 'granted';
+      if (verdict == 'AMBER') resultStr = 'grace';
+      if (verdict == 'RED' && member == null) {
+        final reason = res['reason']?.toString() ?? '';
+        if (reason.contains('no registrado') || reason.contains('DNI invÃ¡lido')) {
+          resultStr = 'not_found';
+        }
+      }
+
+      onTriggerVerdict(resultStr, member, rawInput);
+      return;
+    }
+
+    String dni = rawInput;
     String otpToken = '';
-    final hasQrPayload = input.contains('|');
+    final hasQrPayload = rawInput.contains('|');
     
     if (hasQrPayload) {
-      final parts = input.split('|');
+      final parts = rawInput.split('|');
       dni = parts[0];
       otpToken = parts[1];
     } else if (state.isBackendMode) {

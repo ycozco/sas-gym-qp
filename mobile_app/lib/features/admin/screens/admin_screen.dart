@@ -82,6 +82,7 @@ class _AdminScreenState extends State<AdminScreen> {
           member: member,
           dni: dni,
           onBack: _back,
+          membershipPlans: state.membershipPlans,
           onChargeDirect: (memberDni, {planName, price}) {
             _back();
             setState(() {

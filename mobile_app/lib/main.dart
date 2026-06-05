@@ -12,6 +12,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
   await EncryptedHive.openBox('gym_cache');
+  await Hive.openBox('ui_settings_box');
   await SyncQueueService.init();
   runApp(
     GymStateProvider(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../models/gym_models.dart';
 import '../../../../data/gym_state.dart';
+import '../../../../theme/app_theme_tokens.dart';
 import '../../../../widgets/app_shell.dart';
 import 'admin_dashboard_page.dart';
 
@@ -16,25 +17,40 @@ class AdminCashiersPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.sasColors;
     return ListView(
       key: const PageStorageKey<String>('admin-cashiers'),
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
       children: [
         Row(
           children: [
-            const Expanded(child: SectionHeader(title: 'Cuentas de Caja', action: 'Permisos en tiempo real')),
+            const Expanded(
+              child: SectionHeader(
+                title: 'Cuentas de Caja',
+                action: 'Permisos en tiempo real',
+              ),
+            ),
             IconButton(
-              icon: Icon(Icons.person_add_rounded, color: palette.accent, size: 26),
+              icon: Icon(
+                Icons.person_add_rounded,
+                color: palette.accent,
+                size: 26,
+              ),
               onPressed: () => _showAddCashierDialog(context),
             ),
           ],
         ),
         Container(
           padding: const EdgeInsets.all(16),
-          decoration: adminCardDecoration(),
-          child: const Text(
+          decoration: adminCardDecoration(context),
+          child: Text(
             'Habilita o suspende cuentas de caja al instante, y selecciona individualmente qué módulos tienen permitido visualizar en el rol limitado.',
-            style: TextStyle(fontSize: 13, height: 1.4, fontWeight: FontWeight.w500, color: Colors.white70),
+            style: TextStyle(
+              fontSize: 13,
+              height: 1.4,
+              fontWeight: FontWeight.w500,
+              color: colors.textSecondary,
+            ),
           ),
         ),
         const SizedBox(height: 16),
@@ -44,17 +60,26 @@ class AdminCashiersPage extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 12),
               child: Container(
                 padding: const EdgeInsets.all(16),
-                decoration: adminCardDecoration(),
+                decoration: adminCardDecoration(context),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
                         CircleAvatar(
-                          backgroundColor: palette.accent.withValues(alpha: 0.12),
+                          backgroundColor: palette.accent.withValues(
+                            alpha: 0.12,
+                          ),
                           foregroundColor: palette.accent,
                           child: Text(
-                            cashier.name.substring(0, cashier.name.length >= 2 ? 2 : cashier.name.length).toUpperCase(),
+                            cashier.name
+                                .substring(
+                                  0,
+                                  cashier.name.length >= 2
+                                      ? 2
+                                      : cashier.name.length,
+                                )
+                                .toUpperCase(),
                             style: const TextStyle(fontWeight: FontWeight.w800),
                           ),
                         ),
@@ -65,12 +90,20 @@ class AdminCashiersPage extends StatelessWidget {
                             children: [
                               Text(
                                 cashier.name,
-                                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w800,
+                                  color: colors.textPrimary,
+                                ),
                               ),
                               const SizedBox(height: 3),
                               Text(
                                 'Horario: ${cashier.shift}',
-                                style: const TextStyle(fontSize: 12, color: Colors.white60, fontWeight: FontWeight.w500),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: colors.textSecondary,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
                             ],
                           ),
@@ -79,44 +112,73 @@ class AdminCashiersPage extends StatelessWidget {
                         Switch(
                           value: cashier.active,
                           activeThumbColor: const Color(0xFF00B85C),
-                          inactiveTrackColor: Colors.grey.shade800,
-                          onChanged: (val) => state.toggleCashierActive(cashier.name),
+                          inactiveTrackColor: colors.borderStrong,
+                          onChanged: (val) =>
+                              state.toggleCashierActive(cashier.name),
                         ),
                       ],
                     ),
-                    const Divider(height: 24, color: Color(0xFF232329)),
-                    const Text(
+                    Divider(height: 24, color: colors.border),
+                    Text(
                       'Módulos y Permisos Habilitados:',
-                      style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Colors.white70),
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w800,
+                        color: colors.textSecondary,
+                      ),
                     ),
                     const SizedBox(height: 10),
                     // Permissions Choice list
                     Wrap(
                       spacing: 6,
                       runSpacing: 6,
-                      children: [
-                        'Cobros',
-                        'Asistencia',
-                        'Ventas',
-                        'Productos',
-                        'Usuarios',
-                        'Log lectura',
-                      ].map((permission) {
-                        final hasIt = cashier.permissions.contains(permission);
-                        return FilterChip(
-                          label: Text(permission, style: TextStyle(fontSize: 10.5, fontWeight: hasIt ? FontWeight.w800 : FontWeight.w500)),
-                          selected: hasIt,
-                          selectedColor: palette.accent.withValues(alpha: 0.16),
-                          checkmarkColor: palette.accent,
-                          labelStyle: TextStyle(color: hasIt ? palette.accent : Colors.white60),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          side: BorderSide(color: hasIt ? palette.accent : const Color(0xFF2E2E38)),
-                          backgroundColor: const Color(0xFF1D1D22),
-                          onSelected: (selected) {
-                            state.toggleCashierPermission(cashier.name, permission);
-                          },
-                        );
-                      }).toList(),
+                      children:
+                          [
+                            'Cobros',
+                            'Asistencia',
+                            'Ventas',
+                            'Productos',
+                            'Usuarios',
+                            'Log lectura',
+                          ].map((permission) {
+                            final hasIt = cashier.permissions.contains(
+                              permission,
+                            );
+                            return FilterChip(
+                              label: Text(
+                                permission,
+                                style: TextStyle(
+                                  fontSize: 10.5,
+                                  fontWeight: hasIt
+                                      ? FontWeight.w800
+                                      : FontWeight.w500,
+                                ),
+                              ),
+                              selected: hasIt,
+                              selectedColor: palette.accent.withValues(
+                                alpha: 0.16,
+                              ),
+                              checkmarkColor: palette.accent,
+                              labelStyle: TextStyle(
+                                color: hasIt
+                                    ? palette.accent
+                                    : colors.textSecondary,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              side: BorderSide(
+                                color: hasIt ? palette.accent : colors.border,
+                              ),
+                              backgroundColor: colors.surfaceAlt,
+                              onSelected: (selected) {
+                                state.toggleCashierPermission(
+                                  cashier.name,
+                                  permission,
+                                );
+                              },
+                            );
+                          }).toList(),
                     ),
                   ],
                 ),
@@ -129,6 +191,7 @@ class AdminCashiersPage extends StatelessWidget {
   }
 
   void _showAddCashierDialog(BuildContext context) {
+    final colors = context.sasColors;
     final nameCtrl = TextEditingController();
     final shiftCtrl = TextEditingController(text: '08:00 - 16:00');
     final List<String> permissions = ['Cobros', 'Asistencia'];
@@ -139,9 +202,17 @@ class AdminCashiersPage extends StatelessWidget {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              backgroundColor: const Color(0xFF16161A),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: const Text('Registrar Cajero', style: TextStyle(fontWeight: FontWeight.w900)),
+              backgroundColor: colors.surface,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: Text(
+                'Registrar Cajero',
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  color: colors.textPrimary,
+                ),
+              ),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -160,35 +231,62 @@ class AdminCashiersPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    const Align(
+                    Align(
                       alignment: Alignment.centerLeft,
-                      child: Text('Permisos Iniciales:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                      child: Text(
+                        'Permisos Iniciales:',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                          color: colors.textPrimary,
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Wrap(
                       spacing: 6,
-                      children: ['Cobros', 'Asistencia', 'Ventas', 'Productos', 'Usuarios', 'Log lectura'].map((perm) {
-                        final hasIt = permissions.contains(perm);
-                        return ChoiceChip(
-                          label: Text(perm, style: const TextStyle(fontSize: 11)),
-                          selected: hasIt,
-                          selectedColor: palette.accent.withValues(alpha: 0.18),
-                          labelStyle: TextStyle(
-                            color: hasIt ? palette.accent : Colors.white60,
-                            fontWeight: hasIt ? FontWeight.w800 : FontWeight.w500,
-                          ),
-                          backgroundColor: const Color(0xFF1D1D22),
-                          onSelected: (val) {
-                            setState(() {
-                              if (val) {
-                                permissions.add(perm);
-                              } else {
-                                permissions.remove(perm);
-                              }
-                            });
-                          },
-                        );
-                      }).toList(),
+                      children:
+                          [
+                            'Cobros',
+                            'Asistencia',
+                            'Ventas',
+                            'Productos',
+                            'Usuarios',
+                            'Log lectura',
+                          ].map((perm) {
+                            final hasIt = permissions.contains(perm);
+                            return ChoiceChip(
+                              label: Text(
+                                perm,
+                                style: const TextStyle(fontSize: 11),
+                              ),
+                              selected: hasIt,
+                              selectedColor: palette.accent.withValues(
+                                alpha: 0.18,
+                              ),
+                              labelStyle: TextStyle(
+                                color: hasIt
+                                    ? palette.accent
+                                    : colors.textSecondary,
+                                fontWeight: hasIt
+                                    ? FontWeight.w800
+                                    : FontWeight.w500,
+                              ),
+                              backgroundColor: colors.surfaceAlt,
+                              side: BorderSide(
+                                color: hasIt ? palette.accent : colors.border,
+                              ),
+                              onSelected: (val) {
+                                setState(() {
+                                  if (val) {
+                                    permissions.add(perm);
+                                  } else {
+                                    permissions.remove(perm);
+                                  }
+                                });
+                              },
+                            );
+                          }).toList(),
                     ),
                   ],
                 ),
@@ -196,7 +294,13 @@ class AdminCashiersPage extends StatelessWidget {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancelar', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                  child: Text(
+                    'Cancelar',
+                    style: TextStyle(
+                      color: colors.textSecondary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
                 ElevatedButton(
                   style: roleFilledPillButtonStyle(
@@ -214,10 +318,16 @@ class AdminCashiersPage extends StatelessWidget {
                         active: true,
                       ),
                     );
-                    state.updateGymSettings(state.graceDays, state.alertDays); // Forces notifyListeners
+                    state.updateGymSettings(
+                      state.graceDays,
+                      state.alertDays,
+                    ); // Forces notifyListeners
                     Navigator.pop(context);
                   },
-                  child: const Text('Crear', style: TextStyle(fontWeight: FontWeight.bold)),
+                  child: const Text(
+                    'Crear',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ),
               ],
             );

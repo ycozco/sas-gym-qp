@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import '../../../data/gym_state.dart';
 import '../../../models/gym_models.dart';
+import '../../../theme/app_theme_tokens.dart';
 import '../../../widgets/app_shell.dart';
 
 class CashierPOSPage extends StatefulWidget {
@@ -45,16 +46,18 @@ class _CashierPOSPageState extends State<CashierPOSPage> {
     {'name': 'Barra energética', 'price': 5.0, 'icon': '🍫', 'category': 'Snacks'},
   ];
 
-  BoxDecoration _cardDecoration() {
+  BoxDecoration _cardDecoration(BuildContext context) {
+    final colors = context.sasColors;
     return BoxDecoration(
-      color: Colors.white,
+      color: colors.surface,
       borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: const Color(0xFFE6E2D8)),
+      border: Border.all(color: colors.border),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.sasColors;
     final double subtotal = widget.cartItems.fold(0, (sum, item) => sum + (item['price'] * item['qty']));
     final double discount = subtotal > 300.0 ? subtotal * 0.05 : 0.0; // 5% discount for bulk
     final double total = subtotal - discount;
@@ -71,7 +74,7 @@ class _CashierPOSPageState extends State<CashierPOSPage> {
             Expanded(
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                decoration: _cardDecoration(),
+                decoration: _cardDecoration(context),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
                     isExpanded: true,
@@ -129,15 +132,15 @@ class _CashierPOSPageState extends State<CashierPOSPage> {
         // Cart items display
         Container(
           padding: const EdgeInsets.all(18),
-          decoration: _cardDecoration(),
+          decoration: _cardDecoration(context),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  const Icon(Icons.shopping_cart_outlined, color: Colors.grey),
+                  Icon(Icons.shopping_cart_outlined, color: colors.textSecondary),
                   const SizedBox(width: 8),
-                  const Text('Items en Carrito', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14.5)),
+                  Text('Items en Carrito', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14.5, color: colors.textPrimary)),
                   const Spacer(),
                   if (widget.cartItems.isNotEmpty)
                     TextButton(
@@ -169,8 +172,8 @@ class _CashierPOSPageState extends State<CashierPOSPage> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(item['name'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
-                                  Text('S/ ${item['price']} x ${item['qty']}', style: const TextStyle(color: Colors.grey, fontSize: 11.5)),
+                                  Text(item['name'], style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: colors.textPrimary)),
+                                  Text('S/ ${item['price']} x ${item['qty']}', style: TextStyle(color: colors.textSecondary, fontSize: 11.5)),
                                 ],
                               ),
                             ),
@@ -188,7 +191,7 @@ class _CashierPOSPageState extends State<CashierPOSPage> {
                                 widget.onCartChanged();
                               },
                             ),
-                            Text('${item['qty']}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                            Text('${item['qty']}', style: TextStyle(fontWeight: FontWeight.bold, color: colors.textPrimary)),
                             IconButton(
                               icon: const Icon(Icons.add_circle_outline, size: 20),
                               onPressed: () {
@@ -211,16 +214,16 @@ class _CashierPOSPageState extends State<CashierPOSPage> {
                         ),
                       );
                     }),
-                    const Divider(height: 20, color: Color(0xFFE8E4D9)),
-                    _priceSummaryRow('Subtotal', 'S/ ${subtotal.toStringAsFixed(2)}'),
-                    _priceSummaryRow('Descuento', '- S/ ${discount.toStringAsFixed(2)}'),
+                    Divider(height: 20, color: colors.border),
+                    _priceSummaryRow(context, 'Subtotal', 'S/ ${subtotal.toStringAsFixed(2)}'),
+                    _priceSummaryRow(context, 'Descuento', '- S/ ${discount.toStringAsFixed(2)}'),
                     const SizedBox(height: 6),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('TOTAL VENTA', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
+                        Text('TOTAL VENTA', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: colors.textPrimary)),
                         Text('S/ ${total.toStringAsFixed(2)}',
-                            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 19, color: Colors.orange)),
+                            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 19, color: colors.accent)),
                       ],
                     ),
                   ],
@@ -233,7 +236,7 @@ class _CashierPOSPageState extends State<CashierPOSPage> {
         if (widget.cartItems.isNotEmpty)
           Container(
             padding: const EdgeInsets.all(18),
-            decoration: _cardDecoration(),
+            decoration: _cardDecoration(context),
             child: SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -263,23 +266,23 @@ class _CashierPOSPageState extends State<CashierPOSPage> {
           children: _posItems.map((item) {
             return Card(
               margin: const EdgeInsets.only(bottom: 10),
-              color: Colors.white,
+              color: colors.surface,
               elevation: 0,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
-                side: const BorderSide(color: Color(0xFFE2DDD5)),
+                side: BorderSide(color: colors.border),
               ),
               child: ListTile(
                 leading: Text(item['icon'] as String, style: const TextStyle(fontSize: 22)),
-                title: Text(item['name'] as String, style: const TextStyle(fontWeight: FontWeight.w800)),
-                subtitle: Text(item['category'] as String, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                title: Text(item['name'] as String, style: TextStyle(fontWeight: FontWeight.w800, color: colors.textPrimary)),
+                subtitle: Text(item['category'] as String, style: TextStyle(fontSize: 12, color: colors.textSecondary)),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text('S/ ${item['price']}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
+                    Text('S/ ${item['price']}', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: colors.textPrimary)),
                     const SizedBox(width: 10),
                     IconButton(
-                      icon: const Icon(Icons.add_shopping_cart_rounded, color: Colors.orange),
+                      icon: Icon(Icons.add_shopping_cart_rounded, color: colors.accent),
                       onPressed: () {
                         setState(() {
                           final idx = widget.cartItems.indexWhere((c) => c['name'] == item['name']);
@@ -307,14 +310,15 @@ class _CashierPOSPageState extends State<CashierPOSPage> {
     );
   }
 
-  Widget _priceSummaryRow(String title, String val) {
+  Widget _priceSummaryRow(BuildContext context, String title, String val) {
+    final colors = context.sasColors;
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(title, style: const TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.bold)),
-          Text(val, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+          Text(title, style: TextStyle(color: colors.textSecondary, fontSize: 13, fontWeight: FontWeight.bold)),
+          Text(val, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: colors.textPrimary)),
         ],
       ),
     );
@@ -367,23 +371,25 @@ class _CashierPOSPageState extends State<CashierPOSPage> {
               canConfirm = sumCombined >= total;
             }
 
+            final dialogColors = context.sasColors;
+
             return AlertDialog(
-              backgroundColor: Colors.white,
+              backgroundColor: dialogColors.surface,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
-                side: const BorderSide(color: Color(0xFFE2DDD5)),
+                side: BorderSide(color: dialogColors.border),
               ),
               titlePadding: const EdgeInsets.fromLTRB(24, 20, 24, 10),
               contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
               actionsPadding: const EdgeInsets.fromLTRB(24, 10, 24, 20),
               title: Row(
                 children: [
-                  const Icon(Icons.point_of_sale_rounded, color: Colors.orange, size: 28),
+                  Icon(Icons.point_of_sale_rounded, color: dialogColors.accent, size: 28),
                   const SizedBox(width: 8),
-                  const Text('Procesar Pago', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18.5)),
+                  Text('Procesar Pago', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18.5, color: dialogColors.textPrimary)),
                   const Spacer(),
                   IconButton(
-                    icon: const Icon(Icons.close_rounded, color: Colors.grey),
+                    icon: Icon(Icons.close_rounded, color: dialogColors.textSecondary),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
@@ -400,16 +406,16 @@ class _CashierPOSPageState extends State<CashierPOSPage> {
                         width: double.infinity,
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFAF9F6),
+                          color: dialogColors.surfaceAlt,
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0xFFEBE9E2)),
+                          border: Border.all(color: dialogColors.border),
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text('Monto Total a Pagar:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                            Text('Monto Total a Pagar:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: dialogColors.textPrimary)),
                             Text('S/ ${total.toStringAsFixed(2)}',
-                                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 20, color: Colors.orange)),
+                                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20, color: dialogColors.accent)),
                           ],
                         ),
                       ),
@@ -422,7 +428,7 @@ class _CashierPOSPageState extends State<CashierPOSPage> {
                             child: ElevatedButton(
                               style: roleFilledPillButtonStyle(
                                 backgroundColor: !isCombined ? widget.palette.accent : const Color(0xFFF0EFEA),
-                                foregroundColor: !isCombined ? widget.palette.accentInk : Colors.black,
+                                foregroundColor: !isCombined ? widget.palette.accentInk : dialogColors.textPrimary,
                                 padding: const EdgeInsets.symmetric(vertical: 12),
                                 minimumHeight: 38,
                               ),
@@ -435,7 +441,7 @@ class _CashierPOSPageState extends State<CashierPOSPage> {
                             child: ElevatedButton(
                               style: roleFilledPillButtonStyle(
                                 backgroundColor: isCombined ? widget.palette.accent : const Color(0xFFF0EFEA),
-                                foregroundColor: isCombined ? widget.palette.accentInk : Colors.black,
+                                foregroundColor: isCombined ? widget.palette.accentInk : dialogColors.textPrimary,
                                 padding: const EdgeInsets.symmetric(vertical: 12),
                                 minimumHeight: 38,
                               ),
@@ -458,11 +464,11 @@ class _CashierPOSPageState extends State<CashierPOSPage> {
                                 padding: const EdgeInsets.symmetric(horizontal: 2),
                                 child: ChoiceChip(
                                   showCheckmark: false,
-                                  label: Text(m, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: sel ? Colors.white : Colors.black)),
+                                  label: Text(m, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: sel ? widget.palette.accentInk : dialogColors.textPrimary)),
                                   selected: sel,
                                   selectedColor: widget.palette.accent,
-                                  backgroundColor: Colors.transparent,
-                                  side: const BorderSide(color: Color(0xFFE8E4D9)),
+                                  backgroundColor: dialogColors.surfaceAlt,
+                                  side: BorderSide(color: dialogColors.border),
                                   shape: const StadiumBorder(),
                                   onSelected: (val) {
                                     if (val) {
@@ -489,9 +495,9 @@ class _CashierPOSPageState extends State<CashierPOSPage> {
                                 width: 120,
                                 height: 42,
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFF7F7F7),
+                                  color: dialogColors.surfaceAlt,
                                   borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: const Color(0xFFE2DDD5)),
+                                  border: Border.all(color: dialogColors.border),
                                 ),
                                 padding: const EdgeInsets.symmetric(horizontal: 10),
                                 child: TextField(
@@ -506,7 +512,7 @@ class _CashierPOSPageState extends State<CashierPOSPage> {
                                     border: InputBorder.none,
                                     hintText: '0.00',
                                   ),
-                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                  style: TextStyle(fontWeight: FontWeight.bold, color: dialogColors.textPrimary),
                                 ),
                               ),
                             ],
@@ -515,7 +521,7 @@ class _CashierPOSPageState extends State<CashierPOSPage> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text('Vuelto a Entregar:', style: TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold)),
+                              Text('Vuelto a Entregar:', style: TextStyle(color: dialogColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
                               Text('S/ ${changeSingle.toStringAsFixed(2)}',
                                   style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: cashReceived >= total ? Colors.green : Colors.red)),
                             ],
@@ -534,9 +540,9 @@ class _CashierPOSPageState extends State<CashierPOSPage> {
                                   child: Container(
                                     height: 40,
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFFF7F7F7),
+                                      color: dialogColors.surfaceAlt,
                                       borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: const Color(0xFFE2DDD5)),
+                                      border: Border.all(color: dialogColors.border),
                                     ),
                                     padding: const EdgeInsets.symmetric(horizontal: 12),
                                     child: TextField(
@@ -551,7 +557,7 @@ class _CashierPOSPageState extends State<CashierPOSPage> {
                                         border: InputBorder.none,
                                         hintText: '0.00',
                                       ),
-                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+                                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: dialogColors.textPrimary),
                                     ),
                                   ),
                                 ),
@@ -559,11 +565,11 @@ class _CashierPOSPageState extends State<CashierPOSPage> {
                             ),
                           );
                         }),
-                        const Divider(height: 20, color: Color(0xFFEBE9E2)),
+                        Divider(height: 20, color: dialogColors.border),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text('Suma Ingresada:', style: TextStyle(color: Colors.grey, fontSize: 12.5, fontWeight: FontWeight.bold)),
+                            Text('Suma Ingresada:', style: TextStyle(color: dialogColors.textSecondary, fontSize: 12.5, fontWeight: FontWeight.bold)),
                             Text('S/ ${sumCombined.toStringAsFixed(2)}',
                                 style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
                           ],
@@ -595,11 +601,11 @@ class _CashierPOSPageState extends State<CashierPOSPage> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancelar', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                  child: Text('Cancelar', style: TextStyle(color: dialogColors.textSecondary, fontWeight: FontWeight.bold)),
                 ),
                 ElevatedButton(
                   style: roleFilledPillButtonStyle(
-                    backgroundColor: canConfirm ? widget.palette.accent : Colors.grey,
+                    backgroundColor: canConfirm ? widget.palette.accent : dialogColors.textMuted,
                     foregroundColor: canConfirm ? widget.palette.accentInk : Colors.white,
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   ),
@@ -682,26 +688,27 @@ class _CashierPOSPageState extends State<CashierPOSPage> {
     showDialog(
       context: context,
       builder: (ctx) {
+        final colors = ctx.sasColors;
         return AlertDialog(
-          backgroundColor: Colors.white,
+          backgroundColor: colors.surface,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
-            side: const BorderSide(color: Color(0xFFE2DDD5)),
+            side: BorderSide(color: colors.border),
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               const Icon(Icons.check_circle_rounded, color: Color(0xFF00B85C), size: 64),
               const SizedBox(height: 18),
-              const Text('Venta Completada', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20)),
+              Text('Venta Completada', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20, color: colors.textPrimary)),
               const SizedBox(height: 8),
               Text('Se registró el cobro de S/ $total via $method correctamente.',
                   textAlign: TextAlign.center, style: const TextStyle(color: Colors.grey)),
               const SizedBox(height: 20),
               ElevatedButton(
                 style: roleFilledPillButtonStyle(
-                  backgroundColor: const Color(0xFF111111),
-                  foregroundColor: Colors.white,
+                  backgroundColor: colors.accent,
+                  foregroundColor: widget.palette.accentInk,
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                   minimumHeight: 44,
                 ),

@@ -22,7 +22,7 @@ class PayMembershipView extends StatefulWidget {
 }
 
 class _PayMembershipViewState extends State<PayMembershipView> {
-  String? _selectedPlan = 'Mensual Plata (S/ 120)';
+  String? _selectedPlan;
   String _selectedMethod = 'Yape';
   bool _uploaded = false;
   String _uploadedFileName = '';
@@ -30,11 +30,15 @@ class _PayMembershipViewState extends State<PayMembershipView> {
   List<int>? _selectedFileBytes;
   bool _compressing = false;
 
-  final Map<String, double> planPrices = {
-    'Mensual Plata (S/ 120)': 120.0,
-    'Mensual Oro (S/ 150)': 150.0,
-    'Trimestral Platinium (S/ 400)': 400.0,
-  };
+  List<MembershipPlan> _plans(GymState state) {
+    final activePlans = state.membershipPlans.where((p) => p.active).toList();
+    if (activePlans.isNotEmpty) return activePlans;
+    return const [
+      MembershipPlan(id: 'mensual-plata', name: 'Mensual Plata', durationDays: 30, price: 120),
+      MembershipPlan(id: 'mensual-oro', name: 'Mensual Oro', durationDays: 30, price: 150),
+      MembershipPlan(id: 'trimestral-platinium', name: 'Trimestral Platinium', durationDays: 90, price: 400),
+    ];
+  }
 
   Future<void> _pickAndCompressFile() async {
     try {
@@ -105,6 +109,8 @@ class _PayMembershipViewState extends State<PayMembershipView> {
   @override
   Widget build(BuildContext context) {
     final state = GymStateProvider.of(context);
+    final plans = _plans(state);
+    _selectedPlan ??= plans.first.id;
 
     return Scaffold(
       appBar: AppBar(
@@ -120,9 +126,9 @@ class _PayMembershipViewState extends State<PayMembershipView> {
           // Select plan
           const Text('1. Selecciona tu plan', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
           const SizedBox(height: 10),
-          ...List.generate(planPrices.length, (index) {
-            final plan = planPrices.keys.elementAt(index);
-            final isSelected = _selectedPlan == plan;
+          ...List.generate(plans.length, (index) {
+            final plan = plans[index];
+            final isSelected = _selectedPlan == plan.id;
 
             return Card(
               elevation: 0,
@@ -138,7 +144,7 @@ class _PayMembershipViewState extends State<PayMembershipView> {
                 borderRadius: BorderRadius.circular(12),
                 onTap: () {
                   setState(() {
-                    _selectedPlan = plan;
+                    _selectedPlan = plan.id;
                   });
                 },
                 child: Padding(
@@ -173,9 +179,9 @@ class _PayMembershipViewState extends State<PayMembershipView> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(plan, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                            Text('${plan.name} (S/ ${plan.price})', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                             const SizedBox(height: 4),
-                            const Text('Acceso ilimitado a sala de máquinas y asesoría de entrenador.', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                            Text(plan.description ?? '${plan.durationDays} dias de acceso.', style: const TextStyle(fontSize: 12, color: Colors.grey)),
                           ],
                         ),
                       ),
@@ -301,8 +307,12 @@ class _PayMembershipViewState extends State<PayMembershipView> {
                     final messenger = ScaffoldMessenger.of(context);
                     setState(() => _submitting = true);
                     
-                    final planName = _selectedPlan!.split(' (')[0];
-                    final price = planPrices[_selectedPlan!]!;
+                    final selected = plans.firstWhere(
+                      (p) => p.id == _selectedPlan,
+                      orElse: () => plans.first,
+                    );
+                    final planName = selected.name;
+                    final price = selected.price;
 
                     if (state.isBackendMode && _selectedFileBytes != null) {
                       final success = await state.uploadReceiptBackend(

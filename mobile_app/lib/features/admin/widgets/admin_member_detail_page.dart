@@ -23,7 +23,9 @@ class AdminMemberDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Find member
-    final idx = state.allMembersIncludingSoftDeleted.indexWhere((m) => m.dni == memberDni);
+    final idx = state.allMembersIncludingSoftDeleted.indexWhere(
+      (m) => m.dni == memberDni,
+    );
     if (idx == -1) {
       return Scaffold(
         backgroundColor: Colors.transparent,
@@ -54,7 +56,10 @@ class AdminMemberDetailPage extends StatelessWidget {
           icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
           onPressed: onBack,
         ),
-        title: const Text('Ficha de Socio', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        title: const Text(
+          'Ficha de Socio',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.edit_rounded, color: Colors.white),
@@ -75,14 +80,26 @@ class AdminMemberDetailPage extends StatelessWidget {
                   radius: 36,
                   backgroundColor: palette.accent.withValues(alpha: 0.12),
                   child: Text(
-                    member.name.substring(0, member.name.length >= 2 ? 2 : member.name.length).toUpperCase(),
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: palette.accent),
+                    member.name
+                        .substring(
+                          0,
+                          member.name.length >= 2 ? 2 : member.name.length,
+                        )
+                        .toUpperCase(),
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w900,
+                      color: palette.accent,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 14),
                 Text(
                   member.name,
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 4),
@@ -91,7 +108,11 @@ class AdminMemberDetailPage extends StatelessWidget {
                   style: const TextStyle(color: Colors.white60, fontSize: 13),
                 ),
                 const SizedBox(height: 12),
-                StatusPill(label: statusLabel.toUpperCase(), color: statusColor, solid: true),
+                StatusPill(
+                  label: statusLabel.toUpperCase(),
+                  color: statusColor,
+                  solid: true,
+                ),
               ],
             ),
           ),
@@ -104,28 +125,59 @@ class AdminMemberDetailPage extends StatelessWidget {
             decoration: adminCardDecoration(),
             child: Column(
               children: [
-                _infoRow(Icons.phone_rounded, 'Celular', member.phone.isEmpty ? 'No registrado' : member.phone),
+                _infoRow(
+                  Icons.phone_rounded,
+                  'Celular',
+                  member.phone.isEmpty ? 'No registrado' : member.phone,
+                ),
                 const Divider(height: 20, color: Color(0xFF2E2E38)),
-                _infoRow(Icons.email_rounded, 'Correo', member.email.isEmpty ? 'No registrado' : member.email),
+                _infoRow(
+                  Icons.email_rounded,
+                  'Correo',
+                  member.email.isEmpty ? 'No registrado' : member.email,
+                ),
                 const Divider(height: 20, color: Color(0xFF2E2E38)),
-                _infoRow(Icons.calendar_today_rounded, 'Fecha de Registro', member.startDate),
+                _infoRow(
+                  Icons.calendar_today_rounded,
+                  'Fecha de Registro',
+                  member.startDate,
+                ),
                 const Divider(height: 20, color: Color(0xFF2E2E38)),
-                _infoRow(Icons.flag_rounded, 'Objetivo', member.goal.isEmpty ? 'No definido' : member.goal),
+                _infoRow(
+                  Icons.flag_rounded,
+                  'Objetivo',
+                  member.goal.isEmpty ? 'No definido' : member.goal,
+                ),
                 const Divider(height: 20, color: Color(0xFF2E2E38)),
-                _infoRow(Icons.person_pin_rounded, 'Entrenador Asignado', member.assignedTrainer.isEmpty ? 'Ninguno' : member.assignedTrainer),
+                _infoRow(
+                  Icons.person_pin_rounded,
+                  'Entrenador Asignado',
+                  member.assignedTrainer.isEmpty
+                      ? 'Ninguno'
+                      : member.assignedTrainer,
+                ),
               ],
             ),
           ),
           const SizedBox(height: 16),
 
           // Payment History
-          SectionHeader(title: 'Historial de Pagos', action: '${member.paymentHistory.length} transacciones'),
+          SectionHeader(
+            title: 'Historial de Pagos',
+            action: '${member.paymentHistory.length} transacciones',
+          ),
           if (member.paymentHistory.isEmpty)
             Container(
               padding: const EdgeInsets.all(24),
               decoration: adminCardDecoration(),
               child: const Center(
-                child: Text('No registra pagos aprobados o pendientes.', style: TextStyle(color: Colors.white38, fontWeight: FontWeight.bold)),
+                child: Text(
+                  'No registra pagos aprobados o pendientes.',
+                  style: TextStyle(
+                    color: Colors.white38,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             )
           else
@@ -153,18 +205,40 @@ class AdminMemberDetailPage extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(pay.planName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
+                            Text(
+                              pay.planName,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13.5,
+                              ),
+                            ),
                             const SizedBox(height: 2),
-                            Text('${pay.date} · Método: ${pay.method}', style: const TextStyle(color: Colors.white38, fontSize: 11.5)),
+                            Text(
+                              '${pay.date} · Método: ${pay.method}',
+                              style: const TextStyle(
+                                color: Colors.white38,
+                                fontSize: 11.5,
+                              ),
+                            ),
                           ],
                         ),
                       ),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Text('S/ ${pay.price.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13.5)),
+                          Text(
+                            'S/ ${pay.price.toStringAsFixed(2)}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 13.5,
+                            ),
+                          ),
                           const SizedBox(height: 4),
-                          StatusPill(label: pLabel.toUpperCase(), color: pColor, solid: false),
+                          StatusPill(
+                            label: pLabel.toUpperCase(),
+                            color: pColor,
+                            solid: false,
+                          ),
                         ],
                       ),
                     ],
@@ -186,11 +260,18 @@ class AdminMemberDetailPage extends StatelessWidget {
               onPressed: () {
                 state.toggleMemberLogicDelete(member.dni);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Socio ${member.name} marcado como BAJA LÓGICA.')),
+                  SnackBar(
+                    content: Text(
+                      'Socio ${member.name} marcado como BAJA LÓGICA.',
+                    ),
+                  ),
                 );
                 onBack();
               },
-              child: const Text('Dar de Baja Lógica (Suspender)', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: const Text(
+                'Dar de Baja Lógica (Suspender)',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
           ] else ...[
             ElevatedButton(
@@ -202,11 +283,16 @@ class AdminMemberDetailPage extends StatelessWidget {
               onPressed: () {
                 state.toggleMemberLogicDelete(member.dni);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Socio ${member.name} reactivado con éxito.')),
+                  SnackBar(
+                    content: Text('Socio ${member.name} reactivado con éxito.'),
+                  ),
                 );
                 onBack();
               },
-              child: const Text('Reactivar Socio (Quitar Suspensión)', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: const Text(
+                'Reactivar Socio (Quitar Suspensión)',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         ],
@@ -219,7 +305,14 @@ class AdminMemberDetailPage extends StatelessWidget {
       children: [
         Icon(icon, color: Colors.white30, size: 20),
         const SizedBox(width: 12),
-        Text(label, style: const TextStyle(color: Colors.white60, fontWeight: FontWeight.w500, fontSize: 13)),
+        Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white60,
+            fontWeight: FontWeight.w500,
+            fontSize: 13,
+          ),
+        ),
         const Spacer(),
         Expanded(
           child: Text(
