@@ -158,8 +158,17 @@ class GymState extends ChangeNotifier {
       if (_currentUser?.rol == GymRole.superadmin) {
         loadSaaSClients();
       } else if (_currentUser?.rol == GymRole.admin) {
+        loadAdminMembers();
+        loadProducts();
+        loadCashiers();
         loadObservations();
         loadAuditLogs();
+      } else if (_currentUser?.rol == GymRole.cashier) {
+        loadProducts();
+      } else if (_currentUser?.rol == GymRole.trainer) {
+        loadAssignedTrainerMembers();
+      } else if (_currentUser?.rol == GymRole.member) {
+        loadMemberPayments();
       }
       loadTenantSettings();
       loadMembershipPlans(includeInactive: _currentUser?.rol == GymRole.admin);
@@ -210,8 +219,17 @@ class GymState extends ChangeNotifier {
       if (_currentUser?.rol == GymRole.superadmin) {
         loadSaaSClients();
       } else if (_currentUser?.rol == GymRole.admin) {
+        loadAdminMembers();
+        loadProducts();
+        loadCashiers();
         loadObservations();
         loadAuditLogs();
+      } else if (_currentUser?.rol == GymRole.cashier) {
+        loadProducts();
+      } else if (_currentUser?.rol == GymRole.trainer) {
+        loadAssignedTrainerMembers();
+      } else if (_currentUser?.rol == GymRole.member) {
+        loadMemberPayments();
       }
       loadTenantSettings();
       loadMembershipPlans(includeInactive: _currentUser?.rol == GymRole.admin);
@@ -246,6 +264,12 @@ class GymState extends ChangeNotifier {
     _closeSocket();
     _authLoading = true;
     notifyListeners();
+    try {
+      await ApiClient().dio.post('/auth/logout');
+    } catch (_) {
+      // Native/mobile sessions may not always carry the refresh cookie.
+      // Clearing local auth is still the source of truth for this client.
+    }
     await SecureStorage.clearAll();
     if (Hive.isBoxOpen('gym_cache')) {
       await Hive.box('gym_cache').clear();
@@ -294,6 +318,8 @@ class GymState extends ChangeNotifier {
   final List<Announcement> _announcements = [];
   final List<GymObservation> _observations = [];
   final List<SaaSClient> _saClients = [];
+  final List<MemberRecord> _assignedTrainerMembers = [];
+  final List<PaymentRecord> _memberPayments = [];
 
   // Getters
   List<MemberRecord> get members =>
@@ -305,6 +331,9 @@ class GymState extends ChangeNotifier {
   List<Announcement> get announcements => _announcements;
   List<GymObservation> get observations => _observations;
   List<SaaSClient> get saClients => _saClients;
+  List<MemberRecord> get assignedTrainerMembers =>
+      List.unmodifiable(_assignedTrainerMembers);
+  List<PaymentRecord> get memberPayments => List.unmodifiable(_memberPayments);
 
   // Verification: is current gym blocked?
   bool get isCurrentGymActive {
@@ -335,6 +364,8 @@ class GymState extends ChangeNotifier {
     _announcements.clear();
     _observations.clear();
     _saClients.clear();
+    _assignedTrainerMembers.clear();
+    _memberPayments.clear();
   }
 
   bool get isBackendMode => _currentUser != null;
@@ -1305,6 +1336,195 @@ class GymState extends ChangeNotifier {
   }
 
   // --- Tenant settings and membership plans ---
+  String _mapMembershipState(String? raw) {
+    final value = (raw ?? '').toLowerCase();
+    if (value.contains('grace')) return 'grace';
+    if (value.contains('active')) return 'active';
+    if (value.contains('pending') || value.contains('inactive')) return 'inactive';
+    if (value.contains('suspend')) return 'suspended';
+    return 'expired';
+  }
+
+  MemberRecord _memberRecordFromBackend(Map<String, dynamic> json) {
+    final memberships = (json['memberships'] as List<dynamic>? ?? []);
+    final latestMembership = memberships.isNotEmpty
+        ? memberships.first as Map<String, dynamic>
+        : const <String, dynamic>{};
+    final memberProfile = json['member_profile'] as Map<String, dynamic>? ?? const {};
+    final trainer = memberProfile['trainer'] as Map<String, dynamic>?;
+    final trainerUser = trainer?['user'] as Map<String, dynamic>?;
+    final paymentHistory = memberships.map((membership) {
+      final item = membership as Map<String, dynamic>;
+      return PaymentRecord(
+        id: item['id']?.toString() ?? '',
+        planName: item['plan_nombre']?.toString() ?? 'Membresía',
+        price: (item['precio'] as num?)?.toDouble() ?? 0,
+        date: item['fecha_inicio']?.toString() ?? item['created_at']?.toString() ?? '',
+        method: 'Sistema',
+        state: _mapMembershipState(item['estado']?.toString()),
+      );
+    }).toList();
+
+    return MemberRecord(
+      dni: json['dni']?.toString() ?? '',
+      name: json['nombre_completo']?.toString() ?? 'Socio',
+      phone: json['celular']?.toString() ?? '',
+      email: json['email']?.toString() ?? '',
+      startDate: latestMembership['fecha_inicio']?.toString() ?? '—',
+      goal: memberProfile['objetivo']?.toString() ?? 'Objetivo pendiente',
+      sessions: 0,
+      lastSeen: latestMembership['fecha_vencimiento']?.toString() ?? '—',
+      state: _mapMembershipState(latestMembership['estado']?.toString() ?? json['estado']?.toString()),
+      assignedTrainer: trainerUser?['nombre_completo']?.toString() ?? '',
+      paymentHistory: paymentHistory,
+      physicalMeasurements: {
+        if (memberProfile['peso_kg'] != null)
+          'peso': (memberProfile['peso_kg'] as num).toDouble(),
+        if (memberProfile['altura_cm'] != null)
+          'altura': (memberProfile['altura_cm'] as num).toDouble(),
+      },
+      progressImages: const [],
+      daysLeft: (latestMembership['dias_restantes'] as num?)?.toInt(),
+    );
+  }
+
+  ProductItem _productFromBackend(Map<String, dynamic> json) {
+    final categoria = json['categoria'];
+    String categoryName = 'General';
+    if (categoria is Map<String, dynamic>) {
+      categoryName = categoria['descripcion']?.toString() ??
+          categoria['nombre']?.toString() ??
+          'General';
+    } else if (categoria != null) {
+      categoryName = categoria.toString();
+    }
+
+    return ProductItem(
+      name: json['nombre']?.toString() ?? 'Producto',
+      category: categoryName,
+      price: (json['precio_venta'] as num?)?.toDouble() ?? 0,
+      stock: (json['stock_actual'] as num?)?.toInt() ?? 0,
+      icon: 'inventory',
+      readOnlyLogs: !(json['es_visible'] as bool? ?? true),
+    );
+  }
+
+  CashierAccount _cashierFromBackend(Map<String, dynamic> json) {
+    final cajas = (json['cajas_registradas'] as List<dynamic>? ?? []);
+    final lastCaja = cajas.isNotEmpty ? cajas.first as Map<String, dynamic> : const <String, dynamic>{};
+    return CashierAccount(
+      name: json['nombre_completo']?.toString() ?? 'Cajero',
+      shift: lastCaja['estado']?.toString() ?? 'Sin turno',
+      permissions: const ['POS', 'Caja', 'Ventas'],
+      active: (json['estado']?.toString() ?? '').toUpperCase() == 'ACTIVE',
+    );
+  }
+
+  PaymentRecord _memberPaymentFromBackend(Map<String, dynamic> json) {
+    final membership = json['membership'] as Map<String, dynamic>? ?? const {};
+    return PaymentRecord(
+      id: json['id']?.toString() ?? '',
+      planName: membership['plan_nombre']?.toString() ?? 'Membresía',
+      price: (json['monto'] as num?)?.toDouble() ?? 0,
+      date: json['fecha_pago']?.toString() ?? json['created_at']?.toString() ?? '',
+      method: json['metodo_pago']?.toString() ?? 'Sistema',
+      state: (json['estado']?.toString() ?? 'pending').toLowerCase(),
+      receiptUrl: json['comprobante_url']?.toString(),
+    );
+  }
+
+  Future<void> loadAdminMembers() async {
+    if (!isBackendMode || _currentUser?.rol != GymRole.admin) return;
+    try {
+      final response = await ApiClient().dio.get('/admin/members');
+      final rows = (response.data as List)
+          .map((item) => Map<String, dynamic>.from(item as Map))
+          .map(_memberRecordFromBackend)
+          .toList();
+      _members
+        ..clear()
+        ..addAll(rows);
+      notifyListeners();
+    } catch (e) {
+      AppLogger.debug('Error loading admin members', e);
+    }
+  }
+
+  Future<void> loadProducts() async {
+    if (!isBackendMode ||
+        !(_currentUser?.rol == GymRole.admin || _currentUser?.rol == GymRole.cashier)) {
+      return;
+    }
+    try {
+      final includeInactive = _currentUser?.rol == GymRole.admin ? 'true' : 'false';
+      final response = await ApiClient().dio.get(
+        '/products',
+        queryParameters: {'includeInactive': includeInactive},
+      );
+      final rows = (response.data as List)
+          .map((item) => Map<String, dynamic>.from(item as Map))
+          .map(_productFromBackend)
+          .toList();
+      _products
+        ..clear()
+        ..addAll(rows);
+      notifyListeners();
+    } catch (e) {
+      AppLogger.debug('Error loading products', e);
+    }
+  }
+
+  Future<void> loadCashiers() async {
+    if (!isBackendMode || _currentUser?.rol != GymRole.admin) return;
+    try {
+      final response = await ApiClient().dio.get('/admin/cashiers');
+      final rows = (response.data as List)
+          .map((item) => Map<String, dynamic>.from(item as Map))
+          .map(_cashierFromBackend)
+          .toList();
+      _cashiers
+        ..clear()
+        ..addAll(rows);
+      notifyListeners();
+    } catch (e) {
+      AppLogger.debug('Error loading cashiers', e);
+    }
+  }
+
+  Future<void> loadAssignedTrainerMembers() async {
+    if (!isBackendMode || _currentUser?.rol != GymRole.trainer) return;
+    try {
+      final response = await ApiClient().dio.get('/members/assigned');
+      final rows = (response.data as List)
+          .map((item) => Map<String, dynamic>.from(item as Map))
+          .map(_memberRecordFromBackend)
+          .toList();
+      _assignedTrainerMembers
+        ..clear()
+        ..addAll(rows);
+      notifyListeners();
+    } catch (e) {
+      AppLogger.debug('Error loading assigned trainer members', e);
+    }
+  }
+
+  Future<void> loadMemberPayments() async {
+    if (!isBackendMode || _currentUser?.rol != GymRole.member) return;
+    try {
+      final response = await ApiClient().dio.get('/payments/me');
+      final rows = (response.data as List)
+          .map((item) => Map<String, dynamic>.from(item as Map))
+          .map(_memberPaymentFromBackend)
+          .toList();
+      _memberPayments
+        ..clear()
+        ..addAll(rows);
+      notifyListeners();
+    } catch (e) {
+      AppLogger.debug('Error loading member payments', e);
+    }
+  }
+
   Future<void> loadTenantSettings() async {
     if (!isBackendMode) return;
     try {

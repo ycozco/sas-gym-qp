@@ -15,6 +15,7 @@ import '../widgets/full_qr_view.dart';
 
 MemberRecord _getLoggedMember(GymState state) {
   final user = state.currentUser;
+  final backendPayments = state.memberPayments;
   return state.allMembersIncludingSoftDeleted.firstWhere(
     (m) => m.dni == user?.dni,
     orElse: () {
@@ -33,8 +34,9 @@ MemberRecord _getLoggedMember(GymState state) {
                     'expired'
               : (user.estado == 'ACTIVE' ? 'active' : 'expired'),
 
-          assignedTrainer: 'Carlos Mendoza',
-          paymentHistory: [],
+          assignedTrainer:
+              user.memberProfile?['trainer_name']?.toString() ?? 'Carlos Mendoza',
+          paymentHistory: backendPayments,
           physicalMeasurements: {
             'peso':
                 (user.memberProfile?['peso_kg'] as num?)?.toDouble() ?? 70.0,

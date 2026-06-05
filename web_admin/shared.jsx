@@ -4,6 +4,7 @@
 const API_BASE_URL = "http://localhost:3000/api/v1";
 const AUTH_TOKEN_KEY = "sasgym.authToken";
 const TENANT_ID_KEY = "sasgym.tenantId";
+const THEME_MODE_KEY = "sasgym.theme";
 
 function roleFromBackend(role) {
   return ({
@@ -13,6 +14,10 @@ function roleFromBackend(role) {
     TRAINER: "coach",
     MEMBER: "miembro",
   })[role] || "admin";
+}
+
+function normalizeThemeMode(value) {
+  return value === "light" || value === "dark" ? value : "system";
 }
 
 function apiRequest(path, { method = "GET", body, token, tenantId, headers = {}, _retry = true } = {}) {

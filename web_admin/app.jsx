@@ -82,13 +82,51 @@ function App() {
   const [error, setError] = React.useState("");
   const [section, setSection] = React.useState("dashboard");
   const [themeMode, setThemeMode] = React.useState(() => {
-    try { return localStorage.getItem("sasgym.theme") || "system"; } catch (e) { return "system"; }
+    try { return normalizeThemeMode(localStorage.getItem(THEME_MODE_KEY)); } catch (e) { return "system"; }
   });
+  const themeSyncRef = React.useRef({ ready: false, lastSynced: null });
 
   React.useEffect(() => {
     document.documentElement.dataset.theme = themeMode;
-    try { localStorage.setItem("sasgym.theme", themeMode); } catch (e) {}
+    try { localStorage.setItem(THEME_MODE_KEY, themeMode); } catch (e) {}
   }, [themeMode]);
+
+  React.useEffect(() => {
+    if (!currentUser?.id) {
+      themeSyncRef.current = { ready: false, lastSynced: null };
+      return;
+    }
+    if (!themeSyncRef.current.ready) {
+      themeSyncRef.current = {
+        ready: true,
+        lastSynced: normalizeThemeMode(currentUser.themePreference || currentUser.theme_preference),
+      };
+      return;
+    }
+
+    const nextMode = normalizeThemeMode(themeMode);
+    if (themeSyncRef.current.lastSynced === nextMode) return;
+
+    let cancelled = false;
+    apiRequest("/auth/me/preferences", {
+      ...authHeaders,
+      method: "PATCH",
+      body: { themeMode: nextMode },
+    })
+      .then((result) => {
+        if (cancelled) return;
+        const savedMode = normalizeThemeMode(result?.themePreference || result?.theme_preference || nextMode);
+        themeSyncRef.current.lastSynced = savedMode;
+        setCurrentUser((prev) => prev ? { ...prev, themePreference: savedMode, theme_preference: savedMode } : prev);
+        if (savedMode !== themeMode) setThemeMode(savedMode);
+      })
+      .catch((e) => {
+        if (cancelled) return;
+        setError((prev) => prev || e.message || "No se pudo sincronizar el tema.");
+      });
+
+    return () => { cancelled = true; };
+  }, [authHeaders, currentUser?.id, themeMode]);
 
   React.useEffect(() => {
     applyTenantTheme(tenantSettings);
@@ -195,6 +233,12 @@ function App() {
     try {
       const me = await apiRequest("/auth/me", override);
       const nextRole = roleFromBackend(me.rol);
+      const backendTheme = normalizeThemeMode(me.themePreference || me.theme_preference);
+      themeSyncRef.current = {
+        ready: true,
+        lastSynced: backendTheme,
+      };
+      setThemeMode(backendTheme);
       setCurrentUser(me);
       setRole(nextRole);
       await loadTenantSettings(override);
