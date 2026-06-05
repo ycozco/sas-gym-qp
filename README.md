@@ -19,7 +19,7 @@ Roles funcionales:
 ## Arquitectura actual
 
 ```text
-App Flutter / Flutter Web / Mockups Web
+App Flutter / Flutter Web / Panel Web Admin
               |
               | HTTP + WebSocket
               v
@@ -60,12 +60,13 @@ En este proyecto, "sistema web" incluye todos los elementos web y de servidor:
 
 - Backend/API NestJS en `backend/`.
 - Flutter web compilado desde `mobile_app/` y servido por Nginx.
+- Panel web admin real en `web_admin/`, servido por Nginx en `/web/`.
 - Hub estatico en `index.html`.
-- Mockups web en `mockups/web/`.
+- Mockups web en `mockups/web/` como referencia/fallback, no como entrada principal.
 - Mockups mobile en `mockups/mobile/`.
 - Servicios Docker definidos en `docker-compose.yml`.
 
-El hub estatico corre en `http://localhost:8282` y sirve la navegacion hacia mockups y documentacion. La app Flutter web corre en `http://localhost:8383`. La API corre en `http://localhost:3000`.
+El hub estatico corre en `http://localhost:8282`, el panel web admin real en `http://localhost:8282/web/index.html`, la app Flutter web en `http://localhost:8383` y la API en `http://localhost:3000`.
 
 ### Backend/API
 
@@ -128,6 +129,7 @@ sas_gym/
 |   |-- test/
 |   |-- Dockerfile
 |   |-- pubspec.yaml
+|-- web_admin/
 |-- mockups/
 |   |-- mobile/
 |   |-- web/
@@ -179,6 +181,7 @@ docker compose up --build
 Servicios esperados:
 
 - API NestJS: `http://localhost:3000`
+- Panel web admin real: `http://localhost:8282/web/index.html`
 - Flutter web: `http://localhost:8383`
 - Hub/mockups/docs: `http://localhost:8282`
 - PostgreSQL: `127.0.0.1:5432`

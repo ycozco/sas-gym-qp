@@ -38,13 +38,16 @@ services:
     volumes:
       - ./backend:/app
       - /app/node_modules
+    env_file:
+      - ./backend/.env
     environment:
       - DATABASE_URL=postgresql://postgres:postgres_secure_password@db:5432/gymsmart?schema=public
       - PORT=3000
-      - JWT_SECRET=gymsmart_secure_jwt_secret_key_2026
       - TZ=America/Lima # Forzar zona horaria en el contenedor para turnos POS
+      - ENABLE_QR_SIMULATOR=true
+      - ALLOW_TEST_DATA_RESET=true
     command: >
-      sh -c "npx prisma db push --force-reset && npx prisma generate && npx prisma db seed && npm run start:dev"
+      sh -c "npm run db:setup:local && npx prisma db seed && npm run start:dev"
     networks:
       - internal-net
       - public-net
@@ -55,6 +58,11 @@ services:
       context: ./mobile_app
       dockerfile: Dockerfile
       target: runtime
+      args:
+        APP_ENV: dev
+        APP_MODE: backend
+        ENABLE_QR_SIMULATOR: "true"
+        API_BASE_URL: http://localhost:3000/api/v1
     container_name: sas_gym_flutter_web
     ports:
       - "8383:80"
@@ -73,7 +81,7 @@ services:
     image: sas_gym_flutter_ci:latest
     profiles: ["ci"]
 
-  # ─── NAVIGATOR HUB & STATIC PROTOTYPES (RED PÚBLICA) ─────────────────
+  # ─── WEB ADMIN REAL + NAVIGATOR HUB & STATIC PROTOTYPES (RED PÚBLICA) ──
   web:
     image: nginx:alpine
     container_name: sas_gym_frontend
@@ -81,6 +89,7 @@ services:
       - "8282:80"
     volumes:
       - ./index.html:/usr/share/nginx/html/index.html:ro
+      - ./web_admin:/usr/share/nginx/html/web:ro
       - ./mockups/mobile:/usr/share/nginx/html/mockups/mobile:ro
       - ./mockups/web:/usr/share/nginx/html/mockups/web:ro
       - ./docs:/usr/share/nginx/html/docs:ro

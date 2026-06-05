@@ -15,7 +15,7 @@ function roleFromBackend(role) {
   })[role] || "admin";
 }
 
-function apiRequest(path, { method = "GET", body, token, tenantId, headers = {} } = {}) {
+function apiRequest(path, { method = "GET", body, token, tenantId, headers = {}, _retry = true } = {}) {
   const finalHeaders = {
     Accept: "application/json",
     ...headers,
@@ -27,10 +27,30 @@ function apiRequest(path, { method = "GET", body, token, tenantId, headers = {} 
   return fetch(`${API_BASE_URL}${path}`, {
     method,
     headers: finalHeaders,
+    credentials: "include",
     body: body === undefined ? undefined : JSON.stringify(body),
   }).then(async (response) => {
     const text = await response.text();
     const data = text ? JSON.parse(text) : null;
+    if (response.status === 401 && _retry && !path.startsWith("/auth/")) {
+      const refreshed = await apiRequest("/auth/refresh", {
+        method: "POST",
+        tenantId,
+        _retry: false,
+      });
+      try {
+        if (refreshed.token) localStorage.setItem(AUTH_TOKEN_KEY, refreshed.token);
+        if (refreshed.tenantId) localStorage.setItem(TENANT_ID_KEY, refreshed.tenantId);
+      } catch (_) {}
+      return apiRequest(path, {
+        method,
+        body,
+        token: refreshed.token,
+        tenantId: refreshed.tenantId || tenantId,
+        headers,
+        _retry: false,
+      });
+    }
     if (!response.ok) {
       const message = Array.isArray(data?.message)
         ? data.message.join("\n")
@@ -73,6 +93,41 @@ function normalizeMembershipPlan(plan) {
   };
 }
 
+function normalizeProduct(product) {
+  const categoryName = product.categoria?.descripcion || product.categoria?.nombre || product.categoria || "";
+  return {
+    id: product.id || "",
+    name: product.nombre || product.name || "",
+    description: product.descripcion || "",
+    category: String(categoryName).replace(/^[a-f0-9-]{8,}-/i, ""),
+    sku: product.sku || "",
+    price: Number(product.precio_venta ?? product.price ?? 0),
+    cost: Number(product.precio_compra ?? product.cost ?? 0),
+    stock: Number(product.stock_actual ?? product.stock ?? 0),
+    minStock: Number(product.stock_minimo ?? 0),
+    imageUrl: product.imagen_url || "",
+    status: product.estado || "activo",
+    visible: product.es_visible ?? true,
+    raw: product,
+  };
+}
+
+function productToApiPayload(product) {
+  return {
+    nombre: product.name.trim(),
+    descripcion: product.description?.trim() || "",
+    categoria: product.category?.trim() || "General",
+    sku: product.sku?.trim() || undefined,
+    precioCompra: Number(product.cost || 0),
+    precioVenta: Number(product.price || 0),
+    stockActual: Number(product.stock || 0),
+    stockMinimo: Number(product.minStock || 5),
+    imagenUrl: product.imageUrl || "",
+    estado: product.status || "activo",
+    esVisible: product.visible ?? true,
+  };
+}
+
 function planToApiPayload(plan) {
   return {
     nombre: plan.name.trim(),
@@ -95,6 +150,22 @@ function colorInk(hex, light = "#FFFFFF", dark = "#0B0B0B") {
   return luminance > 0.58 ? dark : light;
 }
 
+function hexToRgb(hex) {
+  const value = String(hex || "").replace("#", "");
+  if (!/^[0-9a-f]{6}$/i.test(value)) return null;
+  return {
+    r: parseInt(value.slice(0, 2), 16),
+    g: parseInt(value.slice(2, 4), 16),
+    b: parseInt(value.slice(4, 6), 16),
+  };
+}
+
+function colorMix(hex, amount = 0.12, fallback = "rgba(47,107,255,.12)") {
+  const rgb = hexToRgb(hex);
+  if (!rgb) return fallback;
+  return `rgba(${rgb.r},${rgb.g},${rgb.b},${amount})`;
+}
+
 function applyTenantTheme(tenant) {
   const root = document.documentElement;
   if (!tenant) {
@@ -113,6 +184,7 @@ function applyTenantTheme(tenant) {
     root.style.setProperty("--accent", accent);
     root.style.setProperty("--accent-2", accent);
     root.style.setProperty("--accent-ink", colorInk(accent));
+    root.style.setProperty("--accent-soft", colorMix(accent, 0.16));
   }
 }
 
@@ -369,8 +441,11 @@ Object.assign(window, {
   roleFromBackend,
   normalizeTenantSettings,
   normalizeMembershipPlan,
+  normalizeProduct,
   planToApiPayload,
+  productToApiPayload,
   colorInk,
+  colorMix,
   applyTenantTheme,
   LoadingBlock,
   ErrorBlock,
