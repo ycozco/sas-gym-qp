@@ -20,10 +20,16 @@ model Tenant {
   horario         String?
   descripcion     String?
   redes_sociales  Json?
+  color_primario  String?
+  color_secundario String?
+  color_acento    String?
+  dias_gracia     Int      @default(1)
+  dias_alerta_vencimiento Int @default(5)
   plan_saas       String   @default("BASIC")  // BASIC | PRO | ENTERPRISE
   activo          Boolean  @default(true)
   created_at      DateTime @default(now())
   usuarios        User[]
+  membership_plans MembershipPlan[]
   memberships     Membership[]
   attendances     Attendance[]
   exercises       Exercise[]
@@ -49,6 +55,7 @@ model User {
   celular         String?
   foto_url        String?
   estado          UserState @default(PENDING)
+  theme_preference ThemePreference @default(SYSTEM)
   refresh_token   String?
   qr_secret       String?
   created_at      DateTime @default(now())
@@ -60,6 +67,7 @@ model User {
   memberships        Membership[]
   payments_registered Payment[] @relation("RegisteredBy")
   attendances        Attendance[]
+  membership_plans_created MembershipPlan[]
 
   // Nuevas relaciones para Caja, Ventas de Productos, Huellas y Puntos
   cajas_registradas           Caja[]            @relation("CajeroSessions")
@@ -72,9 +80,27 @@ model User {
   points_exchanges_processed  PointsExchange[]  @relation("ExchangesProcessed")
   points_movements            PointsMovement[]
   inventory_movements         InventoryMovement[]
+  refresh_sessions            RefreshTokenSession[]
 
   @@unique([tenant_id, email])
   @@unique([tenant_id, dni])
+}
+
+model RefreshTokenSession {
+  id              String    @id @default(uuid())
+  user_id         String
+  user            User      @relation(fields: [user_id], references: [id])
+  token_hash      String    @unique
+  user_agent      String?
+  ip_address      String?
+  expires_at      DateTime
+  revoked_at      DateTime?
+  replaced_by_id  String?
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+
+  @@index([user_id])
+  @@index([expires_at])
 }
 
 enum Role {
@@ -90,6 +116,12 @@ enum UserState {
   INACTIVE
   PENDING
   SUSPENDED
+}
+
+enum ThemePreference {
+  SYSTEM
+  LIGHT
+  DARK
 }
 
 // ─── PERFILES ────────────────────────────────────────────────────
@@ -139,6 +171,8 @@ model Membership {
   tenant          Tenant          @relation(fields: [tenant_id], references: [id])
   user_id         String
   user            User            @relation(fields: [user_id], references: [id])
+  plan_id         String?
+  plan            MembershipPlan? @relation(fields: [plan_id], references: [id])
   plan_nombre     String          // "Mensual", "Trimestral"
   duracion_dias   Int             // 30, 90, 365
   monto           Float
@@ -168,6 +202,27 @@ model Membership {
   traspasada_a_id             String?
 
   points_movements            PointsMovement[]
+}
+
+model MembershipPlan {
+  id              String   @id @default(uuid())
+  tenant_id       String
+  tenant          Tenant   @relation(fields: [tenant_id], references: [id])
+  nombre          String
+  descripcion     String?
+  duracion_dias   Int
+  precio          Float
+  color           String?
+  orden           Int      @default(0)
+  activo          Boolean  @default(true)
+  created_by_id   String?
+  created_by      User?    @relation(fields: [created_by_id], references: [id])
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+  memberships     Membership[]
+
+  @@unique([tenant_id, nombre])
+  @@index([tenant_id, activo, orden])
 }
 
 enum MembershipState {
@@ -646,4 +701,3 @@ model PointsMovement {
   payment        Payment?        @relation(fields: [payment_id], references: [id])
   created_at     DateTime        @default(now())
 }
-

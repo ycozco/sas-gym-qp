@@ -6,7 +6,6 @@ import {
   Role,
   ThemePreference,
   UserState,
-  AccessMethod,
 } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 
@@ -204,52 +203,13 @@ function membershipDates(status: MemberStatus, plan: PlanDef, now: Date) {
 }
 
 async function main() {
-  const isProduction = process.env.NODE_ENV === 'production';
-  if (isProduction) {
-    console.log('Ejecutando sembrado de producción (solo inicialización esencial, no reset)...');
-    
-    const existingSuperAdmin = await prisma.user.findFirst({
-      where: { rol: Role.SUPER_ADMIN },
-    });
-
-    if (!existingSuperAdmin) {
-      let superTenant = await prisma.tenant.findFirst({
-        where: { plan_saas: 'ENTERPRISE' },
-      });
-      if (!superTenant) {
-        superTenant = await prisma.tenant.create({
-          data: {
-            nombre: 'SAS Gym Holding',
-            plan_saas: 'ENTERPRISE',
-            activo: true,
-            direccion: 'Av. Javier Prado 1000, Lima',
-            telefono: '999000000',
-            horario: 'Administracion central',
-            descripcion: 'Tenant de administracion global.',
-          },
-        });
-      }
-
-      const superPasswordHash = await bcrypt.hash('super_secure_pass', 10);
-      await prisma.user.create({
-        data: {
-          tenant_id: superTenant.id,
-          email: 'superadmin@test.sasgym.com',
-          password_hash: superPasswordHash,
-          rol: Role.SUPER_ADMIN,
-          nombre_completo: 'Super Admin',
-          dni: '90000000',
-          estado: UserState.ACTIVE,
-        },
-      });
-      console.log('Super Admin inicial creado exitosamente para producción.');
-    } else {
-      console.log('El Super Admin ya existe en la base de datos de producción. Omitiendo creación.');
-    }
-    return;
+  if (process.env.ALLOW_TEST_DATA_RESET !== 'true') {
+    throw new Error(
+      'Set ALLOW_TEST_DATA_RESET=true to reset and seed test data.',
+    );
   }
 
-  console.log('Iniciando el sembrado de datos (Seed Realista)...');
+  console.log('Resetting database for realistic test data...');
   await resetDatabase();
 
   const passwordHash = {
@@ -527,22 +487,12 @@ async function main() {
       'EXPIRED',
     ];
 
-    // Configuración de Puntos
-    await prisma.pointsConfig.create({
-      data: {
-        puntos_por_sol: 1.0,
-        minimo_para_canje: 100,
-        puntos_expiran: false,
-      },
-    });
-
     for (let i = 0; i < 20; i++) {
       const status = statusCycle[i];
       const plan = plans[(i + tenantIndex) % plans.length];
       const tenantPlan = tenantPlans[(i + tenantIndex) % tenantPlans.length];
       const first = firstNames[(i + tenantIndex * 2) % firstNames.length];
       const last = lastNames[(i + tenantIndex * 3) % lastNames.length];
-      
       const memberUser = await prisma.user.create({
         data: {
           tenant_id: tenant.id,
@@ -592,7 +542,6 @@ async function main() {
             ? plan.price
             : Math.round(plan.price * (1 - discount / 100));
       const pending = Math.max(0, plan.price - paid);
-      
       const membership = await prisma.membership.create({
         data: {
           tenant_id: tenant.id,
@@ -616,13 +565,13 @@ async function main() {
       });
       totalMemberships++;
 
-      // Vincular caja activa
       const caja = cajas[i % cajas.length];
       const paymentState =
         status === 'PENDING'
           ? PaymentState.PENDING
-          : PaymentState.APPROVED;
-          
+          : status === 'SUSPENDED'
+            ? PaymentState.APPROVED
+            : PaymentState.APPROVED;
       const method = [
         PaymentMethod.CASH,
         PaymentMethod.MANUAL_YAPE,
@@ -670,134 +619,6 @@ async function main() {
           total_ingresos: { increment: paid },
         },
       });
-
-      // Crear saldo de puntos inicial
-      await prisma.pointsBalance.create({
-        data: {
-          usuario_id: memberUser.id,
-          puntos_disponibles: 100,
-          puntos_totales_ganados: 100,
-          puntos_totales_canjeados: 0,
-        },
-      });
-
-      // --- SIMULACIÓN DE ASISTENCIAS ACTIVAS HOY (QR y Huella) ---
-      // Registrar ingresos "hoy" para algunos de los socios activos
-      if (status === 'ACTIVE' && i % 3 === 0) {
-        // Asistencia QR
-        await prisma.attendance.create({
-          data: {
-            tenant_id: tenant.id,
-            user_id: memberUser.id,
-            timestamp: now,
-            metodo_acceso: AccessMethod.QR_ADMIN,
-          },
-        });
-
-        // Asistencia biométrica (Huella)
-        const activeHuella = await prisma.fingerprint.create({
-          data: {
-            usuario_id: memberUser.id,
-            dedo: 'pulgar_der',
-            datos_huella: 'U01HQVNFUl9GSU5HRVJQUklOVF9URU1QTEFURV9EQVRB',
-            hash_verificacion: 'SHA256_HASH_VERIFY_SIMULATION',
-            activa: true,
-          },
-        });
-
-        await prisma.fingerprintAttendance.create({
-          data: {
-            usuario_id: memberUser.id,
-            huella_id: activeHuella.id,
-            fecha_entrada: now,
-            ip_origen: '192.168.1.15',
-            dispositivo_id: 'ZKTECO-SURCO-01',
-          },
-        });
-      }
-
-      // --- SIMULACIÓN DE MULTIPLES VENTAS DE PRODUCTOS DESDE CAJA ---
-      // Crear algunas compras de bebidas o suplementos en caja
-      if (i % 5 === 0) {
-        const prod = products[i % products.length];
-        const cant = (i % 3) + 1;
-        const totalVenta = prod.precio_venta * cant;
-        const refVenta = `SALE-${gym.code.toUpperCase()}-${i}-${now.getTime()}`;
-
-        const productSale = await prisma.productSale.create({
-          data: {
-            tenant_id: tenant.id,
-            referencia: refVenta,
-            cajero_id: cashiers[i % cashiers.length].id,
-            cliente_id: memberUser.id,
-            caja_id: caja.id,
-            subtotal: totalVenta,
-            descuento: 0,
-            total: totalVenta,
-            estado: 'completada',
-            fecha_venta: now,
-          },
-        });
-
-        await prisma.productSaleDetail.create({
-          data: {
-            sale_id: productSale.id,
-            producto_id: prod.id,
-            cantidad: cant,
-            precio_unitario: prod.precio_venta,
-            subtotal: totalVenta,
-          },
-        });
-
-        await prisma.productPaymentMethodDetail.create({
-          data: {
-            sale_id: productSale.id,
-            metodo: 'efectivo',
-            monto: totalVenta,
-          },
-        });
-
-        // Registrar movimiento de stock
-        await prisma.inventoryMovement.create({
-          data: {
-            producto_id: prod.id,
-            tipo: 'salida',
-            cantidad: cant,
-            stock_anterior: prod.stock_actual,
-            stock_actual: prod.stock_actual - cant,
-            sale_id: productSale.id,
-            usuario_id: cashiers[i % cashiers.length].id,
-            motivo: 'Venta Caja Registradora',
-          },
-        });
-
-        // Actualizar stock real
-        await prisma.product.update({
-          where: { id: prod.id },
-          data: {
-            stock_actual: { decrement: cant },
-            veces_vendido: { increment: cant },
-          },
-        });
-
-        // Registrar ingreso de efectivo en la caja
-        await prisma.movimientoCaja.create({
-          data: {
-            caja_id: caja.id,
-            tipo: 'ingreso',
-            monto: totalVenta,
-            descripcion: `Venta Producto: ${prod.nombre} (${cant} und) - ${first} ${last}`,
-          },
-        });
-
-        await prisma.caja.update({
-          where: { id: caja.id },
-          data: {
-            total_ventas_efectivo: { increment: totalVenta },
-            total_ingresos: { increment: totalVenta },
-          },
-        });
-      }
     }
 
     for (let i = 0; i < 3; i++) {
@@ -830,7 +651,7 @@ async function main() {
         accion: 'CREATE',
         entidad: 'DataTest',
         detalles: {
-          message: 'Carga data-test creada con logs de asistencias y ventas',
+          message: 'Carga data-test creada',
           members: 20,
           admins: 2,
           trainers: 5,
@@ -841,13 +662,13 @@ async function main() {
   }
 
   console.log(
-    `Sembrado finalizado: tenants=${gyms.length + 1}, gyms=${gyms.length}, users=${totalUsers}, memberships=${totalMemberships}, cajas=${totalCajas}`
+    `Data-test listo: tenants=${gyms.length + 1}, gyms=${gyms.length}, users=${totalUsers}, memberships=${totalMemberships}, cajas=${totalCajas}`,
   );
 }
 
 main()
-  .catch((e) => {
-    console.error('Error al correr el seed:', e);
+  .catch((error) => {
+    console.error('Error running data-test seed:', error);
     process.exit(1);
   })
   .finally(async () => {

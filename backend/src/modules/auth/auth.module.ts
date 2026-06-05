@@ -3,14 +3,15 @@ import { JwtModule } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { PrismaModule } from '../../prisma/prisma.module';
+import { getAccessTokenTtl, getJwtSecret } from '../../core/config/env';
 
 @Module({
   imports: [
     PrismaModule,
     JwtModule.register({
       global: true,
-      secret: process.env.JWT_SECRET || 'gymsmart_secure_jwt_secret_key_2026',
-      signOptions: { expiresIn: '1d' },
+      secret: getJwtSecret(),
+      signOptions: { expiresIn: getAccessTokenTtl() as any },
     }),
   ],
   controllers: [AuthController],

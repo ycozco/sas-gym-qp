@@ -28,12 +28,13 @@ services:
         condition: service_healthy
     ports:
       - "3000:3000"
+    env_file:
+      - ./.env
     environment:
       - DATABASE_URL=postgresql://postgres:postgres_secure_password@db:5432/gymsmart?schema=public
       - PORT=3000
-      - JWT_SECRET=gymsmart_secure_jwt_secret_key_2026
     command: >
-      sh -c "npx prisma db push --force-reset && npx prisma db seed && npm run start:dev"
+      sh -c "npm run db:setup:local && npm run start:dev"
 
 volumes:
   postgres_data:

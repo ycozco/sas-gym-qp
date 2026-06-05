@@ -1,4 +1,8 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PaymentMethod, PaymentState } from '@prisma/client';
 import { IsNumber, IsOptional, IsString, Min } from 'class-validator';
@@ -72,11 +76,15 @@ export class CashierSessionService {
   async openCaja(cajeroId: string, tenantId: string, dto: OpenCajaDto) {
     const existing = await this.getActiveCaja(cajeroId, tenantId);
     if (existing) {
-      throw new BadRequestException('Ya tienes una caja abierta. Debes cerrarla antes de abrir una nueva.');
+      throw new BadRequestException(
+        'Ya tienes una caja abierta. Debes cerrarla antes de abrir una nueva.',
+      );
     }
 
     if (dto.montoApertura < 0) {
-      throw new BadRequestException('El monto de apertura no puede ser negativo.');
+      throw new BadRequestException(
+        'El monto de apertura no puede ser negativo.',
+      );
     }
 
     const caja = await this.prisma.caja.create({
@@ -182,9 +190,15 @@ export class CashierSessionService {
         efectivoIngreso += p.monto;
       } else if (p.metodo === PaymentMethod.TRANSFER) {
         transferenciaIngreso += p.monto;
-      } else if (p.metodo === PaymentMethod.MANUAL_YAPE || p.metodo === PaymentMethod.MANUAL_PLIN) {
+      } else if (
+        p.metodo === PaymentMethod.MANUAL_YAPE ||
+        p.metodo === PaymentMethod.MANUAL_PLIN
+      ) {
         yapeIngreso += p.monto;
-      } else if (p.metodo === PaymentMethod.POS || p.metodo === PaymentMethod.GATEWAY) {
+      } else if (
+        p.metodo === PaymentMethod.POS ||
+        p.metodo === PaymentMethod.GATEWAY
+      ) {
         posIngreso += p.monto;
       }
     }
@@ -211,9 +225,15 @@ export class CashierSessionService {
         const descLower = m.descripcion.toLowerCase();
         if (descLower.includes('[metodo:transferencia]')) {
           transferenciaEgreso += m.monto;
-        } else if (descLower.includes('[metodo:yape]') || descLower.includes('[metodo:plin]')) {
+        } else if (
+          descLower.includes('[metodo:yape]') ||
+          descLower.includes('[metodo:plin]')
+        ) {
           yapeEgreso += m.monto;
-        } else if (descLower.includes('[metodo:pos]') || descLower.includes('[metodo:tarjeta]')) {
+        } else if (
+          descLower.includes('[metodo:pos]') ||
+          descLower.includes('[metodo:tarjeta]')
+        ) {
           posEgreso += m.monto;
         } else {
           efectivoEgreso += m.monto; // Por defecto efectivo
@@ -260,13 +280,24 @@ export class CashierSessionService {
     const details = await this.getCajaSessionDetails(cajeroId, tenantId);
     const { caja, stats } = details;
 
-    const totalSistema = stats.efectivo_esperado + stats.total_ventas_transferencia - stats.transferencia_egreso +
-      stats.total_ventas_yape - stats.yape_egreso + stats.total_ventas_pos - stats.pos_egreso;
+    const totalSistema =
+      stats.efectivo_esperado +
+      stats.total_ventas_transferencia -
+      stats.transferencia_egreso +
+      stats.total_ventas_yape -
+      stats.yape_egreso +
+      stats.total_ventas_pos -
+      stats.pos_egreso;
     // O de forma equivalente: totalSistema = stats.efectivo_esperado + neto_transferencia + neto_yape + neto_pos
     // que es igual a caja.monto_apertura + stats.total_esperado
 
-    const totalCierre = dto.montoCierreEfectivo + dto.montoCierreTransferencia + dto.montoCierreYape + dto.montoCierrePOS;
-    const diferencia = totalCierre - (caja.monto_apertura + stats.total_esperado);
+    const totalCierre =
+      dto.montoCierreEfectivo +
+      dto.montoCierreTransferencia +
+      dto.montoCierreYape +
+      dto.montoCierrePOS;
+    const diferencia =
+      totalCierre - (caja.monto_apertura + stats.total_esperado);
 
     const updatedCaja = await this.prisma.caja.update({
       where: { id: caja.id },

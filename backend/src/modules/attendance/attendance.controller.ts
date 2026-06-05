@@ -33,6 +33,13 @@ export class AttendanceController {
     return this.attendanceService.verifyQrToken(dto.dni, dto.otpToken, tenantId);
   }
 
+  @Post('simulation-access')
+  @Roles(Role.ADMIN, Role.CAJA)
+  async simulateAccess(@Req() req: any, @Body('dni') dni: string) {
+    const tenantId = req.user.tenantId;
+    return this.attendanceService.simulateAccess(dni, tenantId);
+  }
+
   @Post('fingerprint/register')
   @Roles(Role.ADMIN, Role.CAJA)
   async registerFingerprint(@Body() dto: RegisterFingerprintDto) {
@@ -45,4 +52,3 @@ export class AttendanceController {
     return this.fingerprintService.verifyFingerprint(dto);
   }
 }
-

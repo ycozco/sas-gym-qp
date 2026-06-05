@@ -14,8 +14,16 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { existsSync, mkdirSync } from 'fs';
 import { PaymentsService, ChargePosDto } from './payments.service';
-import { CashierSessionService, OpenCajaDto, CloseCajaDto, EgressDto } from './cashier-session.service';
-import { MembershipBillingService, RegisterMembershipSaleDto } from './membership-billing.service';
+import {
+  CashierSessionService,
+  OpenCajaDto,
+  CloseCajaDto,
+  EgressDto,
+} from './cashier-session.service';
+import {
+  MembershipBillingService,
+  RegisterMembershipSaleDto,
+} from './membership-billing.service';
 import { AuthGuard } from '../../core/guards/auth.guard';
 import { TenantGuard } from '../../core/guards/tenant.guard';
 import { RolesGuard } from '../../core/guards/roles.guard';
@@ -38,7 +46,12 @@ export class PaymentsController {
       limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB max
       fileFilter: (req: any, file: any, cb: any) => {
         if (!file.mimetype.match(/\/(jpg|jpeg|png|webp)$/)) {
-          return cb(new BadRequestException('Solo se permiten imágenes (JPG, JPEG, PNG, WEBP).'), false);
+          return cb(
+            new BadRequestException(
+              'Solo se permiten imágenes (JPG, JPEG, PNG, WEBP).',
+            ),
+            false,
+          );
         }
         cb(null, true);
       },
@@ -51,7 +64,8 @@ export class PaymentsController {
           cb(null, uploadPath);
         },
         filename: (req: any, file: any, cb: any) => {
-          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
           const extension = file.originalname.split('.').pop();
           cb(null, `${uniqueSuffix}.${extension}`);
         },
@@ -69,7 +83,9 @@ export class PaymentsController {
       throw new BadRequestException('El archivo de comprobante es requerido.');
     }
     if (!montoStr || !metodo || !planNombre) {
-      throw new BadRequestException('Los campos monto, metodo y planNombre son obligatorios.');
+      throw new BadRequestException(
+        'Los campos monto, metodo y planNombre son obligatorios.',
+      );
     }
 
     const monto = parseFloat(montoStr);
@@ -90,6 +106,12 @@ export class PaymentsController {
     );
   }
 
+  @Get('me')
+  @Roles(Role.MEMBER)
+  async getMyPayments(@Req() req: any) {
+    return this.paymentsService.getMemberPayments(req.user.sub, req.user.tenantId);
+  }
+
   @Get('pending')
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   async getPending(@Req() req: any) {
@@ -106,10 +128,17 @@ export class PaymentsController {
     @Body('comments') comments?: string,
   ) {
     if (!status || (status !== 'APPROVED' && status !== 'REJECTED')) {
-      throw new BadRequestException("El estado debe ser 'APPROVED' o 'REJECTED'.");
+      throw new BadRequestException(
+        "El estado debe ser 'APPROVED' o 'REJECTED'.",
+      );
     }
     const tenantId = req.user.tenantId;
-    return this.paymentsService.resolvePayment(paymentId, tenantId, status, comments);
+    return this.paymentsService.resolvePayment(
+      paymentId,
+      tenantId,
+      status,
+      comments,
+    );
   }
 
   @Get('check-shift')
@@ -143,7 +172,10 @@ export class PaymentsController {
   async getActiveCaja(@Req() req: any) {
     const cashierId = req.user.sub;
     const tenantId = req.user.tenantId;
-    const active = await this.cashierSessionService.getActiveCaja(cashierId, tenantId);
+    const active = await this.cashierSessionService.getActiveCaja(
+      cashierId,
+      tenantId,
+    );
     return active || { message: 'No hay ninguna caja abierta.' };
   }
 
@@ -160,7 +192,10 @@ export class PaymentsController {
   async getCajaDetails(@Req() req: any) {
     const cashierId = req.user.sub;
     const tenantId = req.user.tenantId;
-    return this.cashierSessionService.getCajaSessionDetails(cashierId, tenantId);
+    return this.cashierSessionService.getCajaSessionDetails(
+      cashierId,
+      tenantId,
+    );
   }
 
   @Post('caja/close')
@@ -171,13 +206,46 @@ export class PaymentsController {
     return this.cashierSessionService.closeCaja(cashierId, tenantId, dto);
   }
 
+  @Get('caja/sales')
+  @Roles(Role.CAJA, Role.ADMIN)
+  async getCajaSales(@Req() req: any) {
+    return this.paymentsService.getCajaSales(req.user.sub, req.user.tenantId);
+  }
+
+  @Post(':id/void-request')
+  @Roles(Role.CAJA, Role.ADMIN)
+  async requestVoid(@Req() req: any, @Param('id') id: string) {
+    return this.paymentsService.requestVoid(req.user.sub, req.user.tenantId, id);
+  }
+
+  @Post(':id/void-resolve')
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  async resolveVoid(
+    @Req() req: any,
+    @Param('id') id: string,
+    @Body('approved') approved: boolean,
+  ) {
+    return this.paymentsService.resolveVoid(
+      req.user.tenantId,
+      id,
+      Boolean(approved),
+    );
+  }
+
   // ─── VENTAS DE MEMBRESÍAS ──────────────────────────────────────────
 
   @Post('membership-sale')
   @Roles(Role.CAJA, Role.ADMIN)
-  async registerMembershipSale(@Req() req: any, @Body() dto: RegisterMembershipSaleDto) {
+  async registerMembershipSale(
+    @Req() req: any,
+    @Body() dto: RegisterMembershipSaleDto,
+  ) {
     const cashierId = req.user.sub;
     const tenantId = req.user.tenantId;
-    return this.membershipBillingService.registerMembershipSale(cashierId, tenantId, dto);
+    return this.membershipBillingService.registerMembershipSale(
+      cashierId,
+      tenantId,
+      dto,
+    );
   }
 }

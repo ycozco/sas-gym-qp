@@ -1,6 +1,11 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PaymentMethod, PaymentState, MembershipState } from '@prisma/client';
+import { MembershipPlansService } from '../membership-plans/membership-plans.service';
 import {
   IsString,
   IsNumber,
@@ -28,16 +33,23 @@ export class RegisterMembershipSaleDto {
   @IsUUID()
   userId: string;
 
+  @IsOptional()
+  @IsUUID()
+  planId?: string;
+
+  @IsOptional()
   @IsString()
-  planNombre: string;
+  planNombre?: string;
 
+  @IsOptional()
   @IsNumber()
   @IsPositive()
-  duracionDias: number;
+  duracionDias?: number;
 
+  @IsOptional()
   @IsNumber()
   @IsPositive()
-  monto: number; // Precio base del plan
+  monto?: number; // Precio base del plan
 
   @IsOptional()
   @IsNumber()
@@ -73,7 +85,10 @@ export class RegisterMembershipSaleDto {
 
 @Injectable()
 export class MembershipBillingService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private membershipPlansService: MembershipPlansService,
+  ) {}
 
   async registerMembershipSale(
     cashierId: string,
@@ -82,9 +97,7 @@ export class MembershipBillingService {
   ) {
     const {
       userId,
-      planNombre,
-      duracionDias,
-      monto,
+      planId,
       descuentoPorcentaje = 0,
       descuentoMonto = 0,
       ventaToken,
@@ -94,8 +107,30 @@ export class MembershipBillingService {
       observaciones = '',
     } = dto;
 
+    let planNombre = dto.planNombre?.trim();
+    let duracionDias = dto.duracionDias;
+    let monto = dto.monto;
+
+    if (planId) {
+      const plan = await this.membershipPlansService.findActiveForSale(
+        tenantId,
+        planId,
+      );
+      planNombre = plan.nombre;
+      duracionDias = plan.duracion_dias;
+      monto = plan.precio;
+    }
+
+    if (!planNombre || !duracionDias || monto === undefined || monto === null) {
+      throw new BadRequestException(
+        'Debes seleccionar un plan valido o enviar nombre, duracion y monto.',
+      );
+    }
+
     if (!ventaToken) {
-      throw new BadRequestException('El token de venta (ventaToken) es obligatorio.');
+      throw new BadRequestException(
+        'El token de venta (ventaToken) es obligatorio.',
+      );
     }
 
     // 1. ===== PREVENCIÓN DE DOBLE SUBMIT (UUID Check) =====
@@ -151,10 +186,14 @@ export class MembershipBillingService {
 
     // 3. ===== VALIDACIONES Y CÁLCULO DE DESCUENTOS =====
     if (descuentoPorcentaje < 0 || descuentoPorcentaje > 100) {
-      throw new BadRequestException('El porcentaje de descuento debe estar entre 0 y 100.');
+      throw new BadRequestException(
+        'El porcentaje de descuento debe estar entre 0 y 100.',
+      );
     }
     if (descuentoMonto < 0) {
-      throw new BadRequestException('El descuento en monto no puede ser negativo.');
+      throw new BadRequestException(
+        'El descuento en monto no puede ser negativo.',
+      );
     }
 
     let precioFinal = monto;
@@ -167,12 +206,16 @@ export class MembershipBillingService {
     precioFinal = Math.max(0, precioFinal);
 
     if (!pagos || pagos.length === 0) {
-      throw new BadRequestException('Debes ingresar al menos un método de pago.');
+      throw new BadRequestException(
+        'Debes ingresar al menos un método de pago.',
+      );
     }
 
     const totalPagado = pagos.reduce((sum, p) => sum + p.monto, 0);
     if (totalPagado <= 0) {
-      throw new BadRequestException('El monto total de pago debe ser mayor a cero.');
+      throw new BadRequestException(
+        'El monto total de pago debe ser mayor a cero.',
+      );
     }
 
     const pagoCompleto = totalPagado >= precioFinal;
@@ -213,6 +256,7 @@ export class MembershipBillingService {
       data: {
         tenant_id: tenantId,
         user_id: userId,
+        plan_id: planId ?? null,
         plan_nombre: planNombre,
         duracion_dias: duracionDias,
         monto: monto,
@@ -275,7 +319,11 @@ export class MembershipBillingService {
     // 6. ===== ACUMULACIÓN DE PUNTOS =====
     let puntosGanados = 0;
     try {
-      puntosGanados = await this.accumulatePoints(userId, totalPagado, `Compra de membresía: ${planNombre}`);
+      puntosGanados = await this.accumulatePoints(
+        userId,
+        totalPagado,
+        `Compra de membresía: ${planNombre}`,
+      );
     } catch (err) {
       console.error('Error al acumular puntos de fidelización:', err);
     }
@@ -290,7 +338,11 @@ export class MembershipBillingService {
     };
   }
 
-  private async accumulatePoints(userId: string, totalPagado: number, descripcion: string): Promise<number> {
+  private async accumulatePoints(
+    userId: string,
+    totalPagado: number,
+    descripcion: string,
+  ): Promise<number> {
     // Obtener la configuración activa de puntos
     const config = await this.prisma.pointsConfig.findFirst({
       where: { activo: true },

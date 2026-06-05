@@ -17,4 +17,10 @@ export class ReportsController {
     const tenantId = req.user.tenantId;
     return this.reportsService.getAuditLogs(tenantId);
   }
+
+  @Get('dashboard')
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  async getDashboard(@Req() req: any) {
+    return this.reportsService.getDashboard(req.user.tenantId);
+  }
 }

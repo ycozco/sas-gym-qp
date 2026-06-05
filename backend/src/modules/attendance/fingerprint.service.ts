@@ -3,6 +3,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { MembershipState } from '@prisma/client';
 import * as crypto from 'crypto';
 import { IsString, IsOptional, IsUUID } from 'class-validator';
+import { getFingerprintSecret } from '../../core/config/env';
 
 export class RegisterFingerprintDto {
   @IsUUID()
@@ -41,7 +42,7 @@ export class FingerprintService {
   async registerFingerprint(dto: RegisterFingerprintDto) {
     const { userId, dedo, datosHuella, signature } = dto;
 
-    const secret = process.env.HUELLA_SECRET_KEY || 'huella_secure_secret_key_2026';
+    const secret = getFingerprintSecret();
     
     // 1. Validar la firma HMAC-SHA256
     const message = `${userId}:${dedo}:${datosHuella}`;
