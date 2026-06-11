@@ -98,9 +98,11 @@ La app usa `--dart-define` para separar ambiente, API y modo demo:
 ```powershell
 cd mobile_app
 flutter run --flavor dev --dart-define=APP_ENV=dev --dart-define=APP_MODE=backend --dart-define=API_BASE_URL=http://10.0.2.2:3000/api/v1
-flutter build web --release --dart-define=APP_ENV=staging --dart-define=APP_MODE=backend --dart-define=API_BASE_URL=http://localhost:3000/api/v1
+flutter build web --release --dart-define=APP_ENV=staging --dart-define=APP_MODE=backend --dart-define=API_BASE_URL=https://api.<ip/dominio>/api/v1
 flutter build apk --debug --flavor dev --dart-define=APP_ENV=dev --dart-define=APP_MODE=backend --dart-define=API_BASE_URL=http://10.0.2.2:3000/api/v1
 ```
+
+Para `APP_ENV=production`, `API_BASE_URL` es obligatoria y no puede usar `localhost`, `127.0.0.1` ni `10.0.2.2`.
 
 Para release firmado se debe crear `mobile_app/android/key.properties` a partir de `mobile_app/android/key.properties.example`. No se debe commitear el keystore ni claves reales.
 

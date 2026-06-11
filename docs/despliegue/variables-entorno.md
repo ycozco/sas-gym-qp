@@ -31,3 +31,9 @@
 ## Frontend
 
 Flutter debe recibir URLs con `--dart-define`, especialmente `API_BASE_URL`. El APK productivo no debe apuntar a `localhost`, `127.0.0.1` ni `10.0.2.2`.
+
+En este repositorio:
+
+- `APP_ENV=production` exige `API_BASE_URL`.
+- El build de `mobile_app/Dockerfile` falla si en produccion `API_BASE_URL` esta vacia.
+- La app tambien falla en runtime si `API_BASE_URL` productiva esta ausente o apunta a un host local.

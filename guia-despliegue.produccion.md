@@ -105,6 +105,25 @@ CORS_ORIGINS=https://app.<ip/dominio>,https://admin.<ip/dominio>
 
 No versionar `.env`.
 
+## Regla para Flutter web en produccion
+
+El build de `mobile_app/` debe recibir `API_BASE_URL` explicita. Si `APP_ENV=production`:
+
+- `API_BASE_URL` es obligatoria.
+- No puede apuntar a `localhost`, `127.0.0.1` ni `10.0.2.2`.
+- La imagen debe compilarse con la URL publica real de la API.
+
+Ejemplo de build correcto dentro de contenedores:
+
+```bash
+docker compose --env-file .env -f infra/docker/compose.prod.yml build app_web
+```
+
+La validacion queda repartida en dos capas:
+
+- `infra/docker/compose.prod.yml` inyecta `API_BASE_URL` al build de Flutter.
+- `mobile_app/Dockerfile` corta el build si `APP_ENV=production` sin URL publica valida.
+
 ## Validar compose sin desplegar
 
 ```bash

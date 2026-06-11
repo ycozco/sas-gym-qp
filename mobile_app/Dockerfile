@@ -17,7 +17,18 @@ COPY . .
 ARG APP_ENV=dev
 ARG APP_MODE=backend
 ARG ENABLE_QR_SIMULATOR=false
-ARG API_BASE_URL=http://localhost:3000/api/v1
+ARG API_BASE_URL=""
+RUN if [ "$APP_ENV" = "production" ] && [ -z "$API_BASE_URL" ]; then \
+      echo "API_BASE_URL is required when APP_ENV=production" >&2; \
+      exit 1; \
+    fi \
+    && if [ "$APP_ENV" = "production" ]; then \
+      case "$API_BASE_URL" in \
+        *localhost*|*127.0.0.1*|*10.0.2.2*) \
+          echo "API_BASE_URL cannot target a local host when APP_ENV=production" >&2; \
+          exit 1 ;; \
+      esac; \
+    fi
 RUN flutter build web --release --no-wasm-dry-run --pwa-strategy=none \
     --dart-define=APP_ENV=${APP_ENV} \
     --dart-define=APP_MODE=${APP_MODE} \

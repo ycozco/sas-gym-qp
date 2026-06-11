@@ -50,7 +50,14 @@ class AppConfig {
 
   static String resolveApiBaseUrl() {
     if (apiBaseUrlOverride.isNotEmpty) {
+      _validateProductionApiBaseUrl(apiBaseUrlOverride);
       return apiBaseUrlOverride;
+    }
+    if (isProduction) {
+      throw StateError(
+        'API_BASE_URL is required when APP_ENV=production. '
+        'Provide it with --dart-define=API_BASE_URL=https://api.<dominio>/api/v1.',
+      );
     }
     if (kIsWeb) {
       return 'http://localhost:3000/api/v1';
@@ -65,6 +72,21 @@ class AppConfig {
     if (isProduction) return null;
     if (!enableQrSimulator) return null;
     return '${dni}_secure_totp_secret_key_2026';
+  }
+
+  static void _validateProductionApiBaseUrl(String value) {
+    if (!isProduction) return;
+    final uri = Uri.tryParse(value);
+    final host = uri?.host.toLowerCase() ?? '';
+    if (host.isEmpty ||
+        host == 'localhost' ||
+        host == '127.0.0.1' ||
+        host == '10.0.2.2') {
+      throw StateError(
+        'Invalid API_BASE_URL for production: $value. '
+        'Use the public HTTPS API URL for the deployed environment.',
+      );
+    }
   }
 }
 
