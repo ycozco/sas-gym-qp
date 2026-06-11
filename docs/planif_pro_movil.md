@@ -100,11 +100,19 @@ cd mobile_app
 flutter run --flavor dev --dart-define=APP_ENV=dev --dart-define=APP_MODE=backend --dart-define=API_BASE_URL=http://10.0.2.2:3000/api/v1
 flutter build web --release --dart-define=APP_ENV=staging --dart-define=APP_MODE=backend --dart-define=API_BASE_URL=https://api.<ip/dominio>/api/v1
 flutter build apk --debug --flavor dev --dart-define=APP_ENV=dev --dart-define=APP_MODE=backend --dart-define=API_BASE_URL=http://10.0.2.2:3000/api/v1
+flutter build apk --flavor prod --release --build-name 0.1.0 --build-number 1 --dart-define=APP_ENV=production --dart-define=APP_MODE=backend --dart-define=API_BASE_URL=https://api.sas-gym.qpsecure.cloud/api/v1
 ```
 
 Para `APP_ENV=production`, `API_BASE_URL` es obligatoria y no puede usar `localhost`, `127.0.0.1` ni `10.0.2.2`.
 
 Para release firmado se debe crear `mobile_app/android/key.properties` a partir de `mobile_app/android/key.properties.example`. No se debe commitear el keystore ni claves reales.
+
+Flujo ADB recomendado para Redmi:
+
+```powershell
+C:\Users\yoset\AppData\Local\Android\Sdk\platform-tools\adb.exe devices -l
+C:\Users\yoset\AppData\Local\Android\Sdk\platform-tools\adb.exe install -r D:\proyectos\sas_gym\release\<fecha>_v0.1\sas-gym-v0.1.0-<fecha>.apk
+```
 
 Flavors Android:
 

@@ -1,0 +1,45 @@
+Running Gradle task 'assembleProdRelease'...                    
+
+D:\proyectos\sas_gym\mobile_app\android>if "Windows_NT" == "Windows_NT" setlocal
+
+D:\proyectos\sas_gym\mobile_app\android>set DEFAULT_JVM_OPTS= 
+
+D:\proyectos\sas_gym\mobile_app\android>set DIRNAME=D:\proyectos\sas_gym\mobile_app\android\ 
+
+D:\proyectos\sas_gym\mobile_app\android>if "D:\proyectos\sas_gym\mobile_app\android\" == "" set DIRNAME=. 
+
+D:\proyectos\sas_gym\mobile_app\android>set APP_BASE_NAME=gradlew 
+
+D:\proyectos\sas_gym\mobile_app\android>set APP_HOME=D:\proyectos\sas_gym\mobile_app\android\ 
+
+D:\proyectos\sas_gym\mobile_app\android>if defined JAVA_HOME goto findJavaFromJavaHome 
+
+D:\proyectos\sas_gym\mobile_app\android>set JAVA_HOME=C:\Program Files\Android\Android Studio\jbr 
+
+D:\proyectos\sas_gym\mobile_app\android>set JAVA_EXE=C:\Program Files\Android\Android Studio\jbr/bin/java.exe 
+
+D:\proyectos\sas_gym\mobile_app\android>if exist "C:\Program Files\Android\Android Studio\jbr/bin/java.exe" goto init 
+
+D:\proyectos\sas_gym\mobile_app\android>if not "Windows_NT" == "Windows_NT" goto win9xME_args 
+
+D:\proyectos\sas_gym\mobile_app\android>if "@eval[2+2]" == "4" goto 4NT_args 
+
+D:\proyectos\sas_gym\mobile_app\android>set CMD_LINE_ARGS= 
+
+D:\proyectos\sas_gym\mobile_app\android>set _SKIP=2 
+
+D:\proyectos\sas_gym\mobile_app\android>if "x-q" == "x" goto execute 
+
+D:\proyectos\sas_gym\mobile_app\android>set CMD_LINE_ARGS=-q -Ptarget-platform=android-arm,android-arm64,android-x64 -Ptarget=lib\main.dart -Pbase-application-name=android.app.Application -Pdart-defines=QVBQX0VOVj1wcm9kdWN0aW9u,QVBQX01PREU9YmFja2VuZA==,QVBJX0JBU0VfVVJMPWh0dHBzOi8vYXBpLnNhcy1neW0ucXBzZWN1cmUuY2xvdWQvYXBpL3Yx,RkxVVFRFUl9BUFBfRkxBVk9SPXByb2Q=,RkxVVFRFUl9WRVJTSU9OPTMuNDQuMA==,RkxVVFRFUl9DSEFOTkVMPXN0YWJsZQ==,RkxVVFRFUl9HSVRfVVJMPWh0dHBzOi8vZ2l0aHViLmNvbS9mbHV0dGVyL2ZsdXR0ZXIuZ2l0,RkxVVFRFUl9GUkFNRVdPUktfUkVWSVNJT049NTU5ZmZhM2Y3NQ==,RkxVVFRFUl9FTkdJTkVfUkVWSVNJT049NGM1MjVkYWM1ZQ==,RkxVVFRFUl9EQVJUX1ZFUlNJT049My4xMi4w -Pdart-obfuscation=false -Ptrack-widget-creation=true -Ptree-shake-icons=true assembleProdRelease 
+
+D:\proyectos\sas_gym\mobile_app\android>goto execute 
+
+D:\proyectos\sas_gym\mobile_app\android>set CLASSPATH=D:\proyectos\sas_gym\mobile_app\android\\gradle\wrapper\gradle-wrapper.jar 
+
+D:\proyectos\sas_gym\mobile_app\android>"C:\Program Files\Android\Android Studio\jbr/bin/java.exe"    "-Dorg.gradle.appname=gradlew" -classpath "D:\proyectos\sas_gym\mobile_app\android\\gradle\wrapper\gradle-wrapper.jar" org.gradle.wrapper.GradleWrapperMain -q -Ptarget-platform=android-arm,android-arm64,android-x64 -Ptarget=lib\main.dart -Pbase-application-name=android.app.Application -Pdart-defines=QVBQX0VOVj1wcm9kdWN0aW9u,QVBQX01PREU9YmFja2VuZA==,QVBJX0JBU0VfVVJMPWh0dHBzOi8vYXBpLnNhcy1neW0ucXBzZWN1cmUuY2xvdWQvYXBpL3Yx,RkxVVFRFUl9BUFBfRkxBVk9SPXByb2Q=,RkxVVFRFUl9WRVJTSU9OPTMuNDQuMA==,RkxVVFRFUl9DSEFOTkVMPXN0YWJsZQ==,RkxVVFRFUl9HSVRfVVJMPWh0dHBzOi8vZ2l0aHViLmNvbS9mbHV0dGVyL2ZsdXR0ZXIuZ2l0,RkxVVFRFUl9GUkFNRVdPUktfUkVWSVNJT049NTU5ZmZhM2Y3NQ==,RkxVVFRFUl9FTkdJTkVfUkVWSVNJT049NGM1MjVkYWM1ZQ==,RkxVVFRFUl9EQVJUX1ZFUlNJT049My4xMi4w -Pdart-obfuscation=false -Ptrack-widget-creation=true -Ptree-shake-icons=true assembleProdRelease 
+
+D:\proyectos\sas_gym\mobile_app\android>if "0" == "0" goto mainEnd 
+
+D:\proyectos\sas_gym\mobile_app\android>if "Windows_NT" == "Windows_NT" endlocal
+Running Gradle task 'assembleProdRelease'...                        3.1s
+√ Built build\app\outputs\flutter-apk\app-prod-release.apk (57.8MB)

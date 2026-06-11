@@ -1,8 +1,8 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:image/image.dart' as img;
 import '../../../core/config/app_config.dart';
+import '../../../core/services/local_image_picker.dart';
 import '../../../data/gym_state.dart';
 import '../../../widgets/app_shell.dart';
 import '../../../models/gym_models.dart';
@@ -34,33 +34,43 @@ class _PayMembershipViewState extends State<PayMembershipView> {
     final activePlans = state.membershipPlans.where((p) => p.active).toList();
     if (activePlans.isNotEmpty) return activePlans;
     return const [
-      MembershipPlan(id: 'mensual-plata', name: 'Mensual Plata', durationDays: 30, price: 120),
-      MembershipPlan(id: 'mensual-oro', name: 'Mensual Oro', durationDays: 30, price: 150),
-      MembershipPlan(id: 'trimestral-platinium', name: 'Trimestral Platinium', durationDays: 90, price: 400),
+      MembershipPlan(
+        id: 'mensual-plata',
+        name: 'Mensual Plata',
+        durationDays: 30,
+        price: 120,
+      ),
+      MembershipPlan(
+        id: 'mensual-oro',
+        name: 'Mensual Oro',
+        durationDays: 30,
+        price: 150,
+      ),
+      MembershipPlan(
+        id: 'trimestral-platinium',
+        name: 'Trimestral Platinium',
+        durationDays: 90,
+        price: 400,
+      ),
     ];
   }
 
   Future<void> _pickAndCompressFile() async {
     try {
-      final result = await FilePicker.pickFiles(
-        type: FileType.custom,
+      final file = await LocalImagePicker.pickImage(
         allowedExtensions: ['jpg', 'jpeg', 'png'],
-        withData: true,
       );
+      if (file == null) return;
 
-      if (result == null || result.files.isEmpty) return;
-
-      final file = result.files.first;
       if (file.size > AppConfig.maxLocalImageBytes) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('El archivo supera el tamano maximo permitido.')),
+          const SnackBar(
+            content: Text('El archivo supera el tamano maximo permitido.'),
+          ),
         );
         return;
       }
-
-      final rawBytes = file.bytes;
-      if (rawBytes == null) return;
 
       setState(() {
         _compressing = true;
@@ -69,13 +79,20 @@ class _PayMembershipViewState extends State<PayMembershipView> {
       });
 
       await Future.delayed(const Duration(milliseconds: 100));
-      final compressedBytes = await _compressImage(rawBytes);
+      final compressedBytes = await _compressImage(file.bytes);
 
       setState(() {
         _selectedFileBytes = compressedBytes;
         _uploaded = true;
         _compressing = false;
       });
+    } on FormatException {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Selecciona una imagen JPG o PNG para el comprobante.'),
+        ),
+      );
     } catch (e) {
       AppLogger.debug('Error picking/compressing file', e);
       setState(() {
@@ -114,7 +131,10 @@ class _PayMembershipViewState extends State<PayMembershipView> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('RENOVAR MEMBRESÍA', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+        title: const Text(
+          'RENOVAR MEMBRESÍA',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded),
           onPressed: widget.onBack,
@@ -124,7 +144,10 @@ class _PayMembershipViewState extends State<PayMembershipView> {
         padding: const EdgeInsets.all(20),
         children: [
           // Select plan
-          const Text('1. Selecciona tu plan', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
+          const Text(
+            '1. Selecciona tu plan',
+            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+          ),
           const SizedBox(height: 10),
           ...List.generate(plans.length, (index) {
             final plan = plans[index];
@@ -135,7 +158,9 @@ class _PayMembershipViewState extends State<PayMembershipView> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
                 side: BorderSide(
-                  color: isSelected ? widget.palette.accent : const Color(0xFFE8E4D9),
+                  color: isSelected
+                      ? widget.palette.accent
+                      : const Color(0xFFE8E4D9),
                   width: isSelected ? 2 : 1,
                 ),
               ),
@@ -148,7 +173,10 @@ class _PayMembershipViewState extends State<PayMembershipView> {
                   });
                 },
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   child: Row(
                     children: [
                       Container(
@@ -179,9 +207,22 @@ class _PayMembershipViewState extends State<PayMembershipView> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('${plan.name} (S/ ${plan.price})', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                            Text(
+                              '${plan.name} (S/ ${plan.price})',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
+                            ),
                             const SizedBox(height: 4),
-                            Text(plan.description ?? '${plan.durationDays} dias de acceso.', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                            Text(
+                              plan.description ??
+                                  '${plan.durationDays} dias de acceso.',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -194,20 +235,31 @@ class _PayMembershipViewState extends State<PayMembershipView> {
           const SizedBox(height: 24),
 
           // Select payment method
-          const Text('2. Método de Pago', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
+          const Text(
+            '2. Método de Pago',
+            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+          ),
           const SizedBox(height: 10),
           DropdownButtonFormField<String>(
             initialValue: _selectedMethod,
             decoration: InputDecoration(
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               filled: true,
               fillColor: Colors.white,
             ),
             items: const [
               DropdownMenuItem(value: 'Yape', child: Text('Yape (QR)')),
               DropdownMenuItem(value: 'Plin', child: Text('Plin (QR)')),
-              DropdownMenuItem(value: 'Tarjeta', child: Text('Tarjeta de Crédito / Débito (Culqi)')),
-              DropdownMenuItem(value: 'Manual', child: Text('Depósito Bancario (Acreditación Manual)')),
+              DropdownMenuItem(
+                value: 'Tarjeta',
+                child: Text('Tarjeta de Crédito / Débito (Culqi)'),
+              ),
+              DropdownMenuItem(
+                value: 'Manual',
+                child: Text('Depósito Bancario (Acreditación Manual)'),
+              ),
             ],
             onChanged: (val) {
               setState(() {
@@ -228,7 +280,10 @@ class _PayMembershipViewState extends State<PayMembershipView> {
               ),
               child: Column(
                 children: [
-                  const Text('Escanea este código QR desde tu app:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                  const Text(
+                    'Escanea este código QR desde tu app:',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(height: 14),
                   Container(
                     width: 140,
@@ -237,7 +292,10 @@ class _PayMembershipViewState extends State<PayMembershipView> {
                     child: const Icon(Icons.qr_code, size: 100),
                   ),
                   const SizedBox(height: 10),
-                  const Text('Número: 987-654-321', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900)),
+                  const Text(
+                    'Número: 987-654-321',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900),
+                  ),
                 ],
               ),
             ),
@@ -245,7 +303,10 @@ class _PayMembershipViewState extends State<PayMembershipView> {
           ],
 
           // Upload verification section (always needed for simulated flows to show approval)
-          const Text('3. Comprobante de Pago', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
+          const Text(
+            '3. Comprobante de Pago',
+            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+          ),
           const SizedBox(height: 10),
           GestureDetector(
             onTap: _compressing ? null : _pickAndCompressFile,
@@ -255,7 +316,9 @@ class _PayMembershipViewState extends State<PayMembershipView> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: _uploaded ? const Color(0xFF00B85C) : const Color(0xFFFF7A1A),
+                  color: _uploaded
+                      ? const Color(0xFF00B85C)
+                      : const Color(0xFFFF7A1A),
                   style: BorderStyle.solid,
                   width: 1.5,
                 ),
@@ -265,33 +328,77 @@ class _PayMembershipViewState extends State<PayMembershipView> {
                   ? Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFFF7A1A))),
+                        const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Color(0xFFFF7A1A),
+                          ),
+                        ),
                         const SizedBox(height: 8),
-                        Text('Comprimiendo imagen...', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                        Text(
+                          'Comprimiendo imagen...',
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 12,
+                          ),
+                        ),
                       ],
                     )
                   : _uploaded
-                      ? Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.check_circle, color: Color(0xFF00B85C), size: 32),
-                            const SizedBox(height: 8),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
-                              child: Text(_uploadedFileName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5), maxLines: 1, overflow: TextOverflow.ellipsis),
-                            ),
-                            Text('Comprimido con éxito a ${(_selectedFileBytes?.length ?? 0) ~/ 1024} KB', style: TextStyle(color: Colors.grey[600], fontSize: 11)),
-                          ],
-                        )
-                      : const Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.cloud_upload_outlined, color: Color(0xFFFF7A1A), size: 36),
-                            SizedBox(height: 8),
-                            Text('Cargar Imagen de Comprobante', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                            Text('Formatos: JPG, PNG (Auto-comprimir < 2MB)', style: TextStyle(color: Colors.grey, fontSize: 11)),
-                          ],
+                  ? Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.check_circle,
+                          color: Color(0xFF00B85C),
+                          size: 32,
                         ),
+                        const SizedBox(height: 8),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Text(
+                            _uploadedFileName,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12.5,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Text(
+                          'Comprimido con éxito a ${(_selectedFileBytes?.length ?? 0) ~/ 1024} KB',
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    )
+                  : const Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.cloud_upload_outlined,
+                          color: Color(0xFFFF7A1A),
+                          size: 36,
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'Cargar Imagen de Comprobante',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                        Text(
+                          'Formatos: JPG, PNG (Auto-comprimir < 2MB)',
+                          style: TextStyle(color: Colors.grey, fontSize: 11),
+                        ),
+                      ],
+                    ),
             ),
           ),
           const SizedBox(height: 36),
@@ -306,7 +413,7 @@ class _PayMembershipViewState extends State<PayMembershipView> {
                 ? () async {
                     final messenger = ScaffoldMessenger.of(context);
                     setState(() => _submitting = true);
-                    
+
                     final selected = plans.firstWhere(
                       (p) => p.id == _selectedPlan,
                       orElse: () => plans.first,
@@ -322,13 +429,15 @@ class _PayMembershipViewState extends State<PayMembershipView> {
                         fileBytes: _selectedFileBytes!,
                         fileName: _uploadedFileName,
                       );
-                      
+
                       setState(() => _submitting = false);
-                      
+
                       if (success) {
                         messenger.showSnackBar(
                           const SnackBar(
-                            content: Text('Pago enviado para acreditación. Un administrador lo revisará.'),
+                            content: Text(
+                              'Pago enviado para acreditación. Un administrador lo revisará.',
+                            ),
                             backgroundColor: Color(0xFF0066FF),
                           ),
                         );
@@ -336,7 +445,9 @@ class _PayMembershipViewState extends State<PayMembershipView> {
                       } else {
                         messenger.showSnackBar(
                           const SnackBar(
-                            content: Text('Error al enviar el pago al servidor.'),
+                            content: Text(
+                              'Error al enviar el pago al servidor.',
+                            ),
                             backgroundColor: Colors.red,
                           ),
                         );
@@ -355,7 +466,9 @@ class _PayMembershipViewState extends State<PayMembershipView> {
 
                         messenger.showSnackBar(
                           const SnackBar(
-                            content: Text('Pago enviado para acreditación (Modo Demo).'),
+                            content: Text(
+                              'Pago enviado para acreditación (Modo Demo).',
+                            ),
                             backgroundColor: Color(0xFF0066FF),
                           ),
                         );
@@ -366,8 +479,18 @@ class _PayMembershipViewState extends State<PayMembershipView> {
                   }
                 : null,
             child: _submitting
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                : const Text('Enviar a Verificación', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : const Text(
+                    'Enviar a Verificación',
+                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
+                  ),
           ),
         ],
       ),

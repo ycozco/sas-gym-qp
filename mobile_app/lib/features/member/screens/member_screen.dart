@@ -1,9 +1,9 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image/image.dart' as img;
-import 'package:file_picker/file_picker.dart';
 import 'package:hive/hive.dart';
 import '../../../core/config/app_config.dart';
+import '../../../core/services/local_image_picker.dart';
 import '../../../data/gym_seed.dart';
 import '../../../data/gym_state.dart';
 import '../../../models/gym_models.dart';
@@ -35,7 +35,8 @@ MemberRecord _getLoggedMember(GymState state) {
               : (user.estado == 'ACTIVE' ? 'active' : 'expired'),
 
           assignedTrainer:
-              user.memberProfile?['trainer_name']?.toString() ?? 'Carlos Mendoza',
+              user.memberProfile?['trainer_name']?.toString() ??
+              'Carlos Mendoza',
           paymentHistory: backendPayments,
           physicalMeasurements: {
             'peso':
@@ -618,11 +619,13 @@ class _MemberAgendaPage extends StatelessWidget {
     final scheduleRows = state.schedules.isNotEmpty
         ? state.schedules
         : memberWeek
-            .map((day) => {
+              .map(
+                (day) => {
                   'dia_semana': [day.number],
                   'nombre_clase': day.group,
-                })
-            .toList();
+                },
+              )
+              .toList();
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 6, 20, 36),
       children: [
@@ -638,8 +641,9 @@ class _MemberAgendaPage extends StatelessWidget {
             runSpacing: 8,
             children: scheduleRows.take(7).map((raw) {
               final rawDays = (raw['dia_semana'] as List?) ?? const [];
-              final dayNumber =
-                  rawDays.isNotEmpty ? ((rawDays.first as num?)?.toInt() ?? 1) : 1;
+              final dayNumber = rawDays.isNotEmpty
+                  ? ((rawDays.first as num?)?.toInt() ?? 1)
+                  : 1;
               final day =
                   memberWeek[(dayNumber - 1).clamp(0, memberWeek.length - 1)];
               return Container(
@@ -732,7 +736,7 @@ class _MemberAgendaPage extends StatelessWidget {
               Text(
                 mappedExercises.isNotEmpty
                     ? (template?['descripcion']?.toString() ??
-                        'Rutina activa sincronizada desde el backend.')
+                          'Rutina activa sincronizada desde el backend.')
                     : '6 ejercicios asignados Â· Enfocado en desarrollo de fuerza de empuje.',
                 style: TextStyle(
                   fontSize: 13,
@@ -763,36 +767,37 @@ class _MemberAgendaPage extends StatelessWidget {
         Column(
           children: (mappedExercises.isNotEmpty ? mappedExercises : memberExercises)
               .map((exercise) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: Container(
-                decoration: _cardDecoration(context),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Container(
+                    decoration: _cardDecoration(context),
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      leading: CircleAvatar(
+                        backgroundColor: palette.accent.withValues(alpha: 0.12),
+                        foregroundColor: palette.accent,
+                        child: Icon(exercise.icon, size: 18),
+                      ),
+                      title: Text(
+                        exercise.name,
+                        style: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                      subtitle: Text(
+                        '${exercise.sets} series Ã— ${exercise.reps} reps Â· ${exercise.weight != null ? "${exercise.weight} kg" : "Al fallo"} Â· descanso: ${exercise.restSeconds}s',
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                      trailing: const Icon(
+                        Icons.check_circle_outline,
+                        color: Color(0xFFCDCDCD),
+                      ),
+                    ),
                   ),
-                  leading: CircleAvatar(
-                    backgroundColor: palette.accent.withValues(alpha: 0.12),
-                    foregroundColor: palette.accent,
-                    child: Icon(exercise.icon, size: 18),
-                  ),
-                  title: Text(
-                    exercise.name,
-                    style: const TextStyle(fontWeight: FontWeight.w800),
-                  ),
-                  subtitle: Text(
-                    '${exercise.sets} series Ã— ${exercise.reps} reps Â· ${exercise.weight != null ? "${exercise.weight} kg" : "Al fallo"} Â· descanso: ${exercise.restSeconds}s',
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                  trailing: const Icon(
-                    Icons.check_circle_outline,
-                    color: Color(0xFFCDCDCD),
-                  ),
-                ),
-              ),
-            );
-          }).toList(),
+                );
+              })
+              .toList(),
         ),
       ],
     );
@@ -817,10 +822,11 @@ class _MemberSubscriptionPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = GymStateProvider.of(context);
     final mateo = _getLoggedMember(state);
-    final currentMembership =
-        state.currentUser?.memberships?.isNotEmpty == true
-            ? Map<String, dynamic>.from(state.currentUser!.memberships!.first as Map)
-            : null;
+    final currentMembership = state.currentUser?.memberships?.isNotEmpty == true
+        ? Map<String, dynamic>.from(
+            state.currentUser!.memberships!.first as Map,
+          )
+        : null;
     final balance =
         state.memberPointsSummary?['balance'] as Map<String, dynamic>?;
     final planName =
@@ -828,7 +834,8 @@ class _MemberSubscriptionPage extends StatelessWidget {
     final startDate =
         currentMembership?['fecha_inicio']?.toString().split('T').first ?? '—';
     final endDate =
-        currentMembership?['fecha_vencimiento']?.toString().split('T').first ?? '—';
+        currentMembership?['fecha_vencimiento']?.toString().split('T').first ??
+        '—';
     final totalPaid = (currentMembership?['monto'] as num?)?.toDouble() ?? 0;
     final points = (balance?['puntos_disponibles'] as num?)?.toInt() ?? 0;
     final earnedPoints =
@@ -897,7 +904,10 @@ class _MemberSubscriptionPage extends StatelessWidget {
                   const Spacer(),
                   Text(
                     'S/ ${totalPaid.toStringAsFixed(2)} pagados',
-                    style: const TextStyle(fontSize: 12, color: Color(0xFF757575)),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF757575),
+                    ),
                   ),
                 ],
               ),
@@ -1447,8 +1457,8 @@ class _ClassBookingViewState extends State<_ClassBookingView> {
           final statusLabel = myStatus == 'CONFIRMED'
               ? 'Reservado'
               : myStatus == 'WAITLIST'
-                  ? 'Lista de espera'
-                  : 'Reservar';
+              ? 'Lista de espera'
+              : 'Reservar';
           Color statusColor = widget.palette.accent;
           if (statusLabel == 'Reservado') statusColor = const Color(0xFF00B85C);
           if (statusLabel == 'Lista de espera') {
@@ -1566,30 +1576,26 @@ class ReportObservationView extends StatefulWidget {
 class _ReportObservationViewState extends State<ReportObservationView> {
   final _descCtrl = TextEditingController();
   String _category = 'Equipamiento';
-  PlatformFile? _selectedFile;
+  PickedLocalImage? _selectedFile;
   bool _isUploading = false;
 
   Future<void> _pickImage() async {
     try {
-      final result = await FilePicker.pickFiles(
-        type: FileType.image,
-        withData: true,
-      );
-      if (result != null && result.files.isNotEmpty) {
-        final file = result.files.first;
-        if (file.size > AppConfig.maxLocalImageBytes) {
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('La imagen supera el tamano maximo permitido.'),
-            ),
-          );
-          return;
-        }
-        setState(() {
-          _selectedFile = file;
-        });
+      final file = await LocalImagePicker.pickImage();
+      if (file == null) return;
+      if (file.size > AppConfig.maxLocalImageBytes) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('La imagen supera el tamano maximo permitido.'),
+          ),
+        );
+        return;
       }
+
+      setState(() {
+        _selectedFile = file;
+      });
     } catch (e) {
       AppLogger.debug('Error picking image', e);
     }
@@ -1619,8 +1625,8 @@ class _ReportObservationViewState extends State<ReportObservationView> {
         List<int>? fileBytes;
         String? fileName;
 
-        if (_selectedFile != null && _selectedFile!.bytes != null) {
-          final compressed = await _compressImage(_selectedFile!.bytes!);
+        if (_selectedFile != null) {
+          final compressed = await _compressImage(_selectedFile!.bytes);
           if (compressed != null) {
             fileBytes = compressed;
             fileName = _selectedFile!.name.replaceAll(
@@ -1796,15 +1802,14 @@ class _ReportObservationViewState extends State<ReportObservationView> {
                 child: _selectedFile != null
                     ? Column(
                         children: [
-                          if (_selectedFile!.bytes != null)
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: Image.memory(
-                                _selectedFile!.bytes!,
-                                height: 150,
-                                fit: BoxFit.cover,
-                              ),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.memory(
+                              _selectedFile!.bytes,
+                              height: 150,
+                              fit: BoxFit.cover,
                             ),
+                          ),
                           const SizedBox(height: 12),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,

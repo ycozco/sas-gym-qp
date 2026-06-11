@@ -43,6 +43,24 @@ Example production-oriented container build:
 docker compose --env-file ..\.env.production.example -f ..\infra\docker\compose.prod.yml build app_web
 ```
 
+## Android release 0.1
+
+The Android baseline release version is `0.1.0+1`.
+
+Production APK build:
+
+```powershell
+cd mobile_app
+flutter build apk --flavor prod --release --build-name 0.1.0 --build-number 1 --dart-define=APP_ENV=production --dart-define=APP_MODE=backend --dart-define=API_BASE_URL=https://api.sas-gym.qpsecure.cloud/api/v1
+```
+
+ADB install flow for a connected Redmi device:
+
+```powershell
+C:\Users\yoset\AppData\Local\Android\Sdk\platform-tools\adb.exe devices -l
+C:\Users\yoset\AppData\Local\Android\Sdk\platform-tools\adb.exe install -r D:\proyectos\sas_gym\release\<fecha>_v0.1\sas-gym-v0.1.0-<fecha>.apk
+```
+
 ## Layout summary
 
 - `lib/app.dart`: role shell and topbar tabs.
