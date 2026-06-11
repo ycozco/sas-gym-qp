@@ -52,6 +52,8 @@ docker compose --env-file .env.production.example -f infra/docker/compose.prod.y
 
 Guia completa: [docs/despliegue/servidor-con-npm-externo.md](docs/despliegue/servidor-con-npm-externo.md).
 
+Linea base productiva: [guia-despliegue.produccion.md](guia-despliegue.produccion.md). En servidor no se instala Prisma, Node, Flutter ni dependencias de aplicacion; todo corre desde contenedores.
+
 ## Variables de entorno
 
 Plantillas versionables:

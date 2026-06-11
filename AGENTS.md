@@ -28,6 +28,8 @@ La fase actual no es despliegue en VPS. La fase actual es preparar el repositori
 8. No borrar carpetas sin revisar si estan versionadas.
 9. No cambiar logica funcional sin justificarlo.
 10. No mezclar refactors masivos con limpieza de infraestructura.
+11. No instalar Node, npm, Prisma CLI, Flutter ni dependencias del proyecto directamente en servidores de despliegue.
+12. Toda tarea de build, migracion, seed o mantenimiento debe ejecutarse desde contenedores Docker.
 
 ## Prioridad actual
 
@@ -69,6 +71,9 @@ docker compose --env-file .env.production.example -f infra/docker/compose.prod.y
 - Produccion debe usar `expose` para API, WS, app web y admin web.
 - Produccion no debe publicar PostgreSQL ni Redis.
 - Produccion debe conectarse a una red externa configurable para el proxy.
+- Produccion asume que el host solo necesita Docker, Docker Compose, Git y acceso a la red externa de NPM.
+- No documentar pasos de `npm install`, `npx prisma`, `flutter build` o similares ejecutados directamente en el host de despliegue.
+- Si hace falta ejecutar comandos de aplicacion, usar `docker compose exec` o `docker compose run --rm` contra el servicio correspondiente.
 
 ## Red externa de proxy
 
@@ -90,16 +95,36 @@ Toda consulta sensible debe filtrar por tenant.
 
 ## Prisma
 
-El proyecto usa Prisma. Comandos esperados:
+El proyecto usa Prisma, pero Prisma no debe instalarse en el servidor ni ejecutarse directamente en el host.
+
+Comandos esperados desde contenedores:
 
 ```bash
-cd backend
-npx prisma generate
-npx prisma migrate deploy
-npx prisma db seed
+docker compose --env-file .env -f infra/docker/compose.prod.yml exec api npx prisma migrate deploy
+docker compose --env-file .env -f infra/docker/compose.prod.yml exec api npx prisma db seed
 ```
 
-No documentar TypeORM como flujo principal.
+Para validaciones locales:
+
+```bash
+docker compose --env-file .env -f infra/docker/compose.local.yml exec api npx prisma generate
+docker compose --env-file .env -f infra/docker/compose.local.yml exec api npx prisma db push
+docker compose --env-file .env -f infra/docker/compose.local.yml exec api npx prisma db seed
+```
+
+No documentar TypeORM como flujo principal. No pedir instalar Prisma global ni localmente en el VPS.
+
+## Despliegue productivo
+
+La guia base esta en `guia-despliegue.produccion.md`.
+
+Linea base:
+
+- Nginx Proxy Manager existe fuera de este repo.
+- Los subdominios apuntan al VPS o dominio elegido.
+- `EXTERNAL_PROXY_NETWORK` conecta los servicios publicos de SAS Gym a NPM.
+- El host productivo no instala dependencias de aplicacion.
+- Las URLs finales deben poder cambiar por variables, usando placeholders como `<ip/dominio>` cuando se documente una linea base reutilizable.
 
 ## Graphify y Obsidian
 

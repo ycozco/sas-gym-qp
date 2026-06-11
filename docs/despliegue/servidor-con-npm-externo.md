@@ -4,12 +4,15 @@
 
 Esta guia prepara el despliegue futuro en un VPS que ya tiene Nginx Proxy Manager. El proyecto SAS Gym no incluye NPM, no crea certificados y no administra DNS.
 
+La linea base productiva vigente esta en `guia-despliegue.produccion.md`. Si hay contradiccion, usar esa guia como fuente principal.
+
 ## Requisitos previos del VPS
 
 - Docker y Docker Compose instalados.
 - Repositorio clonado.
 - Nginx Proxy Manager ya funcionando fuera de este proyecto.
 - Red Docker del proxy identificada.
+- No instalar Node, npm, Prisma CLI, Flutter, PostgreSQL ni Redis directamente para este proyecto.
 
 ## Preparacion futura
 
@@ -53,3 +56,4 @@ docker compose --env-file .env -f infra/docker/compose.prod.yml up -d --build
 - Activar SSL desde NPM externo.
 - Activar WebSocket Support para el host de WS.
 - No guardar secretos reales en Git.
+- Ejecutar migraciones y seeds Prisma dentro del contenedor `api`, no en el host.
