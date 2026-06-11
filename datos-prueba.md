@@ -8,6 +8,20 @@ Fecha de verificacion: 2026-06-11 UTC
 - El frontend Flutter web no esta desplegado: el contenedor `sasgym_app_web` fue eliminado y su imagen local tambien fue retirada.
 - Servicios activos del stack SaasGym: `sasgym_api`, `sasgym_ws`, `sasgym_admin_web`, `sasgym_postgres`, `sasgym_redis`.
 
+## Subdominios configurados y funcionando
+
+| Subdominio | URL publica | Servicio actual | Estado | Observacion |
+| --- | --- | --- | --- | --- |
+| `api` | `https://api.sas-gym.qpsecure.cloud/api/v1` | `sasgym_api` | `Activo` | API REST principal en produccion |
+| `ws` | `wss://ws.sas-gym.qpsecure.cloud` | `sasgym_ws` | `Activo` | WebSocket en produccion |
+| `admin` | `https://admin.sas-gym.qpsecure.cloud` | `sasgym_admin_web` | `Activo` | Panel web admin publicado |
+| `app` | `https://app.sas-gym.qpsecure.cloud` | Sin contenedor desplegado | `No activo` | URL configurada, pero el frontend Flutter web fue retirado |
+
+### CORS configurado
+
+- `https://app.sas-gym.qpsecure.cloud`
+- `https://admin.sas-gym.qpsecure.cloud`
+
 ## Resumen verificado en base
 
 | Rol | Total |
