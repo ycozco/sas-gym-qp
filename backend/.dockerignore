@@ -1,0 +1,20 @@
+# Ignore dependency folders
+node_modules
+npm-debug.log
+
+# Ignore compiled folders
+dist
+
+# Ignore local env and secrets
+.env
+.env.*
+.git
+.github
+
+# Ignore test results and IDE configuration
+test-results
+.vscode
+.idea
+*.md
+Dockerfile
+docker-compose.yml

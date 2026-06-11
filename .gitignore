@@ -1,0 +1,42 @@
+# Dependency directories
+node_modules/
+
+# Local env files (highly sensitive secrets)
+.env
+.env.local
+.env.*.local
+.env.production
+.env.staging
+.env.development
+
+# Production and compiled output
+dist/
+build/
+bin/
+obj/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Flutter/Dart specific
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub/
+/mobile_app/build/
+/mobile_app/.flutter-plugins
+/mobile_app/.flutter-plugins-dependencies
+/mobile_app/flutter_app.iml
+
+# IDEs and Editors
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store
+Thumbs.db

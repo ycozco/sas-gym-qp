@@ -596,6 +596,33 @@ class _MemberAgendaPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final state = GymStateProvider.of(context);
+    final activeRoutine = state.activeRoutine;
+    final template = activeRoutine?['template'] as Map<String, dynamic>?;
+    final routineExercises =
+        (template?['ejercicios'] as List<dynamic>? ?? const <dynamic>[]);
+    final mappedExercises = routineExercises.map((item) {
+      final row = item as Map<String, dynamic>;
+      final exercise = row['exercise'] as Map<String, dynamic>? ?? const {};
+      return ExerciseItem(
+        name: exercise['nombre']?.toString() ?? 'Ejercicio',
+        muscle: exercise['grupo_muscular']?.toString() ?? 'General',
+        sets: (row['series'] as num?)?.toInt() ?? 4,
+        reps: ((row['repeticiones'] as num?)?.toInt() ?? 10).toString(),
+        weight: (row['peso_sugerido_kg'] as num?)?.toInt(),
+        restSeconds: (row['descanso_seg'] as num?)?.toInt() ?? 60,
+        icon: Icons.fitness_center_rounded,
+        available: true,
+      );
+    }).toList();
+    final scheduleRows = state.schedules.isNotEmpty
+        ? state.schedules
+        : memberWeek
+            .map((day) => {
+                  'dia_semana': [day.number],
+                  'nombre_clase': day.group,
+                })
+            .toList();
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 6, 20, 36),
       children: [
@@ -609,7 +636,12 @@ class _MemberAgendaPage extends StatelessWidget {
           child: Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: memberWeek.map((day) {
+            children: scheduleRows.take(7).map((raw) {
+              final rawDays = (raw['dia_semana'] as List?) ?? const [];
+              final dayNumber =
+                  rawDays.isNotEmpty ? ((rawDays.first as num?)?.toInt() ?? 1) : 1;
+              final day =
+                  memberWeek[(dayNumber - 1).clamp(0, memberWeek.length - 1)];
               return Container(
                 width: 68,
                 padding: const EdgeInsets.symmetric(vertical: 12),
@@ -645,7 +677,7 @@ class _MemberAgendaPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      day.group,
+                      raw['nombre_clase']?.toString() ?? day.group,
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 9.5,
@@ -671,7 +703,7 @@ class _MemberAgendaPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Row(
+              Row(
                 children: [
                   StatusPill(
                     label: 'DÃA 1 (HOY)',
@@ -679,12 +711,17 @@ class _MemberAgendaPage extends StatelessWidget {
                     solid: true,
                   ),
                   Spacer(),
-                  StatusPill(label: '45-50 min', color: Color(0xFF0066FF)),
+                  StatusPill(
+                    label: mappedExercises.isNotEmpty
+                        ? '${mappedExercises.length} ejercicios'
+                        : '45-50 min',
+                    color: Color(0xFF0066FF),
+                  ),
                 ],
               ),
               const SizedBox(height: 14),
-              const Text(
-                'Push Â· Pecho + Hombros',
+              Text(
+                template?['nombre']?.toString() ?? 'Push Â· Pecho + Hombros',
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w900,
@@ -692,8 +729,11 @@ class _MemberAgendaPage extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 6),
-              const Text(
-                '6 ejercicios asignados Â· Enfocado en desarrollo de fuerza de empuje.',
+              Text(
+                mappedExercises.isNotEmpty
+                    ? (template?['descripcion']?.toString() ??
+                        'Rutina activa sincronizada desde el backend.')
+                    : '6 ejercicios asignados Â· Enfocado en desarrollo de fuerza de empuje.',
                 style: TextStyle(
                   fontSize: 13,
                   color: Color(0xFF6A6A6A),
@@ -721,7 +761,8 @@ class _MemberAgendaPage extends StatelessWidget {
         const SizedBox(height: 22),
         const SectionHeader(title: 'Ejercicios de la Rutina'),
         Column(
-          children: memberExercises.map((exercise) {
+          children: (mappedExercises.isNotEmpty ? mappedExercises : memberExercises)
+              .map((exercise) {
             return Padding(
               padding: const EdgeInsets.only(bottom: 10),
               child: Container(
@@ -776,6 +817,22 @@ class _MemberSubscriptionPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = GymStateProvider.of(context);
     final mateo = _getLoggedMember(state);
+    final currentMembership =
+        state.currentUser?.memberships?.isNotEmpty == true
+            ? Map<String, dynamic>.from(state.currentUser!.memberships!.first as Map)
+            : null;
+    final balance =
+        state.memberPointsSummary?['balance'] as Map<String, dynamic>?;
+    final planName =
+        currentMembership?['plan_nombre']?.toString() ?? 'Plan Actual';
+    final startDate =
+        currentMembership?['fecha_inicio']?.toString().split('T').first ?? '—';
+    final endDate =
+        currentMembership?['fecha_vencimiento']?.toString().split('T').first ?? '—';
+    final totalPaid = (currentMembership?['monto'] as num?)?.toDouble() ?? 0;
+    final points = (balance?['puntos_disponibles'] as num?)?.toInt() ?? 0;
+    final earnedPoints =
+        (balance?['puntos_totales_ganados'] as num?)?.toInt() ?? 0;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 6, 20, 36),
@@ -792,8 +849,8 @@ class _MemberSubscriptionPage extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  const Text(
-                    'Plan Actual: Oro Mensual',
+                  Text(
+                    'Plan Actual: $planName',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
                   ),
                   const Spacer(),
@@ -808,8 +865,8 @@ class _MemberSubscriptionPage extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 14),
-              const Text(
-                'Vigencia: del 05 de mayo al 04 de junio',
+              Text(
+                'Vigencia: del $startDate al $endDate',
                 style: TextStyle(fontSize: 12.5, color: Color(0xFF6B6B6B)),
               ),
               const SizedBox(height: 16),
@@ -838,9 +895,9 @@ class _MemberSubscriptionPage extends StatelessWidget {
                     ),
                   ),
                   const Spacer(),
-                  const Text(
-                    'S/ 150 pagados',
-                    style: TextStyle(fontSize: 12, color: Color(0xFF757575)),
+                  Text(
+                    'S/ ${totalPaid.toStringAsFixed(2)} pagados',
+                    style: const TextStyle(fontSize: 12, color: Color(0xFF757575)),
                   ),
                 ],
               ),
@@ -855,6 +912,36 @@ class _MemberSubscriptionPage extends StatelessWidget {
                 child: const Text(
                   'Renovar / Pagar MembresÃ­a',
                   style: TextStyle(fontWeight: FontWeight.w900),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 22),
+        const SectionHeader(title: 'Puntos y Fidelización'),
+        Container(
+          padding: const EdgeInsets.all(18),
+          decoration: _cardDecoration(context),
+          child: Row(
+            children: [
+              Expanded(
+                child: MetricTile(
+                  icon: Icons.stars_rounded,
+                  label: 'Disponibles',
+                  value: '$points',
+                  note: 'Saldo actual',
+                  accent: palette.accent,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: MetricTile(
+                  icon: Icons.trending_up_rounded,
+                  label: 'Ganados',
+                  value: '$earnedPoints',
+                  note: 'Histórico',
+                  accent: const Color(0xFF0066FF),
                 ),
               ),
             ],
@@ -1316,39 +1403,22 @@ class _ClassBookingView extends StatefulWidget {
 }
 
 class _ClassBookingViewState extends State<_ClassBookingView> {
-  final List<Map<String, dynamic>> _classes = [
-    {
-      'name': 'Crossfit WOD',
-      'time': '07:00 - 08:00',
-      'trainer': 'Carlos M.',
-      'status': 'Reservar',
-      'spots': 3,
-    },
-    {
-      'name': 'Spinning Pro',
-      'time': '08:30 - 09:30',
-      'trainer': 'Leticia F.',
-      'status': 'Reservado',
-      'spots': 0,
-    },
-    {
-      'name': 'Funcional HIIT',
-      'time': '10:00 - 11:00',
-      'trainer': 'Carlos M.',
-      'status': 'Lista de espera',
-      'spots': 0,
-    },
-    {
-      'name': 'Yoga Flex',
-      'time': '18:30 - 19:30',
-      'trainer': 'Valeria S.',
-      'status': 'Reservar',
-      'spots': 8,
-    },
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final state = GymStateProvider.of(context);
+    final classes = state.schedules.isNotEmpty
+        ? state.schedules
+        : [
+            {
+              'id': 'demo-1',
+              'nombre_clase': 'Crossfit WOD',
+              'hora_inicio': '07:00',
+              'hora_fin': '08:00',
+              'my_booking_status': null,
+              'cupo_maximo': 12,
+              'bookings': const [],
+            },
+          ];
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -1362,14 +1432,26 @@ class _ClassBookingViewState extends State<_ClassBookingView> {
       ),
       body: ListView.separated(
         padding: const EdgeInsets.all(20),
-        itemCount: _classes.length,
+        itemCount: classes.length,
         separatorBuilder: (context, index) => const SizedBox(height: 12),
         itemBuilder: (context, index) {
-          final c = _classes[index];
+          final c = classes[index];
           final colors = context.sasColors;
+          final bookings = (c['bookings'] as List<dynamic>? ?? const []);
+          final usedSpots = bookings.where((item) {
+            final booking = item as Map<String, dynamic>;
+            return booking['estado']?.toString() != 'CANCELLED';
+          }).length;
+          final maxSpots = (c['cupo_maximo'] as num?)?.toInt() ?? 0;
+          final myStatus = c['my_booking_status']?.toString();
+          final statusLabel = myStatus == 'CONFIRMED'
+              ? 'Reservado'
+              : myStatus == 'WAITLIST'
+                  ? 'Lista de espera'
+                  : 'Reservar';
           Color statusColor = widget.palette.accent;
-          if (c['status'] == 'Reservado') statusColor = const Color(0xFF00B85C);
-          if (c['status'] == 'Lista de espera') {
+          if (statusLabel == 'Reservado') statusColor = const Color(0xFF00B85C);
+          if (statusLabel == 'Lista de espera') {
             statusColor = const Color(0xFFFFB300);
           }
 
@@ -1383,7 +1465,7 @@ class _ClassBookingViewState extends State<_ClassBookingView> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        c['name'],
+                        c['nombre_clase']?.toString() ?? 'Clase',
                         style: const TextStyle(
                           fontWeight: FontWeight.w800,
                           fontSize: 16,
@@ -1399,7 +1481,7 @@ class _ClassBookingViewState extends State<_ClassBookingView> {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            c['time'],
+                            '${c['hora_inicio']} - ${c['hora_fin']}',
                             style: TextStyle(
                               fontSize: 12,
                               color: colors.textMuted,
@@ -1409,7 +1491,7 @@ class _ClassBookingViewState extends State<_ClassBookingView> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Coach: ${c['trainer']}',
+                        'Coach: asignado por sede',
                         style: TextStyle(
                           fontSize: 11.5,
                           color: colors.textMuted,
@@ -1422,7 +1504,7 @@ class _ClassBookingViewState extends State<_ClassBookingView> {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      '${c['spots']} cupos disp.',
+                      '${(maxSpots - usedSpots).clamp(0, 999)} cupos disp.',
                       style: TextStyle(
                         fontSize: 10.5,
                         fontWeight: FontWeight.bold,
@@ -1440,19 +1522,16 @@ class _ClassBookingViewState extends State<_ClassBookingView> {
                         ),
                         minimumHeight: 36,
                       ),
-                      onPressed: () {
-                        setState(() {
-                          if (c['status'] == 'Reservar') {
-                            c['status'] = 'Reservado';
-                            c['spots']--;
-                          } else if (c['status'] == 'Reservado') {
-                            c['status'] = 'Reservar';
-                            c['spots']++;
-                          }
-                        });
+                      onPressed: () async {
+                        if (c['id'] == 'demo-1') return;
+                        if (myStatus == 'CONFIRMED' || myStatus == 'WAITLIST') {
+                          await state.cancelSchedule(c['id'].toString());
+                        } else {
+                          await state.bookSchedule(c['id'].toString());
+                        }
                       },
                       child: Text(
-                        c['status'],
+                        statusLabel,
                         style: const TextStyle(
                           fontSize: 11.5,
                           fontWeight: FontWeight.w900,

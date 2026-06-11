@@ -138,26 +138,55 @@ sas_gym/
 
 `proyecto_antiguo/` contiene el sistema heredado Django/CrossHero, backups y artefactos historicos. No debe publicarse ni servirse como estatico.
 
-## Estado actual del avance
+## Estado actual del avance (Detallado)
 
-Avanzado:
+El desarrollo del ecosistema SaaaS GYM ha avanzado desde una fase de prototipo inicial a un sistema robusto, con altos estándares de seguridad en el backend y una integración sustancial de funcionalidades en la app móvil. A continuación se detalla el estado actual por áreas:
 
-- Backend modular con dominios principales.
-- Esquema Prisma amplio para operacion SaaS de gimnasios.
-- App Flutter con pantallas por rol.
-- Separacion funcional entre Admin y Caja.
-- Login, tenant suspendido y estado compartido en Flutter.
-- Docker Compose raiz con PostgreSQL, API, Flutter web, hub estatico y cliente de pruebas.
+### 🔒 Backend (NestJS + Prisma + PostgreSQL)
+*   **Autenticación y Seguridad (Robustecido)**:
+    *   **Tokens Cortos**: El token de acceso JWT cuenta con una expiración reducida y configurable por entorno (`JWT_ACCESS_TTL`, por defecto `15m`).
+    *   **Rotación de Refresh Tokens**: Implementación de refresh tokens rotativos administrados de forma segura mediante una cookie de servidor `sasgym_refresh` con directivas `HttpOnly`, `SameSite=Strict` y `Secure`. Cada llamada de refresco invalida la sesión previa (`replaced_by_id`).
+    *   **Almacenamiento de Tokens**: Se guarda únicamente el hash criptográfico SHA-256 de los tokens en la base de datos, previniendo su fuga en caso de brecha en base de datos.
+    *   **Protección contra Ataques**: Integración global de Helmet, control de tasa de peticiones mediante `@nestjs/throttler` (100 req/min/IP) y middleware de bloqueo in-memory de IPs tras detectar comportamiento anómalo (10 fallos de login en 5 min bloquean la IP por 15 min).
+*   **Integridad Transaccional**:
+    *   Uso de transacciones atómicas Prisma (`prisma.$transaction`) para operaciones financieras críticas, tales como cobros en caja/POS, venta de membresías y el procesamiento de canjes de puntos para evitar estados inconsistentes.
+    *   Los registros de usuarios autogenerados en operaciones de caja o venta rápida ya no usan cadenas de texto plano; se utiliza un hash de contraseña bcrypt aleatorio e inoperable para inicio de sesión directo.
+*   **Dominios y Lógica de Negocio (Completados)**:
+    *   **Módulo de Clases y Reservas (`Schedules`)**: Listado, reserva de cupos y cancelación de clases grupales sincronizado por sede e inquilino. Soporta cálculo en tiempo real de disponibilidad de aforo y colas de espera automáticas (`WAITLIST` / `CONFIRMED`).
+    *   **Módulo de Gamificación (`Points`)**: Creación de catálogos de fidelización, cálculo de balances acumulados y procesador de canje de puntos por productos físicos o extensiones de membresía.
+    *   **Módulo de Rutinas y Seguimiento (`Routines`)**: Creación de catálogo de ejercicios y plantillas por entrenadores, asignación de rutinas semanales por miembro, registro y analítica de volumen de carga física (`weeklyLoads` e históricos de repeticiones).
 
-Parcial o pendiente de consolidacion:
+### 📱 Aplicación Móvil (Flutter / Dart)
+*   **Caché y Seguridad Local**:
+    *   Toda la base de datos de almacenamiento local (cajas de Hive `gym_cache` y la cola de operaciones fuera de línea `sync_queue_box`) está cifrada mediante llaves de alta entropía custodiadas en el almacenamiento seguro nativo del sistema operativo (`Flutter Secure Storage`).
+    *   Implementación de limpieza completa de caché local de rutinas, credenciales y transacciones pendientes durante el proceso de cierre de sesión (`logout`).
+*   **Interfaz y Flujos Funcionales**:
+    *   Mecanismo de generación de códigos QR dinámicos para acceso al gimnasio basado en el secreto real emitido por el backend (`qr_secret`) para cada perfil de miembro, eliminando la derivación predecible a partir del número de DNI.
+    *   Integración del dashboard de fidelización para miembros (puntos ganados vs. disponibles) y vistas interactivas de reserva de clases directamente conectadas a la API real en modo backend.
+    *   Panel de Entrenador mejorado, permitiendo la asignación real de plantillas de rutinas creadas y la visualización interactiva del progreso del miembro (volumen promedio de entrenamiento semanal).
 
-- Integracion completa entre Flutter y API real.
-- Pruebas unitarias especificas por dominio.
-- Pruebas E2E de flujos de negocio.
-- Validacion completa de WebSocket, QR/TOTP, offline y biometria.
-- Endurecimiento de secretos y migraciones para produccion.
+### 🖥️ Panel Web de Administración (React + Babel + CSS)
+*   Estructura estática optimizada que se ejecuta sin necesidad de un paso complejo de compilación web, integrando componentes dinámicos para visualizar métricas generales del inquilino (tenants), logs de auditoría global del sistema y configuración adaptativa de tema visual sincronizado.
 
-Lee el detalle en `arquitectura/07-avance-actual.md`.
+### 🐳 Infraestructura y Despliegue Local
+*   Se eliminó el arranque destructivo del esquema de base de datos (`force-reset`) y el seed automático del inicio del contenedor de base de datos en Docker.
+*   Separación de flujos de configuración mediante `.env` locales e inicio del backend bajo el comando de producción compilado `start:prod` de forma predeterminada.
+*   Redes de Docker segregadas: red interna privada para la base de datos PostgreSQL (`internal-net`) inaccesible desde el host principal y redes públicas de servicios para la API y los frontends (`public-net`).
+
+### 🔍 Resumen del Estado de Validación
+*   **Calidad de Código**: Compilación sin warnings ni problemas de análisis (`flutter analyze` limpio, compilación NestJS exitosa).
+*   **Testing**: Cobertura de pruebas unitarias locales y de integración del backend funcionando sin incidencias. Tareas de automatización ejecutándose dentro del contenedor de CI dedicado `flutter-ci`.
+
+---
+
+## 🚀 Proyección Futura
+
+Para conocer los hitos restantes del roadmap, los pendientes de despliegue multi-réplica, el plan de refactorización de estados hacia Riverpod y los siguientes pasos de integración de hardware biométrico, consulta el archivo detallado:
+*   [proyeccion-futura.md](file:///d:/proyectos/sas_gym/proyeccion-futura.md)
+
+Para un desglose de los hitos técnicos internos históricos, consulta:
+*   [07-avance-actual.md](file:///d:/proyectos/sas_gym/arquitectura/07-avance-actual.md)
+
 
 ## Comandos rapidos
 

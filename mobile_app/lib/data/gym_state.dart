@@ -167,8 +167,15 @@ class GymState extends ChangeNotifier {
         loadProducts();
       } else if (_currentUser?.rol == GymRole.trainer) {
         loadAssignedTrainerMembers();
+        loadTrainerExercises();
+        loadTrainerTemplates();
+        loadTrainerProgress();
       } else if (_currentUser?.rol == GymRole.member) {
         loadMemberPayments();
+        loadSchedules();
+        loadMemberPoints();
+        loadPointsCatalog();
+        loadActiveRoutine();
       }
       loadTenantSettings();
       loadMembershipPlans(includeInactive: _currentUser?.rol == GymRole.admin);
@@ -228,8 +235,15 @@ class GymState extends ChangeNotifier {
         loadProducts();
       } else if (_currentUser?.rol == GymRole.trainer) {
         loadAssignedTrainerMembers();
+        loadTrainerExercises();
+        loadTrainerTemplates();
+        loadTrainerProgress();
       } else if (_currentUser?.rol == GymRole.member) {
         loadMemberPayments();
+        loadSchedules();
+        loadMemberPoints();
+        loadPointsCatalog();
+        loadActiveRoutine();
       }
       loadTenantSettings();
       loadMembershipPlans(includeInactive: _currentUser?.rol == GymRole.admin);
@@ -320,6 +334,14 @@ class GymState extends ChangeNotifier {
   final List<SaaSClient> _saClients = [];
   final List<MemberRecord> _assignedTrainerMembers = [];
   final List<PaymentRecord> _memberPayments = [];
+  final Map<String, String> _memberUserIdsByDni = {};
+  final List<Map<String, dynamic>> _schedules = [];
+  Map<String, dynamic>? _memberPointsSummary;
+  Map<String, dynamic>? _pointsCatalog;
+  Map<String, dynamic>? _activeRoutine;
+  final List<Map<String, dynamic>> _trainerExercises = [];
+  final List<Map<String, dynamic>> _trainerTemplates = [];
+  Map<String, dynamic>? _trainerProgress;
 
   // Getters
   List<MemberRecord> get members =>
@@ -334,6 +356,16 @@ class GymState extends ChangeNotifier {
   List<MemberRecord> get assignedTrainerMembers =>
       List.unmodifiable(_assignedTrainerMembers);
   List<PaymentRecord> get memberPayments => List.unmodifiable(_memberPayments);
+  List<Map<String, dynamic>> get schedules => List.unmodifiable(_schedules);
+  Map<String, dynamic>? get memberPointsSummary => _memberPointsSummary;
+  Map<String, dynamic>? get pointsCatalog => _pointsCatalog;
+  Map<String, dynamic>? get activeRoutine => _activeRoutine;
+  List<Map<String, dynamic>> get trainerExercises =>
+      List.unmodifiable(_trainerExercises);
+  List<Map<String, dynamic>> get trainerTemplates =>
+      List.unmodifiable(_trainerTemplates);
+  Map<String, dynamic>? get trainerProgress => _trainerProgress;
+  String? findMemberUserIdByDni(String dni) => _memberUserIdsByDni[dni];
 
   // Verification: is current gym blocked?
   bool get isCurrentGymActive {
@@ -366,6 +398,14 @@ class GymState extends ChangeNotifier {
     _saClients.clear();
     _assignedTrainerMembers.clear();
     _memberPayments.clear();
+    _memberUserIdsByDni.clear();
+    _schedules.clear();
+    _memberPointsSummary = null;
+    _pointsCatalog = null;
+    _activeRoutine = null;
+    _trainerExercises.clear();
+    _trainerTemplates.clear();
+    _trainerProgress = null;
   }
 
   bool get isBackendMode => _currentUser != null;
@@ -1365,8 +1405,13 @@ class GymState extends ChangeNotifier {
       );
     }).toList();
 
+    final dni = json['dni']?.toString() ?? '';
+    if (dni.isNotEmpty && json['id'] != null) {
+      _memberUserIdsByDni[dni] = json['id'].toString();
+    }
+
     return MemberRecord(
-      dni: json['dni']?.toString() ?? '',
+      dni: dni,
       name: json['nombre_completo']?.toString() ?? 'Socio',
       phone: json['celular']?.toString() ?? '',
       email: json['email']?.toString() ?? '',
@@ -1522,6 +1567,222 @@ class GymState extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       AppLogger.debug('Error loading member payments', e);
+    }
+  }
+
+  Future<void> loadSchedules() async {
+    if (!isBackendMode) return;
+    try {
+      final response = await ApiClient().dio.get('/schedules');
+      final rows = (response.data as List)
+          .map((item) => Map<String, dynamic>.from(item as Map))
+          .toList();
+      _schedules
+        ..clear()
+        ..addAll(rows);
+      notifyListeners();
+    } catch (e) {
+      AppLogger.debug('Error loading schedules', e);
+    }
+  }
+
+  Future<void> loadMemberPoints() async {
+    if (!isBackendMode || _currentUser?.rol != GymRole.member) return;
+    try {
+      final response = await ApiClient().dio.get('/points/me');
+      _memberPointsSummary = Map<String, dynamic>.from(response.data as Map);
+      notifyListeners();
+    } catch (e) {
+      AppLogger.debug('Error loading member points', e);
+    }
+  }
+
+  Future<void> loadPointsCatalog() async {
+    if (!isBackendMode || _currentUser?.rol != GymRole.member) return;
+    try {
+      final response = await ApiClient().dio.get('/points/catalog');
+      _pointsCatalog = Map<String, dynamic>.from(response.data as Map);
+      notifyListeners();
+    } catch (e) {
+      AppLogger.debug('Error loading points catalog', e);
+    }
+  }
+
+  Future<Map<String, dynamic>?> redeemPoints({
+    required String tipo,
+    required String itemId,
+    int cantidad = 1,
+    String? notas,
+  }) async {
+    if (!isBackendMode || _currentUser?.rol != GymRole.member) return null;
+    try {
+      final response = await ApiClient().dio.post(
+        '/points/redeem',
+        data: {
+          'tipo': tipo,
+          'itemId': itemId,
+          'cantidad': cantidad,
+          'notas': notas ?? '',
+        },
+      );
+      await loadMemberPoints();
+      await loadPointsCatalog();
+      return Map<String, dynamic>.from(response.data as Map);
+    } catch (e) {
+      AppLogger.debug('Error redeeming points', e);
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>?> bookSchedule(String scheduleId, {DateTime? fecha}) async {
+    if (!isBackendMode || _currentUser?.rol != GymRole.member) return null;
+    try {
+      final response = await ApiClient().dio.post(
+        '/schedules/$scheduleId/book',
+        data: {
+          if (fecha != null) 'fecha': fecha.toIso8601String(),
+        },
+      );
+      await loadSchedules();
+      return Map<String, dynamic>.from(response.data as Map);
+    } catch (e) {
+      AppLogger.debug('Error booking schedule', e);
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>?> cancelSchedule(String scheduleId, {DateTime? fecha}) async {
+    if (!isBackendMode || _currentUser?.rol != GymRole.member) return null;
+    try {
+      final response = await ApiClient().dio.post(
+        '/schedules/$scheduleId/cancel',
+        data: {
+          if (fecha != null) 'fecha': fecha.toIso8601String(),
+        },
+      );
+      await loadSchedules();
+      return Map<String, dynamic>.from(response.data as Map);
+    } catch (e) {
+      AppLogger.debug('Error canceling schedule', e);
+      rethrow;
+    }
+  }
+
+  Future<void> loadTrainerExercises() async {
+    if (!isBackendMode || _currentUser?.rol != GymRole.trainer) return;
+    try {
+      final response = await ApiClient().dio.get('/routines/trainer/exercises');
+      final rows = (response.data as List)
+          .map((item) => Map<String, dynamic>.from(item as Map))
+          .toList();
+      _trainerExercises
+        ..clear()
+        ..addAll(rows);
+      notifyListeners();
+    } catch (e) {
+      AppLogger.debug('Error loading trainer exercises', e);
+    }
+  }
+
+  Future<Map<String, dynamic>?> createTrainerExercise({
+    required String nombre,
+    required String grupoMuscular,
+    String? descripcion,
+    String? imagenUrl,
+    String? animacionUrl,
+  }) async {
+    if (!isBackendMode || _currentUser?.rol != GymRole.trainer) return null;
+    try {
+      final response = await ApiClient().dio.post(
+        '/routines/trainer/exercises',
+        data: {
+          'nombre': nombre,
+          'grupoMuscular': grupoMuscular,
+          'descripcion': descripcion ?? '',
+          'imagenUrl': imagenUrl ?? '',
+          'animacionUrl': animacionUrl ?? '',
+        },
+      );
+      await loadTrainerExercises();
+      return Map<String, dynamic>.from(response.data as Map);
+    } catch (e) {
+      AppLogger.debug('Error creating trainer exercise', e);
+      rethrow;
+    }
+  }
+
+  Future<void> loadTrainerTemplates() async {
+    if (!isBackendMode || _currentUser?.rol != GymRole.trainer) return;
+    try {
+      final response = await ApiClient().dio.get('/routines/trainer/templates');
+      final rows = (response.data as List)
+          .map((item) => Map<String, dynamic>.from(item as Map))
+          .toList();
+      _trainerTemplates
+        ..clear()
+        ..addAll(rows);
+      notifyListeners();
+    } catch (e) {
+      AppLogger.debug('Error loading trainer templates', e);
+    }
+  }
+
+  Future<Map<String, dynamic>?> createTrainerTemplate({
+    required String nombre,
+    String? descripcion,
+    required List<Map<String, dynamic>> ejercicios,
+  }) async {
+    if (!isBackendMode || _currentUser?.rol != GymRole.trainer) return null;
+    try {
+      final response = await ApiClient().dio.post(
+        '/routines/trainer/templates',
+        data: {
+          'nombre': nombre,
+          'descripcion': descripcion ?? '',
+          'ejercicios': ejercicios,
+        },
+      );
+      await loadTrainerTemplates();
+      return Map<String, dynamic>.from(response.data as Map);
+    } catch (e) {
+      AppLogger.debug('Error creating trainer template', e);
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>?> assignRoutineTemplate({
+    required String memberUserId,
+    required String templateId,
+    required Map<String, String> agendaSemanal,
+  }) async {
+    if (!isBackendMode || _currentUser?.rol != GymRole.trainer) return null;
+    try {
+      final response = await ApiClient().dio.post(
+        '/routines/trainer/assign',
+        data: {
+          'memberUserId': memberUserId,
+          'templateId': templateId,
+          'agendaSemanal': agendaSemanal,
+          'publicada': true,
+        },
+      );
+      await loadAssignedTrainerMembers();
+      await loadTrainerProgress();
+      return Map<String, dynamic>.from(response.data as Map);
+    } catch (e) {
+      AppLogger.debug('Error assigning routine template', e);
+      rethrow;
+    }
+  }
+
+  Future<void> loadTrainerProgress() async {
+    if (!isBackendMode || _currentUser?.rol != GymRole.trainer) return;
+    try {
+      final response = await ApiClient().dio.get('/routines/trainer/progress');
+      _trainerProgress = Map<String, dynamic>.from(response.data as Map);
+      notifyListeners();
+    } catch (e) {
+      AppLogger.debug('Error loading trainer progress', e);
     }
   }
 
@@ -2281,7 +2542,9 @@ class GymState extends ChangeNotifier {
         final response = await ApiClient().dio.get('/routines/active');
         if (response.data != null) {
           await box.put('active_routine', response.data);
-          return response.data as Map<String, dynamic>;
+          _activeRoutine = Map<String, dynamic>.from(response.data as Map);
+          notifyListeners();
+          return _activeRoutine;
         }
       } catch (e) {
         AppLogger.debug('Error loading active routine from backend', e);
@@ -2292,10 +2555,13 @@ class GymState extends ChangeNotifier {
     final cached = box.get('active_routine');
     if (cached != null) {
       if (cached is Map) {
-        return Map<String, dynamic>.from(cached);
+        _activeRoutine = Map<String, dynamic>.from(cached);
+        notifyListeners();
+        return _activeRoutine;
       }
     }
 
+    _activeRoutine = null;
     return null;
   }
 

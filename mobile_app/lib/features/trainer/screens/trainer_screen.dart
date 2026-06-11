@@ -65,6 +65,23 @@ class _TrainerScreenState extends State<TrainerScreen> {
   Widget build(BuildContext context) {
     final state = GymStateProvider.of(context);
     final palette = rolePalettes[GymRole.trainer]!;
+    final backendTemplates = state.trainerTemplates.map((item) {
+      final exercises = (item['ejercicios'] as List<dynamic>? ?? const [])
+          .map((entry) {
+            final row = entry as Map<String, dynamic>;
+            final exercise = row['exercise'] as Map<String, dynamic>? ?? const {};
+            return exercise['nombre']?.toString() ?? 'Ejercicio';
+          })
+          .toList();
+      return {
+        'id': item['id']?.toString() ?? '',
+        'name': item['nombre']?.toString() ?? 'Plantilla',
+        'muscle': item['descripcion']?.toString() ?? 'General',
+        'exercises': exercises,
+      };
+    }).toList();
+    final effectiveTemplates =
+        backendTemplates.isNotEmpty ? backendTemplates : _routineTemplates;
 
     Widget? activeView;
 
@@ -98,7 +115,7 @@ class _TrainerScreenState extends State<TrainerScreen> {
         activeView = _AssignRoutineView(
           palette: palette,
           member: member,
-          templates: _routineTemplates,
+          templates: effectiveTemplates,
           onBack: _back,
         );
       } else if (screen == 'report-observation') {
@@ -146,6 +163,39 @@ class _TrainerScreenState extends State<TrainerScreen> {
   }
 
   Widget _buildTab(int tab, GymState state, RolePalette palette, {Key? key}) {
+    final backendExercises = state.trainerExercises.map((item) {
+      return ExerciseItem(
+        id: item['id']?.toString(),
+        name: item['nombre']?.toString() ?? 'Ejercicio',
+        muscle: item['grupo_muscular']?.toString() ?? 'General',
+        sets: 4,
+        reps: '10',
+        weight: null,
+        restSeconds: 60,
+        icon: Icons.fitness_center_rounded,
+        available: item['activo'] != false,
+      );
+    }).toList();
+    final effectiveExercises =
+        backendExercises.isNotEmpty ? backendExercises : _localExercises;
+    final backendTemplates = state.trainerTemplates.map((item) {
+      final exercises = (item['ejercicios'] as List<dynamic>? ?? const [])
+          .map((entry) {
+            final row = entry as Map<String, dynamic>;
+            final exercise = row['exercise'] as Map<String, dynamic>? ?? const {};
+            return exercise['nombre']?.toString() ?? 'Ejercicio';
+          })
+          .toList();
+      return {
+        'id': item['id']?.toString() ?? '',
+        'name': item['nombre']?.toString() ?? 'Plantilla',
+        'muscle': item['descripcion']?.toString() ?? 'General',
+        'exercises': exercises,
+      };
+    }).toList();
+    final effectiveTemplates =
+        backendTemplates.isNotEmpty ? backendTemplates : _routineTemplates;
+
     switch (tab) {
       case 0:
         return _TrainerMembersTab(
@@ -158,11 +208,18 @@ class _TrainerScreenState extends State<TrainerScreen> {
         return _TrainerExerciseLibraryTab(
           key: key,
           palette: palette,
-          exercises: _localExercises,
-          onAddExercise: (newEx) {
-            setState(() {
-              _localExercises.insert(0, newEx);
-            });
+          exercises: effectiveExercises,
+          onAddExercise: (newEx) async {
+            if (state.currentUser?.rol == GymRole.trainer) {
+              await state.createTrainerExercise(
+                nombre: newEx.name,
+                grupoMuscular: newEx.muscle,
+              );
+            } else {
+              setState(() {
+                _localExercises.insert(0, newEx);
+              });
+            }
             state.addAnnouncement('ENTRENAMIENTO', 'Nuevo ejercicio: ${newEx.name}', 'Se agregó ${newEx.name} a la biblioteca global.');
           },
         );
@@ -170,8 +227,36 @@ class _TrainerScreenState extends State<TrainerScreen> {
         return _TrainerTemplatesTab(
           key: key,
           palette: palette,
-          templates: _routineTemplates,
-          onAddTemplate: (name, muscle, exercises) {
+          templates: effectiveTemplates,
+          onAddTemplate: (name, muscle, exercises) async {
+            if (state.currentUser?.rol == GymRole.trainer &&
+                state.trainerExercises.isNotEmpty) {
+              final payload = exercises
+                  .map((exerciseName) {
+                    final match = state.trainerExercises.cast<Map<String, dynamic>?>().firstWhere(
+                      (item) => item?['nombre']?.toString() == exerciseName,
+                      orElse: () => null,
+                    );
+                    if (match == null) return null;
+                    return {
+                      'exerciseId': match['id'],
+                      'orden': exercises.indexOf(exerciseName) + 1,
+                      'series': 4,
+                      'repeticiones': 10,
+                      'descansoSeg': 60,
+                    };
+                  })
+                  .whereType<Map<String, dynamic>>()
+                  .toList();
+              if (payload.isNotEmpty) {
+                await state.createTrainerTemplate(
+                  nombre: name,
+                  descripcion: muscle,
+                  ejercicios: payload,
+                );
+                return;
+              }
+            }
             setState(() {
               _routineTemplates.add({
                 'name': name,
@@ -182,7 +267,11 @@ class _TrainerScreenState extends State<TrainerScreen> {
           },
         );
       case 3:
-        return _TrainerProgressTab(key: key, palette: palette);
+        return _TrainerProgressTab(
+          key: key,
+          palette: palette,
+          progress: state.trainerProgress,
+        );
       default:
         return _TrainerProfileTab(
           key: key,
@@ -791,12 +880,43 @@ class _AssignRoutineViewState extends State<_AssignRoutineView> {
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
-              onPressed: () {
-                // Post audit log reactively
-                state.addAnnouncement('RUTINA', 'Rutina asignada a ${widget.member.name}', 'Se actualizó la matriz semanal de rutinas.');
+              onPressed: () async {
+                final memberUserId = state.findMemberUserIdByDni(widget.member.dni);
+                final selectedTemplateName = _weeklyRoutines.values.firstWhere(
+                  (value) => value != 'Descanso',
+                  orElse: () => '',
+                );
+                final selectedTemplate = widget.templates.cast<Map<String, dynamic>?>().firstWhere(
+                  (item) => item?['name']?.toString() == selectedTemplateName,
+                  orElse: () => null,
+                );
+
+                if (memberUserId != null &&
+                    selectedTemplate != null &&
+                    (selectedTemplate['id']?.toString().isNotEmpty ?? false)) {
+                  await state.assignRoutineTemplate(
+                    memberUserId: memberUserId,
+                    templateId: selectedTemplate['id'].toString(),
+                    agendaSemanal: _weeklyRoutines.map((key, value) {
+                      final templateMatch = widget.templates.cast<Map<String, dynamic>?>().firstWhere(
+                        (item) => item?['name']?.toString() == value,
+                        orElse: () => null,
+                      );
+                      return MapEntry(
+                        key,
+                        templateMatch?['id']?.toString().isNotEmpty == true
+                            ? templateMatch!['id'].toString()
+                            : value,
+                      );
+                    }),
+                  );
+                } else {
+                  state.addAnnouncement('RUTINA', 'Rutina asignada a ${widget.member.name}', 'Se actualizó la matriz semanal de rutinas.');
+                }
+                if (!context.mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('Matriz semanal de ${widget.member.name} guardada y notificada'),
+                    content: Text('Matriz semanal de ${widget.member.name} guardada y publicada'),
                     backgroundColor: const Color(0xFF00B85C),
                   ),
                 );
@@ -1218,12 +1338,25 @@ class _TrainerTemplatesTab extends StatelessWidget {
 // TRAINING VOLUME PROGRESS TAB
 // ------------------------------------------
 class _TrainerProgressTab extends StatelessWidget {
-  const _TrainerProgressTab({super.key, required this.palette});
+  const _TrainerProgressTab({
+    super.key,
+    required this.palette,
+    this.progress,
+  });
 
   final RolePalette palette;
+  final Map<String, dynamic>? progress;
 
   @override
   Widget build(BuildContext context) {
+    final weeklyLoads = (progress?['weeklyLoads'] as List<dynamic>? ?? const [])
+        .map((item) => (item as Map<String, dynamic>)['volume'] as num? ?? 0)
+        .map((value) => value.toDouble())
+        .toList();
+    final chartVolumes =
+        weeklyLoads.isNotEmpty ? weeklyLoads : <double>[50, 56, 52, 60, 62, 70, 72, 78];
+    final totals = progress?['totals'] as Map<String, dynamic>? ?? const {};
+
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 6, 20, 24),
       children: [
@@ -1244,18 +1377,33 @@ class _TrainerProgressTab extends StatelessWidget {
                 child: CustomPaint(
                   size: const Size(double.infinity, 140),
                   painter: _VolumePainter(
-                    volumes: [50, 56, 52, 60, 62, 70, 72, 78],
+                    volumes: chartVolumes,
                   ),
                 ),
               ),
               const SizedBox(height: 18),
               Row(
-                children: const [
-                  Expanded(child: _ProgressMiniStat(title: 'Volumen Promedio', value: '62.5 t')),
-                  SizedBox(width: 10),
-                  Expanded(child: _ProgressMiniStat(title: 'Carga Pico', value: '78.0 t')),
-                  SizedBox(width: 10),
-                  Expanded(child: _ProgressMiniStat(title: 'RPE Promedio', value: '8.1')),
+                children: [
+                  Expanded(
+                    child: _ProgressMiniStat(
+                      title: 'Sesiones',
+                      value: '${totals['sessions'] ?? 0}',
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _ProgressMiniStat(
+                      title: 'Completadas',
+                      value: '${totals['completedSessions'] ?? 0}',
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _ProgressMiniStat(
+                      title: 'Reps Promedio',
+                      value: '${totals['averageReps'] ?? 0}',
+                    ),
+                  ),
                 ],
               ),
             ],

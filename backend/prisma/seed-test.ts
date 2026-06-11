@@ -170,6 +170,7 @@ async function resetDatabase() {
   await prisma.membershipPlan.deleteMany();
   await prisma.memberProfile.deleteMany();
   await prisma.trainerProfile.deleteMany();
+  await prisma.refreshTokenSession.deleteMany();
   await prisma.user.deleteMany();
   await prisma.tenant.deleteMany();
 }
@@ -617,6 +618,44 @@ async function main() {
         data: {
           ...totals,
           total_ingresos: { increment: paid },
+        },
+      });
+    }
+
+    const classSchedules = [
+      {
+        nombre_clase: 'Funcional AM',
+        descripcion: 'Clase funcional de alta energia para socios activos.',
+        dia_semana: [1, 3, 5],
+        hora_inicio: '07:00',
+        hora_fin: '08:00',
+        cupo_maximo: 18,
+      },
+      {
+        nombre_clase: 'Spinning Noon',
+        descripcion: 'Sesion de cardio guiada para resistencia y quema calorica.',
+        dia_semana: [2, 4],
+        hora_inicio: '12:30',
+        hora_fin: '13:15',
+        cupo_maximo: 16,
+      },
+      {
+        nombre_clase: 'Yoga Recovery',
+        descripcion: 'Bloque de movilidad y recuperacion con foco post entrenamiento.',
+        dia_semana: [2, 6],
+        hora_inicio: '19:00',
+        hora_fin: '20:00',
+        cupo_maximo: 20,
+      },
+    ];
+
+    for (let i = 0; i < classSchedules.length; i++) {
+      const schedule = classSchedules[i];
+      await prisma.schedule.create({
+        data: {
+          tenant_id: tenant.id,
+          trainer_id: trainers[i % trainers.length].user_id,
+          ...schedule,
         },
       });
     }
