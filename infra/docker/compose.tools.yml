@@ -1,0 +1,28 @@
+name: sasgym-tools
+
+services:
+  graphify:
+    image: alpine:3.20
+    container_name: sasgym_graphify
+    restart: unless-stopped
+    profiles: ["graphify"]
+    working_dir: /code
+    command: >
+      sh -c "mkdir -p /output &&
+      printf '# Graphify report\n\nGraphify image not configured yet. Add the real tool image or Dockerfile before using this report as architectural input.\n' > /output/GRAPH_REPORT.md &&
+      tail -f /dev/null"
+    ports:
+      - "127.0.0.1:7331:7331"
+    volumes:
+      - ../../:/code:ro
+      - ../../graphify/graphify-out:/output
+    environment:
+      GRAPHIFY_WATCH: "true"
+      GRAPHIFY_INCLUDE: "backend,mobile_app,web_admin,docs,arquitectura"
+      GRAPHIFY_EXCLUDE: "dist,node_modules,.dart_tool,build,graphify-out,.git,.env"
+    networks:
+      - sasgym_tools
+
+networks:
+  sasgym_tools:
+    driver: bridge

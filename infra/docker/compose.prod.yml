@@ -1,0 +1,156 @@
+name: sasgym-prod
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: sasgym_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - sasgym_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sasgym_backend
+
+  redis:
+    image: redis:7-alpine
+    container_name: sasgym_redis
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - sasgym_redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - sasgym_backend
+
+  api:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile.prod
+    container_name: sasgym_api
+    restart: unless-stopped
+    expose:
+      - "3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}?schema=public
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      JWT_ACCESS_TTL: ${JWT_ACCESS_TTL:-15m}
+      JWT_REFRESH_DAYS: ${JWT_REFRESH_DAYS:-7}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
+      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-30d}
+      HUELLA_SECRET_KEY: ${HUELLA_SECRET_KEY}
+      API_BASE_URL: ${API_BASE_URL}
+      APP_URL: ${APP_URL}
+      ADMIN_URL: ${ADMIN_URL}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+      PUBLIC_UPLOADS_ENABLED: ${PUBLIC_UPLOADS_ENABLED:-false}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - sasgym_backend
+      - proxy_external
+
+  ws:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile.prod
+    container_name: sasgym_ws
+    restart: unless-stopped
+    expose:
+      - "3001"
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      WS_MODE: "true"
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}?schema=public
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      JWT_ACCESS_TTL: ${JWT_ACCESS_TTL:-15m}
+      JWT_REFRESH_DAYS: ${JWT_REFRESH_DAYS:-7}
+      HUELLA_SECRET_KEY: ${HUELLA_SECRET_KEY}
+      WS_URL: ${WS_URL}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - sasgym_backend
+      - proxy_external
+
+  app-web:
+    build:
+      context: ../../mobile_app
+      dockerfile: Dockerfile
+      target: runtime
+      args:
+        APP_ENV: production
+        APP_MODE: backend
+        ENABLE_QR_SIMULATOR: "false"
+        API_BASE_URL: ${API_BASE_URL}
+    container_name: sasgym_app_web
+    restart: unless-stopped
+    expose:
+      - "80"
+    depends_on:
+      - api
+    networks:
+      - proxy_external
+
+  admin-web:
+    image: caddy:2-alpine
+    container_name: sasgym_admin_web
+    restart: unless-stopped
+    expose:
+      - "80"
+    volumes:
+      - ../../web_admin:/usr/share/caddy:ro
+    networks:
+      - proxy_external
+
+volumes:
+  sasgym_pgdata:
+  sasgym_redisdata:
+
+networks:
+  sasgym_backend:
+    driver: bridge
+    internal: true
+
+  proxy_external:
+    external: true
+    name: ${EXTERNAL_PROXY_NETWORK}

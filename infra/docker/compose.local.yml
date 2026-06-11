@@ -1,0 +1,151 @@
+name: sasgym-local
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: sasgym_postgres_local
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - sasgym_pgdata_local:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sasgym_backend_local
+
+  redis:
+    image: redis:7-alpine
+    container_name: sasgym_redis_local
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - sasgym_redisdata_local:/data
+    networks:
+      - sasgym_backend_local
+
+  api:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile
+    container_name: sasgym_api_local
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}?schema=public
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      JWT_ACCESS_TTL: ${JWT_ACCESS_TTL:-15m}
+      JWT_REFRESH_DAYS: ${JWT_REFRESH_DAYS:-7}
+      HUELLA_SECRET_KEY: ${HUELLA_SECRET_KEY}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+      PUBLIC_UPLOADS_ENABLED: ${PUBLIC_UPLOADS_ENABLED:-false}
+      ENABLE_QR_SIMULATOR: ${ENABLE_QR_SIMULATOR:-true}
+      ALLOW_TEST_DATA_RESET: ${ALLOW_TEST_DATA_RESET:-true}
+    ports:
+      - "${API_PORT:-3000}:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    command: >
+      sh -c "npm run db:setup:local && npm run seed:local && npm run start:dev"
+    networks:
+      - sasgym_backend_local
+      - sasgym_public_local
+
+  ws:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile
+    container_name: sasgym_ws_local
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      PORT: 3001
+      WS_MODE: "true"
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}?schema=public
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      JWT_ACCESS_TTL: ${JWT_ACCESS_TTL:-15m}
+      JWT_REFRESH_DAYS: ${JWT_REFRESH_DAYS:-7}
+      HUELLA_SECRET_KEY: ${HUELLA_SECRET_KEY}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+    ports:
+      - "${WS_PORT:-3001}:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - sasgym_backend_local
+      - sasgym_public_local
+
+  app-web:
+    build:
+      context: ../../mobile_app
+      dockerfile: Dockerfile
+      target: runtime
+      args:
+        APP_ENV: dev
+        APP_MODE: backend
+        ENABLE_QR_SIMULATOR: ${ENABLE_QR_SIMULATOR:-true}
+        API_BASE_URL: ${API_BASE_URL:-http://localhost:3000/api/v1}
+    container_name: sasgym_app_web_local
+    restart: unless-stopped
+    ports:
+      - "${APP_WEB_PORT:-8383}:80"
+    depends_on:
+      - api
+    networks:
+      - sasgym_public_local
+
+  admin-web:
+    image: nginx:alpine
+    container_name: sasgym_admin_web_local
+    restart: unless-stopped
+    ports:
+      - "${ADMIN_WEB_PORT:-8282}:80"
+    volumes:
+      - ../../index.html:/usr/share/nginx/html/index.html:ro
+      - ../../web_admin:/usr/share/nginx/html/web:ro
+      - ../../mockups/mobile:/usr/share/nginx/html/mockups/mobile:ro
+      - ../../mockups/web:/usr/share/nginx/html/mockups/web:ro
+      - ../../docs:/usr/share/nginx/html/docs:ro
+    networks:
+      - sasgym_public_local
+
+volumes:
+  sasgym_pgdata_local:
+  sasgym_redisdata_local:
+
+networks:
+  sasgym_backend_local:
+    driver: bridge
+  sasgym_public_local:
+    driver: bridge

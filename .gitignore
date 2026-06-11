@@ -1,17 +1,33 @@
-# Dependency directories
-node_modules/
-
-# Local env files (highly sensitive secrets)
+# Env
 .env
-.env.local
-.env.*.local
-.env.production
-.env.staging
-.env.development
+.env.*
+!.env.example
+!.env.local.example
+!.env.production.example
+!backend/.env.example
+
+# Node
+node_modules/
+dist/
+coverage/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub/
+build/
+*.iml
+
+# Android / Gradle
+.gradle/
+local.properties
 
 # Production and compiled output
-dist/
-build/
 bin/
 obj/
 *.exe
@@ -19,16 +35,23 @@ obj/
 *.so
 *.dylib
 
-# Flutter/Dart specific
-.dart_tool/
-.flutter-plugins
-.flutter-plugins-dependencies
-.packages
-.pub/
-/mobile_app/build/
-/mobile_app/.flutter-plugins
-/mobile_app/.flutter-plugins-dependencies
-/mobile_app/flutter_app.iml
+# Logs
+*.log
+
+# Database dumps / backups
+*.sql
+*.dump
+*.tar
+*.gz
+backups/
+
+# Graphify
+graphify/graphify-out/
+
+# Obsidian temporary files
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/cache/
 
 # IDEs and Editors
 .idea/
