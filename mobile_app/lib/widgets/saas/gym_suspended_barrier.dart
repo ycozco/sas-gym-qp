@@ -40,7 +40,7 @@ class GymSuspendedBarrier extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                'Esta sede del gimnasio ha sido suspendida temporalmente por administración de la red SaaaS GYM debido a temas de facturación pendientes.',
+                'Esta sede del gimnasio ha sido suspendida temporalmente por la administración de SaasGym debido a temas de facturación pendientes.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.6),
@@ -57,7 +57,7 @@ class GymSuspendedBarrier extends StatelessWidget {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 icon: const Icon(Icons.headset_mic),
-                label: const Text('Contactar Soporte SaaS', style: TextStyle(fontWeight: FontWeight.w800)),
+                label: const Text('Contactar Soporte SaasGym', style: TextStyle(fontWeight: FontWeight.w800)),
                 onPressed: onContactAdmin,
               ),
               const SizedBox(height: 12),

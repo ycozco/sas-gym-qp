@@ -80,6 +80,6 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
-  console.log(`Servidor de GymSmart ejecutándose en: http://localhost:${port}/api/v1`);
+  console.log(`Servidor de SaasGym ejecutándose en: http://localhost:${port}/api/v1`);
 }
 bootstrap();

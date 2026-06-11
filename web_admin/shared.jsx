@@ -1,7 +1,34 @@
 // shared.jsx — iconos y componentes reutilizables del panel web.
 // Expone todo en window para que data/dashboards/modules/app lo consuman.
 
-const API_BASE_URL = "http://localhost:3000/api/v1";
+const LOCAL_API_BASE_URL = "http://localhost:3000/api/v1";
+
+function normalizeApiBaseUrl(value) {
+  return String(value || "").trim().replace(/\/+$/, "");
+}
+
+function resolveApiBaseUrl() {
+  const configured = normalizeApiBaseUrl(window.__SASGYM_CONFIG__?.apiBaseUrl);
+  if (configured) return configured;
+
+  const { protocol, hostname } = window.location;
+  if (!hostname || hostname === "localhost" || hostname === "127.0.0.1") {
+    return LOCAL_API_BASE_URL;
+  }
+
+  if (hostname.startsWith("admin.") || hostname.startsWith("app.")) {
+    const suffix = hostname.split(".").slice(1).join(".");
+    return `${protocol}//api.${suffix}/api/v1`;
+  }
+
+  if (hostname.startsWith("api.")) {
+    return `${protocol}//${hostname}/api/v1`;
+  }
+
+  return `${protocol}//${hostname}/api/v1`;
+}
+
+const API_BASE_URL = resolveApiBaseUrl();
 const AUTH_TOKEN_KEY = "sasgym.authToken";
 const TENANT_ID_KEY = "sasgym.tenantId";
 const THEME_MODE_KEY = "sasgym.theme";
@@ -382,7 +409,7 @@ function Sidebar({ role, section, onNavigate, tenantSettings }) {
     <aside className="sidebar">
       <div className="brand">
         <span className="dot" aria-hidden="true"/>
-        <span className="wm">Gym<em>Smart</em></span>
+        <span className="wm">Saas<em>Gym</em></span>
       </div>
       <nav aria-label="Navegación del panel">
         {r.nav.map(grp => (
@@ -403,8 +430,8 @@ function Sidebar({ role, section, onNavigate, tenantSettings }) {
       <div className="gym-card">
         <span className="logo" aria-hidden="true">{r.platform ? "★" : logoLetter}</span>
         <div style={{ minWidth: 0 }}>
-          <div className="gn">{r.platform ? "GymSmart SaaS" : gymName}</div>
-          <div className="gs">{r.platform ? "Plataforma multi-tenant" : gymCity}</div>
+          <div className="gn">{r.platform ? "SaasGym Network" : gymName}</div>
+          <div className="gs">{r.platform ? "Operacion multi-sede" : gymCity}</div>
         </div>
       </div>
     </aside>

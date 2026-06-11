@@ -2059,7 +2059,7 @@ class GymState extends ChangeNotifier {
     _saClients.addAll([
       SaaSClient(
         id: 'gym_santiago',
-        name: 'SAS Gym Santiago',
+        name: 'SaasGym Santiago',
         logo: '🏋️',
         location: 'Av. Providencia, Santiago',
         membersCount: '154',
@@ -2067,7 +2067,7 @@ class GymState extends ChangeNotifier {
       ),
       SaaSClient(
         id: 'gym_lima',
-        name: 'SAS Gym Lima Centro',
+        name: 'SaasGym Lima Centro',
         logo: '💪',
         location: 'Jr. Carabaya, Lima',
         membersCount: '89',
@@ -2075,7 +2075,7 @@ class GymState extends ChangeNotifier {
       ),
       SaaSClient(
         id: 'gym_bogota',
-        name: 'SAS Gym Bogotá Norte',
+        name: 'SaasGym Bogotá Norte',
         logo: '⚡',
         location: 'Cl. 85, Bogotá',
         membersCount: '124',

@@ -1,15 +1,8 @@
 // dashboards.jsx - Login + dashboards por rol conectados al backend.
 
 function Login({ onLogin, loading, error }) {
-  const [emailOrDni, setEmailOrDni] = React.useState("admin1.surco@test.sasgym.com");
-  const [password, setPassword] = React.useState("admin_secure_pass");
-  const quickUsers = [
-    ["Admin Surco", "admin1.surco@test.sasgym.com", "admin_secure_pass"],
-    ["Caja Surco", "caja1.surco@test.sasgym.com", "caja_secure_pass"],
-    ["Trainer Surco", "trainer1.surco@test.sasgym.com", "trainer_secure_pass"],
-    ["Miembro Surco", "socio01.surco@test.sasgym.com", "member_secure_pass"],
-    ["Superadmin", "superadmin@test.sasgym.com", "super_secure_pass"],
-  ];
+  const [emailOrDni, setEmailOrDni] = React.useState("");
+  const [password, setPassword] = React.useState("");
   const submit = (e) => {
     e.preventDefault();
     onLogin(emailOrDni.trim(), password);
@@ -20,27 +13,18 @@ function Login({ onLogin, loading, error }) {
         <div className="glow" aria-hidden="true"/>
         <div className="brand">
           <span className="dot" aria-hidden="true"/>
-          <span className="wm">Gym<em>Smart</em></span>
+          <span className="wm">Saas<em>Gym</em></span>
         </div>
-        <h2 className="l-title">Panel web real del gimnasio.</h2>
-        <p className="l-sub">Caja, ventas, usuarios, membresias, inventario, reportes y tenant desde backend.</p>
-        <div className="l-foot">GymSmart - sistema web multi-tenant</div>
+        <h2 className="l-title">Club Ops del gym.</h2>
+        <p className="l-sub">Caja, ventas, socios, clases, inventario y reportes sincronizados con la API real.</p>
+        <div className="l-foot">SaasGym Club Ops</div>
       </aside>
 
       <main className="login-form">
         <form className="lf-wrap" onSubmit={submit}>
           <h2>Iniciar sesion</h2>
-          <p className="lf-sub">Ingresa con una cuenta real. El rol y el gimnasio se cargan desde la API.</p>
-          <div className="role-pick" role="group" aria-label="Accesos demo">
-            {quickUsers.map(([label, email, pass]) => (
-              <button type="button" key={email} aria-pressed={emailOrDni === email}
-                      onClick={() => { setEmailOrDni(email); setPassword(pass); }}>
-                <div className="rp-n">{label}</div>
-                <div className="rp-s">{email}</div>
-              </button>
-            ))}
-          </div>
-          <div className="field"><label htmlFor="lg-email">Correo, DNI o usuario</label><input id="lg-email" value={emailOrDni} onChange={e => setEmailOrDni(e.target.value)} autoComplete="username"/></div>
+          <p className="lf-sub">Ingresa con tus credenciales operativas. El rol y la sede se resuelven desde la API.</p>
+          <div className="field"><label htmlFor="lg-email">Correo, DNI o usuario</label><input id="lg-email" value={emailOrDni} onChange={e => setEmailOrDni(e.target.value)} autoComplete="username" placeholder="tuusuario@empresa.com"/></div>
           <div className="field"><label htmlFor="lg-pass">Contrasena</label><input id="lg-pass" type="password" value={password} onChange={e => setPassword(e.target.value)} autoComplete="current-password"/></div>
           <ErrorBlock message={error}/>
           <div className="checkrow"><label><input type="checkbox" defaultChecked/> Recordarme</label><a className="link">Recuperar acceso</a></div>

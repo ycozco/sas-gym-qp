@@ -23,35 +23,35 @@ type MemberStatus = 'ACTIVE' | 'GRACE' | 'EXPIRED' | 'PENDING' | 'SUSPENDED';
 const gyms = [
   {
     code: 'surco',
-    name: 'SAS Gym Surco Prime',
+    name: 'SaasGym Surco Prime',
     address: 'Av. El Polo 123, Santiago de Surco, Lima',
     phone: '987654101',
     plan: 'PRO',
   },
   {
     code: 'miraflores',
-    name: 'SAS Gym Miraflores Fit',
+    name: 'SaasGym Miraflores Fit',
     address: 'Av. Jose Pardo 740, Miraflores, Lima',
     phone: '987654102',
     plan: 'PRO',
   },
   {
     code: 'sanborja',
-    name: 'SAS Gym San Borja Performance',
+    name: 'SaasGym San Borja Performance',
     address: 'Av. Aviacion 2810, San Borja, Lima',
     phone: '987654103',
     plan: 'ENTERPRISE',
   },
   {
     code: 'lince',
-    name: 'SAS Gym Lince 24/7',
+    name: 'SaasGym Lince 24/7',
     address: 'Av. Arequipa 2100, Lince, Lima',
     phone: '987654104',
     plan: 'BASIC',
   },
   {
     code: 'callao',
-    name: 'SAS Gym Callao Strong',
+    name: 'SaasGym Callao Strong',
     address: 'Av. Colonial 3880, Callao',
     phone: '987654105',
     plan: 'PRO',
@@ -206,52 +206,23 @@ function membershipDates(status: MemberStatus, plan: PlanDef, now: Date) {
 
 async function main() {
   const isProduction = process.env.NODE_ENV === 'production';
+  const existingTenants = await prisma.tenant.count();
+  const existingUsers = await prisma.user.count();
+
   if (isProduction) {
-    console.log('Ejecutando sembrado de producción (solo inicialización esencial, no reset)...');
-    
-    const existingSuperAdmin = await prisma.user.findFirst({
-      where: { rol: Role.SUPER_ADMIN },
-    });
-
-    if (!existingSuperAdmin) {
-      let superTenant = await prisma.tenant.findFirst({
-        where: { plan_saas: 'ENTERPRISE' },
-      });
-      if (!superTenant) {
-        superTenant = await prisma.tenant.create({
-          data: {
-            nombre: 'SAS Gym Holding',
-            plan_saas: 'ENTERPRISE',
-            activo: true,
-            direccion: 'Av. Javier Prado 1000, Lima',
-            telefono: '999000000',
-            horario: 'Administracion central',
-            descripcion: 'Tenant de administracion global.',
-          },
-        });
-      }
-
-      const superPasswordHash = await bcrypt.hash('super_secure_pass', 10);
-      await prisma.user.create({
-        data: {
-          tenant_id: superTenant.id,
-          email: 'superadmin@test.sasgym.com',
-          password_hash: superPasswordHash,
-          rol: Role.SUPER_ADMIN,
-          nombre_completo: 'Super Admin',
-          dni: '90000000',
-          estado: UserState.ACTIVE,
-        },
-      });
-      console.log('Super Admin inicial creado exitosamente para producción.');
-    } else {
-      console.log('El Super Admin ya existe en la base de datos de producción. Omitiendo creación.');
+    if (existingTenants > 0 || existingUsers > 0) {
+      console.log(
+        `Seed de producción omitido para evitar duplicados. Tenants existentes: ${existingTenants}, usuarios existentes: ${existingUsers}.`,
+      );
+      return;
     }
-    return;
+    console.log('Ejecutando seed productivo inicial con dataset operativo de SaasGym...');
   }
 
-  console.log('Iniciando el sembrado de datos (Seed Realista)...');
-  await resetDatabase();
+  if (!isProduction) {
+    console.log('Iniciando el sembrado de datos (Seed Realista)...');
+    await resetDatabase();
+  }
 
   const passwordHash = {
     admin: await bcrypt.hash('admin_secure_pass', 10),
@@ -268,13 +239,13 @@ async function main() {
 
   const superTenant = await prisma.tenant.create({
     data: {
-      nombre: 'SAS Gym Holding Demo',
+      nombre: 'SaasGym Network',
       plan_saas: 'ENTERPRISE',
       activo: true,
       direccion: 'Av. Javier Prado 1000, Lima',
       telefono: '999000000',
       horario: 'Administracion central',
-      descripcion: 'Tenant tecnico para superadmin de pruebas.',
+      descripcion: 'Tenant central para superadmin y operacion de la red SaasGym.',
     },
   });
 
@@ -319,7 +290,7 @@ async function main() {
             email: `admin${i}.${gym.code}@test.sasgym.com`,
             password_hash: passwordHash.admin,
             rol: Role.ADMIN,
-            nombre_completo: `Admin ${i} ${gym.name.replace('SAS Gym ', '')}`,
+            nombre_completo: `Admin ${i} ${gym.name.replace('SaasGym ', '')}`,
             dni: dni(tenantIndex, 100 + i),
             celular: `9${tenantIndex + 1}00${i}1111`,
             estado: UserState.ACTIVE,

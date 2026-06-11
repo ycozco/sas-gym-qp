@@ -521,7 +521,7 @@ function App() {
       <div className="main">
         <Topbar
           title={titleFor(current, role)}
-          sub={role === "superadmin" ? "Plataforma GymSmart · SaaS multi-tenant" : `${gym.name} · ${ROLES[role].label}`}
+          sub={role === "superadmin" ? "Red SaasGym · operacion multi-sede" : `${gym.name} · ${ROLES[role].label}`}
           role={role}
           currentUser={currentUser}
           onLogout={logout}
