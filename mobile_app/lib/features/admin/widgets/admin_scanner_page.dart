@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:otp/otp.dart';
+
 import '../../../../core/config/app_config.dart';
-import '../../../../models/gym_models.dart';
 import '../../../../data/gym_state.dart';
+import '../../../../models/gym_models.dart';
 import '../../../../theme/app_theme_tokens.dart';
 import '../../../../widgets/app_shell.dart';
 import 'admin_dashboard_page.dart';
@@ -34,11 +35,10 @@ class AdminScannerPage extends StatelessWidget {
         RoleHeroHeader(
           palette: palette,
           title: 'Escáner Admin',
-          subtitle: 'Simula accesos y valida de forma reactiva el estatus del socio.',
+          subtitle:
+              'Simula accesos y valida de forma reactiva el estatus del socio.',
         ),
         const SizedBox(height: 18),
-
-        // Laser Viewport Graphics
         Container(
           height: 220,
           decoration: BoxDecoration(
@@ -67,7 +67,10 @@ class AdminScannerPage extends StatelessWidget {
                   right: 0,
                   child: Center(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.black54,
                         borderRadius: BorderRadius.circular(999),
@@ -75,9 +78,20 @@ class AdminScannerPage extends StatelessWidget {
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.videocam_rounded, color: Colors.redAccent, size: 14),
+                          Icon(
+                            Icons.videocam_rounded,
+                            color: Colors.redAccent,
+                            size: 14,
+                          ),
                           SizedBox(width: 6),
-                          Text('CAM_SIM_ONLINE', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                          Text(
+                            'CAM_SIM_ONLINE',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -88,30 +102,32 @@ class AdminScannerPage extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 20),
-
-        // Simulator Dashboard Form
         Container(
           padding: const EdgeInsets.all(20),
           decoration: adminCardDecoration(context),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Simulación de Accesos', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+              const Text(
+                'Simulación de accesos',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+              ),
               const SizedBox(height: 8),
               Text(
-                'Selecciona un socio de prueba para validar reactivamente las reglas de admisión.',
-                style: TextStyle(color: colors.textSecondary, fontSize: 12.5, height: 1.4),
+                'Selecciona un socio real según su estado actual para validar las reglas de admisión.',
+                style: TextStyle(
+                  color: colors.textSecondary,
+                  fontSize: 12.5,
+                  height: 1.4,
+                ),
               ),
               const SizedBox(height: 16),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: [
-                  _scanSimButton('Mateo (Activo)', '11111111'),
-                  _scanSimButton('Ana (En Gracia)', '55667788'),
-                  _scanSimButton('Diego (Vencido)', '11223344'),
-                  _scanSimButton('DNI Inválido', '99999999'),
-                ],
+                children: state.scannerPresets
+                    .map((preset) => _scanSimButton(preset.label, preset.dni))
+                    .toList(),
               ),
               const SizedBox(height: 20),
               Divider(height: 1, color: colors.border),
@@ -129,7 +145,10 @@ class AdminScannerPage extends StatelessWidget {
                       child: TextField(
                         keyboardType: TextInputType.number,
                         onChanged: onScanInputChanged,
-                        style: TextStyle(fontSize: 14, color: colors.textPrimary),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: colors.textPrimary,
+                        ),
                         decoration: InputDecoration(
                           hintText: 'Digitar DNI del socio...',
                           hintStyle: TextStyle(color: colors.textMuted),
@@ -144,14 +163,20 @@ class AdminScannerPage extends StatelessWidget {
                     style: roleFilledPillButtonStyle(
                       backgroundColor: palette.accent,
                       foregroundColor: palette.accentInk,
-                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 14,
+                      ),
                     ),
                     onPressed: () {
                       if (scanInput.isNotEmpty) {
                         _triggerScan(scanInput);
                       }
                     },
-                    child: const Text('Escanear', style: TextStyle(fontWeight: FontWeight.bold)),
+                    child: const Text(
+                      'Escanear',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ],
               ),
@@ -171,7 +196,10 @@ class AdminScannerPage extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       ),
       onPressed: () => _triggerScan(dni),
-      child: Text(label, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+      child: Text(
+        label,
+        style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
+      ),
     );
   }
 
@@ -189,7 +217,8 @@ class AdminScannerPage extends StatelessWidget {
       if (verdict == 'AMBER') resultStr = 'grace';
       if (verdict == 'RED' && member == null) {
         final reason = res['reason']?.toString() ?? '';
-        if (reason.contains('no registrado') || reason.contains('DNI invÃ¡lido')) {
+        if (reason.contains('no registrado') ||
+            reason.contains('DNI inválido')) {
           resultStr = 'not_found';
         }
       }
@@ -201,7 +230,7 @@ class AdminScannerPage extends StatelessWidget {
     String dni = rawInput;
     String otpToken = '';
     final hasQrPayload = rawInput.contains('|');
-    
+
     if (hasQrPayload) {
       final parts = rawInput.split('|');
       dni = parts[0];
@@ -228,7 +257,10 @@ class AdminScannerPage extends StatelessWidget {
     }
 
     if (state.isBackendMode) {
-      final res = await state.verifyAttendanceBackend(dni: dni, otpToken: otpToken);
+      final res = await state.verifyAttendanceBackend(
+        dni: dni,
+        otpToken: otpToken,
+      );
       final verdict = res['verdict'];
       final member = res['member'] as MemberRecord?;
 
@@ -237,7 +269,8 @@ class AdminScannerPage extends StatelessWidget {
       if (verdict == 'AMBER') resultStr = 'grace';
       if (verdict == 'RED' && member == null) {
         final reason = res['reason']?.toString() ?? '';
-        if (reason.contains('no registrado') || reason.contains('DNI inválido')) {
+        if (reason.contains('no registrado') ||
+            reason.contains('DNI inválido')) {
           resultStr = 'not_found';
         }
       }
@@ -245,8 +278,11 @@ class AdminScannerPage extends StatelessWidget {
       onTriggerVerdict(resultStr, member, dni);
     } else {
       final result = state.recordAttendance(dni);
-      final memberIndex = state.allMembersIncludingSoftDeleted.indexWhere((m) => m.dni == dni);
-      final MemberRecord? member = memberIndex != -1 ? state.allMembersIncludingSoftDeleted[memberIndex] : null;
+      final memberIndex = state.allMembersIncludingSoftDeleted
+          .indexWhere((m) => m.dni == dni);
+      final MemberRecord? member = memberIndex != -1
+          ? state.allMembersIncludingSoftDeleted[memberIndex]
+          : null;
       onTriggerVerdict(result, member, dni);
     }
   }
@@ -259,7 +295,8 @@ class AdminLaserSweepLine extends StatefulWidget {
   State<AdminLaserSweepLine> createState() => _AdminLaserSweepLineState();
 }
 
-class _AdminLaserSweepLineState extends State<AdminLaserSweepLine> with SingleTickerProviderStateMixin {
+class _AdminLaserSweepLineState extends State<AdminLaserSweepLine>
+    with SingleTickerProviderStateMixin {
   late AnimationController _animController;
 
   @override

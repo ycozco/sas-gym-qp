@@ -451,6 +451,20 @@ class CashierAccount {
   }
 }
 
+class ScannerPreset {
+  final String label;
+  final String dni;
+  final String? state;
+  final bool isSynthetic;
+
+  const ScannerPreset({
+    required this.label,
+    required this.dni,
+    this.state,
+    this.isSynthetic = false,
+  });
+}
+
 class ShiftWindow {
   final String start;
   final String end;

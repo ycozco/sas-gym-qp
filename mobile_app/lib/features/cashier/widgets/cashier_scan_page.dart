@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:otp/otp.dart';
+
 import '../../../../core/config/app_config.dart';
-import '../../../../models/gym_models.dart';
 import '../../../../data/gym_state.dart';
+import '../../../../models/gym_models.dart';
 import '../../../../theme/app_theme_tokens.dart';
 import '../../../../widgets/app_shell.dart';
 
@@ -22,8 +23,6 @@ class CashierScanPage extends StatelessWidget {
   final String scanInput;
   final Function(String) onScanChanged;
   final Function(String, MemberRecord?, String) onTriggerVerdict;
-  /// Called with (memberDni, planName, price) when issuing a day pass.
-  /// memberDni == 'ANONIMO' for anonymous pass.
   final Function(String memberDni, {String? planName, double? price}) onDayPass;
 
   @override
@@ -34,12 +33,10 @@ class CashierScanPage extends StatelessWidget {
       children: [
         RoleHeroHeader(
           palette: palette,
-          title: 'Escáner de Sala',
+          title: 'Escáner de sala',
           subtitle: 'Simula accesos y valida reglas de entrada al instante.',
         ),
         const SizedBox(height: 18),
-
-        // Scanner Graphic with Overlay Grid
         Container(
           height: 240,
           decoration: BoxDecoration(
@@ -51,9 +48,7 @@ class CashierScanPage extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
             child: Stack(
               children: [
-                // Animated red laser sweep line
                 const LaserSweepLine(),
-                // Corner grid markers
                 Center(
                   child: Container(
                     width: 140,
@@ -70,7 +65,10 @@ class CashierScanPage extends StatelessWidget {
                   right: 0,
                   child: Center(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.black.withValues(alpha: 0.6),
                         borderRadius: BorderRadius.circular(999),
@@ -80,8 +78,14 @@ class CashierScanPage extends StatelessWidget {
                         children: [
                           Icon(Icons.videocam_rounded, color: Colors.red, size: 14),
                           SizedBox(width: 6),
-                          Text('CAM_SIMULATOR_ON',
-                              style: TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.bold)),
+                          Text(
+                            'CAM_SIMULATOR_ON',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -92,44 +96,32 @@ class CashierScanPage extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 20),
-
-        // Interactive Scanner Simulator Actions
         Container(
           padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: colors.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: colors.border),
-          ),
+          decoration: themedCardDecoration(context),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Simulación de Escaneo QR',
+                'Simulación de escaneo QR',
                 style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
               ),
               const SizedBox(height: 8),
               Text(
-                'Selecciona un socio preconfigurado o digita un DNI para probar las reglas de acceso reactivas.',
+                'Selecciona un socio real según su estado actual o digita un DNI para probar las reglas de acceso.',
                 style: TextStyle(color: colors.textSecondary, fontSize: 12.5),
               ),
               const SizedBox(height: 16),
-              // Preset scan test buttons
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: [
-                  _scanSimButton('Mateo Salas (Activo)', '11111111'),
-                  _scanSimButton('Ana Torres (En Gracia)', '55667788'),
-                  _scanSimButton('Diego Castro (Vencido)', '11223344'),
-                  _scanSimButton('Rosa Mendieta (Activa)', '44332211'),
-                  _scanSimButton('DNI Inválido', '99999999'),
-                ],
+                children: state.scannerPresets
+                    .map((preset) => _scanSimButton(preset.label, preset.dni))
+                    .toList(),
               ),
               const SizedBox(height: 20),
               Divider(height: 1, color: colors.border),
               const SizedBox(height: 20),
-              // Custom DNI field
               Row(
                 children: [
                   Expanded(
@@ -143,9 +135,13 @@ class CashierScanPage extends StatelessWidget {
                       child: TextField(
                         keyboardType: TextInputType.number,
                         onChanged: onScanChanged,
-                        style: TextStyle(fontSize: 14, color: colors.textPrimary),
-                        decoration: const InputDecoration(
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: colors.textPrimary,
+                        ),
+                        decoration: InputDecoration(
                           hintText: 'Digitar DNI del socio...',
+                          hintStyle: TextStyle(color: colors.textMuted),
                           border: InputBorder.none,
                           isDense: true,
                         ),
@@ -157,24 +153,27 @@ class CashierScanPage extends StatelessWidget {
                     style: roleFilledPillButtonStyle(
                       backgroundColor: palette.accent,
                       foregroundColor: palette.accentInk,
-                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 14,
+                      ),
                     ),
                     onPressed: () {
                       if (scanInput.isNotEmpty) {
                         _triggerScan(scanInput);
                       }
                     },
-                    child: const Text('Escanear DNI', style: TextStyle(fontWeight: FontWeight.bold)),
+                    child: const Text(
+                      'Escanear DNI',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ],
               ),
             ],
           ),
         ),
-
         const SizedBox(height: 20),
-
-        // ─── Pase por un Día ────────────────────────────────────────────────────
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
@@ -187,7 +186,10 @@ class CashierScanPage extends StatelessWidget {
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: palette.accent.withValues(alpha: 0.3), width: 1.5),
+            border: Border.all(
+              color: palette.accent.withValues(alpha: 0.3),
+              width: 1.5,
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -200,7 +202,11 @@ class CashierScanPage extends StatelessWidget {
                       color: palette.accent.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Icon(Icons.local_activity_rounded, color: palette.accent, size: 20),
+                    child: Icon(
+                      Icons.local_activity_rounded,
+                      color: palette.accent,
+                      size: 20,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -208,18 +214,27 @@ class CashierScanPage extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'Pase por un Día',
-                          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
+                          'Pase por un día',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w900,
+                            fontSize: 15,
+                          ),
                         ),
                         Text(
-                          'Emite un acceso diario rápido — S/ 25.00',
-                          style: TextStyle(color: colors.textSecondary, fontSize: 12),
+                          'Emite un acceso diario rápido - S/ 25.00',
+                          style: TextStyle(
+                            color: colors.textSecondary,
+                            fontSize: 12,
+                          ),
                         ),
                       ],
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
                     decoration: BoxDecoration(
                       color: palette.accent,
                       borderRadius: BorderRadius.circular(8),
@@ -244,9 +259,13 @@ class CashierScanPage extends StatelessWidget {
                     child: _dayPassButton(
                       context,
                       icon: Icons.person_off_rounded,
-                      label: 'Pase Anónimo',
+                      label: 'Pase anónimo',
                       subtitle: 'Sin registro',
-                      onTap: () => onDayPass('ANONIMO', planName: 'Pase por un Día', price: 25.0),
+                      onTap: () => onDayPass(
+                        'ANONIMO',
+                        planName: 'Pase por un día',
+                        price: 25.0,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -293,8 +312,21 @@ class CashierScanPage extends StatelessWidget {
             children: [
               Icon(icon, color: palette.accent, size: 26),
               const SizedBox(height: 6),
-              Text(label, style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12.5, color: colors.textPrimary)),
-              Text(subtitle, style: TextStyle(color: colors.textSecondary, fontSize: 10.5)),
+              Text(
+                label,
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 12.5,
+                  color: colors.textPrimary,
+                ),
+              ),
+              Text(
+                subtitle,
+                style: TextStyle(
+                  color: colors.textSecondary,
+                  fontSize: 10.5,
+                ),
+              ),
             ],
           ),
         ),
@@ -310,12 +342,21 @@ class CashierScanPage extends StatelessWidget {
       builder: (ctx) {
         return AlertDialog(
           backgroundColor: colors.surface,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           title: Row(
             children: [
               Icon(Icons.badge_rounded, color: palette.accent, size: 26),
               const SizedBox(width: 10),
-              Text('Pase con DNI', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17, color: colors.textPrimary)),
+              Text(
+                'Pase con DNI',
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 17,
+                  color: colors.textPrimary,
+                ),
+              ),
             ],
           ),
           content: SizedBox(
@@ -337,7 +378,9 @@ class CashierScanPage extends StatelessWidget {
                   decoration: InputDecoration(
                     labelText: 'DNI del cliente',
                     prefixIcon: const Icon(Icons.person_rounded),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
               ],
@@ -346,21 +389,30 @@ class CashierScanPage extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: Text('Cancelar', style: TextStyle(color: colors.textSecondary)),
+              child: Text(
+                'Cancelar',
+                style: TextStyle(color: colors.textSecondary),
+              ),
             ),
             ElevatedButton(
               style: roleFilledPillButtonStyle(
                 backgroundColor: palette.accent,
                 foregroundColor: palette.accentInk,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
               ),
               onPressed: () {
                 final dni = controller.text.trim();
                 if (dni.isEmpty) return;
                 Navigator.pop(ctx);
-                onDayPass(dni, planName: 'Pase por un Día', price: 25.0);
+                onDayPass(dni, planName: 'Pase por un día', price: 25.0);
               },
-              child: const Text('Emitir Pase', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: const Text(
+                'Emitir pase',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         );
@@ -377,7 +429,10 @@ class CashierScanPage extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       ),
       onPressed: () => _triggerScan(dni),
-      child: Text(label, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+      child: Text(
+        label,
+        style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
+      ),
     );
   }
 
@@ -395,7 +450,8 @@ class CashierScanPage extends StatelessWidget {
       if (verdict == 'AMBER') resultStr = 'grace';
       if (verdict == 'RED' && member == null) {
         final reason = res['reason']?.toString() ?? '';
-        if (reason.contains('no registrado') || reason.contains('DNI invÃ¡lido')) {
+        if (reason.contains('no registrado') ||
+            reason.contains('DNI inválido')) {
           resultStr = 'not_found';
         }
       }
@@ -407,7 +463,7 @@ class CashierScanPage extends StatelessWidget {
     String dni = rawInput;
     String otpToken = '';
     final hasQrPayload = rawInput.contains('|');
-    
+
     if (hasQrPayload) {
       final parts = rawInput.split('|');
       dni = parts[0];
@@ -434,7 +490,10 @@ class CashierScanPage extends StatelessWidget {
     }
 
     if (state.isBackendMode) {
-      final res = await state.verifyAttendanceBackend(dni: dni, otpToken: otpToken);
+      final res = await state.verifyAttendanceBackend(
+        dni: dni,
+        otpToken: otpToken,
+      );
       final verdict = res['verdict'];
       final member = res['member'] as MemberRecord?;
 
@@ -443,7 +502,8 @@ class CashierScanPage extends StatelessWidget {
       if (verdict == 'AMBER') resultStr = 'grace';
       if (verdict == 'RED' && member == null) {
         final reason = res['reason']?.toString() ?? '';
-        if (reason.contains('no registrado') || reason.contains('DNI inválido')) {
+        if (reason.contains('no registrado') ||
+            reason.contains('DNI inválido')) {
           resultStr = 'not_found';
         }
       }
@@ -451,8 +511,11 @@ class CashierScanPage extends StatelessWidget {
       onTriggerVerdict(resultStr, member, dni);
     } else {
       final result = state.recordAttendance(dni);
-      final memberIndex = state.allMembersIncludingSoftDeleted.indexWhere((m) => m.dni == dni);
-      final MemberRecord? member = memberIndex != -1 ? state.allMembersIncludingSoftDeleted[memberIndex] : null;
+      final memberIndex = state.allMembersIncludingSoftDeleted
+          .indexWhere((m) => m.dni == dni);
+      final MemberRecord? member = memberIndex != -1
+          ? state.allMembersIncludingSoftDeleted[memberIndex]
+          : null;
       onTriggerVerdict(result, member, dni);
     }
   }
@@ -465,7 +528,8 @@ class LaserSweepLine extends StatefulWidget {
   State<LaserSweepLine> createState() => _LaserSweepLineState();
 }
 
-class _LaserSweepLineState extends State<LaserSweepLine> with SingleTickerProviderStateMixin {
+class _LaserSweepLineState extends State<LaserSweepLine>
+    with SingleTickerProviderStateMixin {
   late AnimationController _animController;
 
   @override

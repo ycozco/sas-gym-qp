@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../models/gym_models.dart';
 import '../../../../data/gym_state.dart';
+import '../../../../theme/app_theme_tokens.dart';
 import '../../../../widgets/app_shell.dart';
 
 class CashierMembershipsPage extends StatefulWidget {
@@ -61,6 +62,7 @@ class _CashierMembershipsPageState extends State<CashierMembershipsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.sasColors;
     final filteredMembers = widget.state.members
         .where((m) =>
             m.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
@@ -83,9 +85,9 @@ class _CashierMembershipsPageState extends State<CashierMembershipsPage> {
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: colors.surface,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFE2DDD5)),
+                  border: Border.all(color: colors.border),
                 ),
                 padding: const EdgeInsets.symmetric(horizontal: 14),
                 child: TextField(
@@ -120,9 +122,9 @@ class _CashierMembershipsPageState extends State<CashierMembershipsPage> {
           Container(
             padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: colors.surface,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFE2DDD5)),
+              border: Border.all(color: colors.border),
             ),
             child: const Center(
               child: Text(
@@ -157,11 +159,11 @@ class _CashierMembershipsPageState extends State<CashierMembershipsPage> {
 
               return Card(
                 margin: const EdgeInsets.only(bottom: 12),
-                color: Colors.white,
+                color: colors.surface,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
-                  side: const BorderSide(color: Color(0xFFE2DDD5)),
+                  side: BorderSide(color: colors.border),
                 ),
                 child: ListTile(
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -204,6 +206,7 @@ class _CashierMembershipsPageState extends State<CashierMembershipsPage> {
   }
 
   void _showAddMemberDialog(BuildContext context, {String? prefilledDni}) {
+    final colors = context.sasColors;
     final dniCtrl = TextEditingController(text: prefilledDni ?? '');
     final nameCtrl = TextEditingController();
     final phoneCtrl = TextEditingController();
@@ -218,10 +221,10 @@ class _CashierMembershipsPageState extends State<CashierMembershipsPage> {
         return StatefulBuilder(
           builder: (context, setModalState) {
             return AlertDialog(
-              backgroundColor: Colors.white,
+              backgroundColor: colors.surface,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
-                side: const BorderSide(color: Color(0xFFE2DDD5)),
+                side: BorderSide(color: colors.border),
               ),
               title: const Text('Registrar Nuevo Socio', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
               content: SingleChildScrollView(
@@ -323,6 +326,7 @@ class _CashierMembershipsPageState extends State<CashierMembershipsPage> {
   }
 
   void _showVerifyMembershipDialog(BuildContext context, MemberRecord member) {
+    final colors = context.sasColors;
     showDialog(
       context: context,
       builder: (ctx) {
@@ -348,10 +352,10 @@ class _CashierMembershipsPageState extends State<CashierMembershipsPage> {
         }
 
         return AlertDialog(
-          backgroundColor: Colors.white,
+          backgroundColor: colors.surface,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
-            side: const BorderSide(color: Color(0xFFE2DDD5)),
+            side: BorderSide(color: colors.border),
           ),
           title: Row(
             children: [
@@ -461,6 +465,7 @@ class _CashierMembershipsPageState extends State<CashierMembershipsPage> {
   }
 
   void _showAssignPlanDialog(BuildContext context, MemberRecord member, {String? defaultPlan, double? defaultPrice}) {
+    final colors = context.sasColors;
     final plans = widget.state.membershipPlans.isNotEmpty
         ? widget.state.membershipPlans.where((p) => p.active).toList()
         : const [
@@ -482,10 +487,10 @@ class _CashierMembershipsPageState extends State<CashierMembershipsPage> {
         return StatefulBuilder(
           builder: (context, setPlanState) {
             return AlertDialog(
-              backgroundColor: Colors.white,
+              backgroundColor: colors.surface,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
-                side: const BorderSide(color: Color(0xFFE2DDD5)),
+                side: BorderSide(color: colors.border),
               ),
               title: Text('Asignar Membresía a ${member.name}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16.5)),
               content: Column(

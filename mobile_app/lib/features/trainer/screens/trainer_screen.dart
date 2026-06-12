@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../data/gym_seed.dart';
 import '../../../data/gym_state.dart';
 import '../../../models/gym_models.dart';
+import '../../../theme/app_theme_tokens.dart';
 import '../../../widgets/app_shell.dart';
 import '../../../widgets/exercise_anim.dart';
 import '../../member/member.dart';
@@ -342,7 +343,7 @@ class _TrainerMembersTab extends StatelessWidget {
         if (trainerStudents.isEmpty)
           Container(
             padding: const EdgeInsets.all(24),
-            decoration: _cardDecoration(),
+            decoration: _cardDecoration(context),
             child: const Center(
               child: Text(
                 'No tienes alumnos asignados.',
@@ -373,7 +374,7 @@ class _TrainerMembersTab extends StatelessWidget {
                   borderRadius: BorderRadius.circular(18),
                   child: Container(
                     padding: const EdgeInsets.all(16),
-                    decoration: _cardDecoration(),
+                    decoration: _cardDecoration(context),
                     child: Row(
                       children: [
                         CircleAvatar(
@@ -493,19 +494,28 @@ class _StudentDetailsViewState extends State<_StudentDetailsView> {
   @override
   Widget build(BuildContext context) {
     final m = widget.member;
+    final colors = context.sasColors;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: colors.surface,
         elevation: 0.5,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.black, size: 20),
+          icon: Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: colors.textPrimary,
+            size: 20,
+          ),
           onPressed: widget.onBack,
         ),
         title: Text(
           m.name,
-          style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w900, fontSize: 17),
+          style: TextStyle(
+            color: colors.textPrimary,
+            fontWeight: FontWeight.w900,
+            fontSize: 17,
+          ),
         ),
         centerTitle: true,
       ),
@@ -515,7 +525,7 @@ class _StudentDetailsViewState extends State<_StudentDetailsView> {
           // Student Info Card
           Container(
             padding: const EdgeInsets.all(20),
-            decoration: _cardDecoration(),
+            decoration: _cardDecoration(context),
             child: Column(
               children: [
                 CircleAvatar(
@@ -589,7 +599,7 @@ class _StudentDetailsViewState extends State<_StudentDetailsView> {
                         decoration: const InputDecoration(
                           hintText: 'Añade restricciones por lesión o cuidados especiales...',
                           border: OutlineInputBorder(),
-                          fillColor: Colors.white,
+                          fillColor: null,
                           filled: true,
                         ),
                       )
@@ -611,7 +621,7 @@ class _StudentDetailsViewState extends State<_StudentDetailsView> {
           SectionHeader(title: 'Medidas Antropométricas', action: 'Ficha Física'),
           Container(
             padding: const EdgeInsets.all(18),
-            decoration: _cardDecoration(),
+            decoration: _cardDecoration(context),
             child: Column(
               children: [
                 Row(
@@ -656,9 +666,9 @@ class _StudentDetailsViewState extends State<_StudentDetailsView> {
           SectionHeader(title: 'Historial de Esfuerzo Reciente', action: 'RPE Logs'),
           Column(
             children: [
-              _rpeLogTile('Ayer', 'Press de banca', '4 series × 8 rep @ 75kg', 'RPE 9 (Cerca al fallo)'),
-              _rpeLogTile('Hace 3d', 'Sentadilla con barra', '4 series × 6 rep @ 95kg', 'RPE 8 (2 rep en reserva)'),
-              _rpeLogTile('Hace 5d', 'Press militar', '3 series × 10 rep @ 40kg', 'RPE 7 (3 rep en reserva)'),
+              _rpeLogTile(context, 'Ayer', 'Press de banca', '4 series × 8 rep @ 75kg', 'RPE 9 (Cerca al fallo)'),
+              _rpeLogTile(context, 'Hace 3d', 'Sentadilla con barra', '4 series × 6 rep @ 95kg', 'RPE 8 (2 rep en reserva)'),
+              _rpeLogTile(context, 'Hace 5d', 'Press militar', '3 series × 10 rep @ 40kg', 'RPE 7 (3 rep en reserva)'),
             ],
           ),
         ],
@@ -687,11 +697,17 @@ class _StudentDetailsViewState extends State<_StudentDetailsView> {
     );
   }
 
-  Widget _rpeLogTile(String time, String exercise, String details, String rpeText) {
+  Widget _rpeLogTile(
+    BuildContext context,
+    String time,
+    String exercise,
+    String details,
+    String rpeText,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
-      decoration: _cardDecoration(),
+      decoration: _cardDecoration(context),
       child: Row(
         children: [
           Container(
@@ -765,19 +781,28 @@ class _AssignRoutineViewState extends State<_AssignRoutineView> {
   @override
   Widget build(BuildContext context) {
     final state = GymStateProvider.of(context);
+    final colors = context.sasColors;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: colors.surface,
         elevation: 0.5,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.black, size: 20),
+          icon: Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: colors.textPrimary,
+            size: 20,
+          ),
           onPressed: widget.onBack,
         ),
-        title: const Text(
+        title: Text(
           'Asignador Semanal',
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.w900, fontSize: 17),
+          style: TextStyle(
+            color: colors.textPrimary,
+            fontWeight: FontWeight.w900,
+            fontSize: 17,
+          ),
         ),
         centerTitle: true,
       ),
@@ -804,7 +829,7 @@ class _AssignRoutineViewState extends State<_AssignRoutineView> {
               return Container(
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: _cardDecoration(),
+                decoration: _cardDecoration(context),
                 child: Row(
                   children: [
                     // Day Circle Badge
@@ -838,7 +863,9 @@ class _AssignRoutineViewState extends State<_AssignRoutineView> {
                             style: TextStyle(
                               fontSize: 14.5,
                               fontWeight: FontWeight.w800,
-                              color: isRest ? const Color(0xFF8E8E8E) : Colors.black,
+                              color: isRest
+                                  ? colors.textMuted
+                                  : colors.textPrimary,
                             ),
                           ),
                         ],
@@ -959,6 +986,7 @@ class _TrainerExerciseLibraryTabState extends State<_TrainerExerciseLibraryTab> 
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.sasColors;
     final filtered = widget.exercises.where((ex) {
       final matchesSearch = ex.name.toLowerCase().contains(_searchQuery.toLowerCase());
       final matchesMuscle = _selectedMuscle == 'Todos' || ex.muscle == _selectedMuscle;
@@ -979,17 +1007,20 @@ class _TrainerExerciseLibraryTabState extends State<_TrainerExerciseLibraryTab> 
           // Search bar
           Container(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: colors.surface,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE2DDD5)),
+              border: Border.all(color: colors.border),
             ),
             child: TextField(
               onChanged: (val) => setState(() => _searchQuery = val),
-              decoration: const InputDecoration(
-                prefixIcon: Icon(Icons.search_rounded, color: Colors.grey),
+              decoration: InputDecoration(
+                prefixIcon: Icon(
+                  Icons.search_rounded,
+                  color: colors.textMuted,
+                ),
                 hintText: 'Buscar ejercicio...',
                 border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(vertical: 14),
+                contentPadding: const EdgeInsets.symmetric(vertical: 14),
               ),
             ),
           ),
@@ -1007,11 +1038,20 @@ class _TrainerExerciseLibraryTabState extends State<_TrainerExerciseLibraryTab> 
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: ChoiceChip(
-                    label: Text(muscle, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: isSelected ? Colors.white : Colors.black)),
+                    label: Text(
+                      muscle,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                        color: isSelected
+                            ? Colors.white
+                            : colors.textPrimary,
+                      ),
+                    ),
                     selected: isSelected,
                     selectedColor: widget.palette.accent,
-                    backgroundColor: Colors.white,
-                    side: const BorderSide(color: Color(0xFFE8E4D9)),
+                    backgroundColor: colors.surface,
+                    side: BorderSide(color: colors.border),
                     shape: const StadiumBorder(),
                     onSelected: (val) {
                       if (val) {
@@ -1045,7 +1085,7 @@ class _TrainerExerciseLibraryTabState extends State<_TrainerExerciseLibraryTab> 
 
               return Container(
                 margin: const EdgeInsets.only(bottom: 12),
-                decoration: _cardDecoration(),
+                decoration: _cardDecoration(context),
                 child: Material(
                   color: Colors.transparent,
                   borderRadius: BorderRadius.circular(16),
@@ -1090,7 +1130,11 @@ class _TrainerExerciseLibraryTabState extends State<_TrainerExerciseLibraryTab> 
                             Text(
                               'Guía técnica: mantener columna neutral y controlar el tempo (3s excéntrica, 1s pausa, 1s concéntrica).',
                               textAlign: TextAlign.center,
-                              style: TextStyle(fontSize: 12, color: Colors.black.withValues(alpha: 0.6), height: 1.3),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: colors.textSecondary,
+                                height: 1.3,
+                              ),
                             ),
                           ],
                         ),
@@ -1107,6 +1151,7 @@ class _TrainerExerciseLibraryTabState extends State<_TrainerExerciseLibraryTab> 
   }
 
   void _showAddExerciseDialog(BuildContext context) {
+    final colors = context.sasColors;
     String name = '';
     String muscle = 'Pecho';
     int sets = 4;
@@ -1119,10 +1164,10 @@ class _TrainerExerciseLibraryTabState extends State<_TrainerExerciseLibraryTab> 
         return StatefulBuilder(
           builder: (context, setDlgState) {
             return AlertDialog(
-              backgroundColor: Colors.white,
+              backgroundColor: colors.surface,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
-                side: const BorderSide(color: Color(0xFFE2DDD5)),
+                side: BorderSide(color: colors.border),
               ),
               title: const Text('Nuevo Ejercicio', style: TextStyle(fontWeight: FontWeight.w900)),
               content: SingleChildScrollView(
@@ -1163,7 +1208,10 @@ class _TrainerExerciseLibraryTabState extends State<_TrainerExerciseLibraryTab> 
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(ctx),
-                  child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
+                  child: Text(
+                    'Cancelar',
+                    style: TextStyle(color: colors.textSecondary),
+                  ),
                 ),
                 ElevatedButton(
                   style: roleFilledPillButtonStyle(
@@ -1239,7 +1287,7 @@ class _TrainerTemplatesTab extends StatelessWidget {
             return Container(
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.all(16),
-              decoration: _cardDecoration(),
+              decoration: _cardDecoration(context),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1277,6 +1325,7 @@ class _TrainerTemplatesTab extends StatelessWidget {
   }
 
   void _showCreateTemplateDialog(BuildContext context) {
+    final colors = context.sasColors;
     String name = '';
     String muscle = '';
     String exStr = '';
@@ -1285,10 +1334,10 @@ class _TrainerTemplatesTab extends StatelessWidget {
       context: context,
       builder: (ctx) {
         return AlertDialog(
-          backgroundColor: Colors.white,
+          backgroundColor: colors.surface,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
-            side: const BorderSide(color: Color(0xFFE2DDD5)),
+            side: BorderSide(color: colors.border),
           ),
           title: const Text('Crear Plantilla', style: TextStyle(fontWeight: FontWeight.w900)),
           content: Column(
@@ -1311,7 +1360,10 @@ class _TrainerTemplatesTab extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
+              child: Text(
+                'Cancelar',
+                style: TextStyle(color: colors.textSecondary),
+              ),
             ),
             ElevatedButton(
               style: roleFilledPillButtonStyle(
@@ -1349,6 +1401,7 @@ class _TrainerProgressTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.sasColors;
     final weeklyLoads = (progress?['weeklyLoads'] as List<dynamic>? ?? const [])
         .map((item) => (item as Map<String, dynamic>)['volume'] as num? ?? 0)
         .map((value) => value.toDouble())
@@ -1363,7 +1416,7 @@ class _TrainerProgressTab extends StatelessWidget {
         SectionHeader(title: 'Volumen Técnico Semanal', action: 'Últimas 8 Semanas'),
         Container(
           padding: const EdgeInsets.all(20),
-          decoration: _cardDecoration(),
+          decoration: _cardDecoration(context),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1378,6 +1431,8 @@ class _TrainerProgressTab extends StatelessWidget {
                   size: const Size(double.infinity, 140),
                   painter: _VolumePainter(
                     volumes: chartVolumes,
+                    labelColor: colors.textPrimary,
+                    axisColor: colors.textMuted,
                   ),
                 ),
               ),
@@ -1415,9 +1470,15 @@ class _TrainerProgressTab extends StatelessWidget {
 }
 
 class _VolumePainter extends CustomPainter {
-  _VolumePainter({required this.volumes});
+  _VolumePainter({
+    required this.volumes,
+    required this.labelColor,
+    required this.axisColor,
+  });
 
   final List<double> volumes;
+  final Color labelColor;
+  final Color axisColor;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1457,7 +1518,11 @@ class _VolumePainter extends CustomPainter {
       // Value label on top of bar
       textPaint.text = TextSpan(
         text: '${val.toInt()}t',
-        style: const TextStyle(color: Colors.black, fontSize: 10, fontWeight: FontWeight.bold),
+        style: TextStyle(
+          color: labelColor,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+        ),
       );
       textPaint.layout();
       textPaint.paint(canvas, Offset(x + (barWidth - textPaint.width) / 2, y - 14));
@@ -1465,7 +1530,11 @@ class _VolumePainter extends CustomPainter {
       // Week label below bar
       textPaint.text = TextSpan(
         text: 'S${i + 1}',
-        style: const TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold),
+        style: TextStyle(
+          color: axisColor,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+        ),
       );
       textPaint.layout();
       textPaint.paint(canvas, Offset(x + (barWidth - textPaint.width) / 2, h - 16));
@@ -1532,7 +1601,7 @@ class _TrainerProfileTab extends StatelessWidget {
         SectionHeader(title: 'Perfil del Entrenador'),
         Container(
           padding: const EdgeInsets.all(20),
-          decoration: _cardDecoration(),
+          decoration: _cardDecoration(context),
           child: Column(
             children: [
               CircleAvatar(
@@ -1564,7 +1633,7 @@ class _TrainerProfileTab extends StatelessWidget {
         const SizedBox(height: 18),
         Container(
           padding: const EdgeInsets.all(18),
-          decoration: _cardDecoration(),
+          decoration: _cardDecoration(context),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1580,7 +1649,7 @@ class _TrainerProfileTab extends StatelessWidget {
         const SizedBox(height: 18),
         Container(
           padding: const EdgeInsets.all(18),
-          decoration: _cardDecoration(),
+          decoration: _cardDecoration(context),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1627,10 +1696,11 @@ class _TrainerProfileTab extends StatelessWidget {
 // ==========================================
 // CARD DECORATION HELPER
 // ==========================================
-BoxDecoration _cardDecoration() {
+BoxDecoration _cardDecoration(BuildContext context) {
+  final colors = context.sasColors;
   return BoxDecoration(
-    color: Colors.white,
+    color: colors.surface,
     borderRadius: BorderRadius.circular(16),
-    border: Border.all(color: const Color(0xFFE6E2D8)),
+    border: Border.all(color: colors.border),
   );
 }

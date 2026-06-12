@@ -4,8 +4,9 @@ import 'package:image/image.dart' as img;
 import '../../../core/config/app_config.dart';
 import '../../../core/services/local_image_picker.dart';
 import '../../../data/gym_state.dart';
-import '../../../widgets/app_shell.dart';
 import '../../../models/gym_models.dart';
+import '../../../theme/app_theme_tokens.dart';
+import '../../../widgets/app_shell.dart';
 
 class PayMembershipView extends StatefulWidget {
   const PayMembershipView({
@@ -126,6 +127,7 @@ class _PayMembershipViewState extends State<PayMembershipView> {
   @override
   Widget build(BuildContext context) {
     final state = GymStateProvider.of(context);
+    final colors = context.sasColors;
     final plans = _plans(state);
     _selectedPlan ??= plans.first.id;
 
@@ -160,11 +162,11 @@ class _PayMembershipViewState extends State<PayMembershipView> {
                 side: BorderSide(
                   color: isSelected
                       ? widget.palette.accent
-                      : const Color(0xFFE8E4D9),
+                      : colors.border,
                   width: isSelected ? 2 : 1,
                 ),
               ),
-              color: Colors.white,
+              color: colors.surface,
               child: InkWell(
                 borderRadius: BorderRadius.circular(12),
                 onTap: () {
@@ -185,7 +187,9 @@ class _PayMembershipViewState extends State<PayMembershipView> {
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: isSelected ? Colors.black : Colors.grey,
+                            color: isSelected
+                                ? colors.textPrimary
+                                : colors.textMuted,
                             width: 2,
                           ),
                         ),
@@ -194,9 +198,9 @@ class _PayMembershipViewState extends State<PayMembershipView> {
                                 child: Container(
                                   width: 10,
                                   height: 10,
-                                  decoration: const BoxDecoration(
+                                  decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    color: Colors.black,
+                                    color: colors.textPrimary,
                                   ),
                                 ),
                               )
@@ -247,7 +251,7 @@ class _PayMembershipViewState extends State<PayMembershipView> {
                 borderRadius: BorderRadius.circular(12),
               ),
               filled: true,
-              fillColor: Colors.white,
+              fillColor: colors.surfaceAlt,
             ),
             items: const [
               DropdownMenuItem(value: 'Yape', child: Text('Yape (QR)')),
@@ -274,9 +278,9 @@ class _PayMembershipViewState extends State<PayMembershipView> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: colors.surface,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFE2DDD5)),
+                border: Border.all(color: colors.border),
               ),
               child: Column(
                 children: [
@@ -313,7 +317,7 @@ class _PayMembershipViewState extends State<PayMembershipView> {
             child: Container(
               height: 110,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: colors.surface,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: _uploaded
@@ -405,8 +409,8 @@ class _PayMembershipViewState extends State<PayMembershipView> {
 
           ElevatedButton(
             style: roleFilledPillButtonStyle(
-              backgroundColor: Colors.black,
-              foregroundColor: Colors.white,
+              backgroundColor: widget.palette.accent,
+              foregroundColor: widget.palette.accentInk,
               minimumHeight: 56,
             ),
             onPressed: (_uploaded && _selectedPlan != null && !_submitting)

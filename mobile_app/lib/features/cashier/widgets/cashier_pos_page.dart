@@ -646,18 +646,37 @@ class _CashierPOSPageState extends State<CashierPOSPage> {
                                 }
                                 showDialog(
                                   context: context,
-                                  builder: (ctx) => AlertDialog(
-                                    backgroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                                    title: const Text('Operación Denegada', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
-                                    content: Text(errorMsg),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () => Navigator.pop(ctx),
-                                        child: const Text('Entendido', style: TextStyle(fontWeight: FontWeight.bold)),
+                                  builder: (ctx) {
+                                    final dialogColors = ctx.sasColors;
+                                    return AlertDialog(
+                                      backgroundColor: dialogColors.surface,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(20),
+                                        side: BorderSide(
+                                          color: dialogColors.border,
+                                        ),
                                       ),
-                                    ],
-                                  ),
+                                      title: const Text(
+                                        'Operación Denegada',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.red,
+                                        ),
+                                      ),
+                                      content: Text(errorMsg),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () => Navigator.pop(ctx),
+                                          child: const Text(
+                                            'Entendido',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  },
                                 );
                               }
                             }

@@ -164,6 +164,7 @@ class GymState extends ChangeNotifier {
         loadObservations();
         loadAuditLogs();
       } else if (_currentUser?.rol == GymRole.cashier) {
+        loadAdminMembers();
         loadProducts();
       } else if (_currentUser?.rol == GymRole.trainer) {
         loadAssignedTrainerMembers();
@@ -232,6 +233,7 @@ class GymState extends ChangeNotifier {
         loadObservations();
         loadAuditLogs();
       } else if (_currentUser?.rol == GymRole.cashier) {
+        loadAdminMembers();
         loadProducts();
       } else if (_currentUser?.rol == GymRole.trainer) {
         loadAssignedTrainerMembers();
@@ -347,6 +349,55 @@ class GymState extends ChangeNotifier {
   List<MemberRecord> get members =>
       _members.where((m) => m.state != 'baja_logica').toList();
   List<MemberRecord> get allMembersIncludingSoftDeleted => _members;
+  List<ScannerPreset> get scannerPresets {
+    const stateOrder = <String>[
+      'active',
+      'grace',
+      'expired',
+      'inactive',
+      'suspended',
+    ];
+    const stateLabels = <String, String>{
+      'active': 'Activo',
+      'grace': 'En gracia',
+      'expired': 'Vencido',
+      'inactive': 'Inactivo',
+      'suspended': 'Suspendido',
+    };
+    final presets = <ScannerPreset>[];
+
+    for (final stateName in stateOrder) {
+      MemberRecord? match;
+      for (final member in allMembersIncludingSoftDeleted) {
+        if (member.dni.isEmpty || member.state == 'baja_logica') {
+          continue;
+        }
+        if (member.state == stateName) {
+          match = member;
+          break;
+        }
+      }
+      if (match == null) {
+        continue;
+      }
+      presets.add(
+        ScannerPreset(
+          label: '${match.name} (${stateLabels[stateName] ?? stateName})',
+          dni: match.dni,
+          state: stateName,
+        ),
+      );
+    }
+
+    presets.add(
+      const ScannerPreset(
+        label: 'DNI inválido',
+        dni: '99999999',
+        isSynthetic: true,
+      ),
+    );
+    return presets;
+  }
   List<ProductItem> get products => _products;
   List<CashierAccount> get cashiers => _cashiers;
   List<AuditEntry> get auditLogs => _auditLogs;
@@ -1479,7 +1530,11 @@ class GymState extends ChangeNotifier {
   }
 
   Future<void> loadAdminMembers() async {
-    if (!isBackendMode || _currentUser?.rol != GymRole.admin) return;
+    if (!isBackendMode ||
+        !(_currentUser?.rol == GymRole.admin ||
+            _currentUser?.rol == GymRole.cashier)) {
+      return;
+    }
     try {
       final response = await ApiClient().dio.get('/admin/members');
       final rows = (response.data as List)
@@ -1491,7 +1546,7 @@ class GymState extends ChangeNotifier {
         ..addAll(rows);
       notifyListeners();
     } catch (e) {
-      AppLogger.debug('Error loading admin members', e);
+      AppLogger.debug('Error loading shared members for admin/cashier', e);
     }
   }
 

@@ -197,7 +197,7 @@ class _MemberHomePage extends StatelessWidget {
         RoleHeroHeader(
           palette: palette,
           title: 'Panel del Socio',
-          subtitle: 'Accede rÃ¡pido a tus clases, membresÃ­a y QR de ingreso.',
+          subtitle: 'Accede rápido a tus clases, membresía y QR de ingreso.',
         ),
         const SizedBox(height: 16),
         _HeroCard(palette: palette, member: mateo, onGo: onGo),
@@ -207,8 +207,8 @@ class _MemberHomePage extends StatelessWidget {
         if (isExpired)
           _buildAlertBanner(
             context,
-            'MEMBRESÃA VENCIDA',
-            'Tu pase ha expirado. Renueva en lÃ­nea para reactivar tu cÃ³digo QR de acceso.',
+            'MEMBRESÍA VENCIDA',
+            'Tu pase ha expirado. Renueva en línea para reactivar tu código QR de acceso.',
             Colors.redAccent,
             Icons.error_outline,
             'Pagar ahora',
@@ -217,8 +217,8 @@ class _MemberHomePage extends StatelessWidget {
         if (isGrace)
           _buildAlertBanner(
             context,
-            'DÃA DE GRACIA ACTIVO',
-            'Tu membresÃ­a venciÃ³ ayer. Tienes acceso permitido solo por hoy. Por favor regulariza tu plan.',
+            'DÍA DE GRACIA ACTIVO',
+            'Tu membresía venció ayer. Tienes acceso permitido solo por hoy. Por favor regulariza tu plan.',
             const Color(0xFFFFB300),
             Icons.warning_amber_rounded,
             'Renovar plan',
@@ -249,7 +249,7 @@ class _MemberHomePage extends StatelessWidget {
                     : 'Vencido',
                 note: mateo.state == 'active'
                     ? 'Vence el 4 de jun'
-                    : 'Sin dÃ­as restantes',
+                    : 'Sin días restantes',
                 accent: mateo.state == 'active'
                     ? const Color(0xFF00B85C)
                     : mateo.state == 'grace'
@@ -262,7 +262,7 @@ class _MemberHomePage extends StatelessWidget {
         const SizedBox(height: 22),
 
         // Action shortcuts
-        SectionHeader(title: 'Acciones RÃ¡pidas'),
+        SectionHeader(title: 'Acciones Rápidas'),
         Row(
           children: [
             Expanded(
@@ -348,7 +348,7 @@ class _MemberHomePage extends StatelessWidget {
                   severityColor = Colors.redAccent;
                   label = 'ALERTA';
                 } else {
-                  severityColor = const Color(0xFF7A5AE0); // Violeta elÃ©ctrico
+                  severityColor = const Color(0xFF7A5AE0); // Violeta electrico
                   label = 'INFO';
                 }
 
@@ -572,7 +572,7 @@ class _HeroCard extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           const Text(
-            'Tienes tu rutina lista para hoy. MantÃ©n el ritmo.',
+            'Tienes tu rutina lista para hoy. Mantén el ritmo.',
             style: TextStyle(
               fontSize: 13.5,
               color: Color(0xFF5E5E5E),
@@ -598,6 +598,7 @@ class _MemberAgendaPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = GymStateProvider.of(context);
+    final colors = context.sasColors;
     final activeRoutine = state.activeRoutine;
     final template = activeRoutine?['template'] as Map<String, dynamic>?;
     final routineExercises =
@@ -650,10 +651,10 @@ class _MemberAgendaPage extends StatelessWidget {
                 width: 68,
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
-                  color: day.today ? palette.accent : Colors.white,
+                  color: day.today ? palette.accent : colors.surface,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: day.today ? palette.accent : const Color(0xFFE2DDD5),
+                    color: day.today ? palette.accent : colors.border,
                   ),
                 ),
                 child: Column(
@@ -700,7 +701,7 @@ class _MemberAgendaPage extends StatelessWidget {
         const SizedBox(height: 22),
 
         // Active workout details
-        const SectionHeader(title: 'Rutina del DÃ­a'),
+        const SectionHeader(title: 'Rutina del Día'),
         Container(
           padding: const EdgeInsets.all(18),
           decoration: _cardDecoration(context),
@@ -710,7 +711,7 @@ class _MemberAgendaPage extends StatelessWidget {
               Row(
                 children: [
                   StatusPill(
-                    label: 'DÃA 1 (HOY)',
+                    label: 'DÍA 1 (HOY)',
                     color: Color(0xFF0B0B0B),
                     solid: true,
                   ),
@@ -725,7 +726,7 @@ class _MemberAgendaPage extends StatelessWidget {
               ),
               const SizedBox(height: 14),
               Text(
-                template?['nombre']?.toString() ?? 'Push Â· Pecho + Hombros',
+                template?['nombre']?.toString() ?? 'Push · Pecho + Hombros',
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w900,
@@ -737,7 +738,7 @@ class _MemberAgendaPage extends StatelessWidget {
                 mappedExercises.isNotEmpty
                     ? (template?['descripcion']?.toString() ??
                           'Rutina activa sincronizada desde el backend.')
-                    : '6 ejercicios asignados Â· Enfocado en desarrollo de fuerza de empuje.',
+                    : '6 ejercicios asignados · Enfocado en desarrollo de fuerza de empuje.',
                 style: TextStyle(
                   fontSize: 13,
                   color: Color(0xFF6A6A6A),
@@ -786,7 +787,7 @@ class _MemberAgendaPage extends StatelessWidget {
                         style: const TextStyle(fontWeight: FontWeight.w800),
                       ),
                       subtitle: Text(
-                        '${exercise.sets} series Ã— ${exercise.reps} reps Â· ${exercise.weight != null ? "${exercise.weight} kg" : "Al fallo"} Â· descanso: ${exercise.restSeconds}s',
+                        '${exercise.sets} series × ${exercise.reps} reps · ${exercise.weight != null ? "${exercise.weight} kg" : "Al fallo"} · descanso: ${exercise.restSeconds}s',
                         style: const TextStyle(fontSize: 12),
                       ),
                       trailing: const Icon(
@@ -844,7 +845,7 @@ class _MemberSubscriptionPage extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 6, 20, 36),
       children: [
-        const SectionHeader(title: 'Mi MembresÃ­a'),
+        const SectionHeader(title: 'Mi Membresía'),
         const SizedBox(height: 4),
 
         // Progress card
@@ -894,8 +895,8 @@ class _MemberSubscriptionPage extends StatelessWidget {
                 children: [
                   Text(
                     mateo.state == 'active'
-                        ? '14 dÃ­as restantes'
-                        : '0 dÃ­as restantes',
+                        ? '14 días restantes'
+                        : '0 días restantes',
                     style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
@@ -920,7 +921,7 @@ class _MemberSubscriptionPage extends StatelessWidget {
                 ),
                 onPressed: () => onGo('pay'),
                 child: const Text(
-                  'Renovar / Pagar MembresÃ­a',
+                  'Renovar / Pagar Membresía',
                   style: TextStyle(fontWeight: FontWeight.w900),
                 ),
               ),
@@ -1008,7 +1009,7 @@ class _MemberSubscriptionPage extends StatelessWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            '${pay.date} Â· via ${pay.method}',
+                            '${pay.date} · vía ${pay.method}',
                             style: const TextStyle(
                               fontSize: 11.5,
                               color: Color(0xFF7A7A7A),
@@ -1093,7 +1094,7 @@ class _MemberProfilePageState extends State<_MemberProfilePage>
           tabs: const [
             Tab(text: 'Privado'),
             Tab(text: 'Social'),
-            Tab(text: 'FÃ­sico'),
+            Tab(text: 'Físico'),
           ],
         ),
         Expanded(
@@ -1119,11 +1120,11 @@ class _MemberProfilePageState extends State<_MemberProfilePage>
           decoration: _cardDecoration(context),
           child: Column(
             children: [
-              _profileRow('DNI / IdentificaciÃ³n', member.dni),
+              _profileRow('DNI / Identificación', member.dni),
               const Divider(color: Color(0xFFECEAE4), height: 24),
               _profileRow('Celular', member.phone),
               const Divider(color: Color(0xFFECEAE4), height: 24),
-              _profileRow('Correo electrÃ³nico', member.email),
+              _profileRow('Correo electrónico', member.email),
               const Divider(color: Color(0xFFECEAE4), height: 24),
               _profileRow('Fecha de inicio', member.startDate),
               const Divider(color: Color(0xFFECEAE4), height: 24),
@@ -1168,7 +1169,7 @@ class _MemberProfilePageState extends State<_MemberProfilePage>
                     ),
                     SizedBox(height: 2),
                     Text(
-                      'Permitir que otros vean que estÃ¡s entrenando hoy.',
+                      'Permitir que otros vean que estás entrenando hoy.',
                       style: TextStyle(fontSize: 11, color: Color(0xFF757575)),
                     ),
                   ],
@@ -1243,7 +1244,7 @@ class _MemberProfilePageState extends State<_MemberProfilePage>
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       children: [
         const Text(
-          'Medidas AntropomÃ©tricas',
+          'Medidas antropométricas',
           style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
         ),
         const SizedBox(height: 12),
@@ -1282,7 +1283,7 @@ class _MemberProfilePageState extends State<_MemberProfilePage>
         const SizedBox(height: 22),
 
         const Text(
-          'Registro Visual (Antes / DespuÃ©s)',
+          'Registro visual (Antes / Después)',
           style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
         ),
         const SizedBox(height: 12),
@@ -1666,7 +1667,7 @@ class _ReportObservationViewState extends State<ReportObservationView> {
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Error al enviar el reporte. IntÃ©ntalo de nuevo.'),
+              content: Text('Error al enviar el reporte. Inténtalo de nuevo.'),
               backgroundColor: Colors.red,
             ),
           );
@@ -1676,7 +1677,7 @@ class _ReportObservationViewState extends State<ReportObservationView> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('OcurriÃ³ un error inesperado.'),
+            content: Text('Ocurrió un error inesperado.'),
             backgroundColor: Colors.red,
           ),
         );
@@ -1693,11 +1694,12 @@ class _ReportObservationViewState extends State<ReportObservationView> {
   @override
   Widget build(BuildContext context) {
     final state = GymStateProvider.of(context);
+    final colors = context.sasColors;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'BUZÃ“N DE OBSERVACIONES',
+          'BUZÓN DE OBSERVACIONES',
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
         ),
         leading: IconButton(
@@ -1716,13 +1718,13 @@ class _ReportObservationViewState extends State<ReportObservationView> {
             ),
             const SizedBox(height: 6),
             const Text(
-              'Tu sugerencia serÃ¡ revisada por la administraciÃ³n del local.',
+              'Tu sugerencia será revisada por la administración del local.',
               style: TextStyle(fontSize: 13, color: Colors.grey),
             ),
             const SizedBox(height: 24),
 
             const Text(
-              'CategorÃ­a',
+              'Categoría',
               style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
@@ -1733,12 +1735,12 @@ class _ReportObservationViewState extends State<ReportObservationView> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: colors.surfaceAlt,
               ),
               items: const [
                 DropdownMenuItem(
                   value: 'Equipamiento',
-                  child: Text('Equipamiento (MÃ¡quinas)'),
+                  child: Text('Equipamiento (Máquinas)'),
                 ),
                 DropdownMenuItem(
                   value: 'Limpieza',
@@ -1746,7 +1748,7 @@ class _ReportObservationViewState extends State<ReportObservationView> {
                 ),
                 DropdownMenuItem(
                   value: 'Personal',
-                  child: Text('AtenciÃ³n del Personal'),
+                  child: Text('Atención del personal'),
                 ),
                 DropdownMenuItem(
                   value: 'Sugerencia',
@@ -1762,7 +1764,7 @@ class _ReportObservationViewState extends State<ReportObservationView> {
             const SizedBox(height: 20),
 
             const Text(
-              'DescripciÃ³n del suceso',
+              'Descripción del suceso',
               style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
@@ -1770,11 +1772,11 @@ class _ReportObservationViewState extends State<ReportObservationView> {
               controller: _descCtrl,
               maxLines: 5,
               decoration: InputDecoration(
-                hintText: 'Detalla lo ocurrido o tu propuesta aquÃ­...',
+                hintText: 'Detalla lo ocurrido o tu propuesta aquí...',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-                fillColor: Colors.white,
+                fillColor: colors.surfaceAlt,
                 filled: true,
               ),
             ),
@@ -1795,9 +1797,9 @@ class _ReportObservationViewState extends State<ReportObservationView> {
                   horizontal: 16,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: colors.surface,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE2DDD5)),
+                  border: Border.all(color: colors.border),
                 ),
                 child: _selectedFile != null
                     ? Column(
@@ -1854,7 +1856,7 @@ class _ReportObservationViewState extends State<ReportObservationView> {
                           ),
                           SizedBox(height: 8),
                           Text(
-                            'Seleccionar imagen de la galerÃ­a',
+                            'Seleccionar imagen de la galería',
                             style: TextStyle(color: Colors.grey, fontSize: 13),
                           ),
                         ],
@@ -1897,23 +1899,24 @@ class _NotificationsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.sasColors;
     final List<Map<String, String>> notifs = [
       {
-        'title': 'MembresÃ­a Activa',
+        'title': 'Membresía activa',
         'desc':
-            'Tu membresÃ­a ha sido renovada exitosamente hasta el 4 de junio.',
+            'Tu membresía ha sido renovada exitosamente hasta el 4 de junio.',
         'time': 'Hace 2 horas',
       },
       {
         'title': 'Nueva Rutina Asignada',
         'desc':
-            'El Coach Carlos Mendoza te ha asignado la rutina Push Â· Pecho + Hombros.',
+            'El Coach Carlos Mendoza te ha asignado la rutina Push · Pecho + Hombros.',
         'time': 'Ayer',
       },
       {
-        'title': 'Alerta de Pago PrÃ³ximo',
+        'title': 'Alerta de pago próximo',
         'desc': 'Recuerda que tu plan vence el 4 de junio de 2026.',
-        'time': 'Hace 3 dÃ­as',
+        'time': 'Hace 3 días',
       },
     ];
 
@@ -1937,9 +1940,9 @@ class _NotificationsView extends StatelessWidget {
           return Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: colors.surface,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE2DDD5)),
+              border: Border.all(color: colors.border),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,

@@ -13,6 +13,7 @@ export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
   @Get('members')
+  @Roles(Role.ADMIN, Role.CAJA)
   listMembers(@Req() req: any, @Query('q') q?: string, @Query('state') state?: string) {
     return this.adminService.listMembers(req.user.tenantId, q || '', state || 'all');
   }
