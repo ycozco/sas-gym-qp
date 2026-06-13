@@ -439,7 +439,7 @@ function Sidebar({ role, section, onNavigate, tenantSettings }) {
 }
 
 // ─── TOPBAR ────────────────────────────────────────────────────
-function Topbar({ title, sub, role, currentUser, onLogout }) {
+function Topbar({ title, sub, role, currentUser, onLogout, themeMode, setThemeMode }) {
   const r = ROLES[role];
   const displayName = currentUser?.nombre_completo || currentUser?.nombreCompleto || r.who;
   return (
@@ -450,6 +450,7 @@ function Topbar({ title, sub, role, currentUser, onLogout }) {
       </div>
       <span className="spacer"/>
       <div className="t-actions">
+        <ThemeSwitcher themeMode={themeMode} setThemeMode={setThemeMode}/>
         <span className="badge" style={{ font: "500 11.5px var(--font-mono)" }}>{TODAY.short}</span>
         <button className="icon-btn" aria-label="Notificaciones">{I.bell}<span className="dot-r"/></button>
         <div className="user-chip" role="button" tabIndex={0}>
@@ -459,7 +460,10 @@ function Topbar({ title, sub, role, currentUser, onLogout }) {
             <div className="ur">{r.label}</div>
           </div>
         </div>
-        <button className="icon-btn" aria-label="Cerrar sesión" onClick={onLogout} title="Cerrar sesión">{I.logout}</button>
+        <button className="topbar-logout" aria-label="Cerrar sesión" onClick={onLogout} title="Cerrar sesión">
+          <span className="topbar-logout-ic" aria-hidden="true">{I.logout}</span>
+          <span>Cerrar sesión</span>
+        </button>
       </div>
     </header>
   );

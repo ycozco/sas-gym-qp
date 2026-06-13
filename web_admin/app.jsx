@@ -525,10 +525,9 @@ function App() {
           role={role}
           currentUser={currentUser}
           onLogout={logout}
+          themeMode={themeMode}
+          setThemeMode={setThemeMode}
         />
-        <div style={{ position: "absolute", right: 28, top: 12 }}>
-          <ThemeSwitcher themeMode={themeMode} setThemeMode={setThemeMode}/>
-        </div>
         <main className="content">
           <View go={go} app={appContext}/>
         </main>
@@ -541,12 +540,12 @@ function ThemeSwitcher({ themeMode, setThemeMode }) {
   return (
     <div className="theme-seg" aria-label="Tema visual">
       {[
-        ["system", "Sistema"],
-        ["light", "Claro"],
-        ["dark", "Oscuro"],
-      ].map(([id, label]) => (
-        <button key={id} aria-pressed={themeMode === id} onClick={() => setThemeMode(id)}>
-          {label}
+        ["system", "Sistema", "◎"],
+        ["light", "Claro", "☼"],
+        ["dark", "Oscuro", "◐"],
+      ].map(([id, label, glyph]) => (
+        <button key={id} aria-pressed={themeMode === id} onClick={() => setThemeMode(id)} aria-label={label} title={label}>
+          <span className="theme-glyph" aria-hidden="true">{glyph}</span>
         </button>
       ))}
     </div>
