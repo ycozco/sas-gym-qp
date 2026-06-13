@@ -29,7 +29,9 @@ export class AuthGuard implements CanActivate {
     const request = executionContext.switchToHttp().getRequest<Request>();
     const token = this.extractTokenFromHeader(request);
     if (!token) {
-      throw new UnauthorizedException('No se proporcionó un token de autorización.');
+      throw new UnauthorizedException(
+        'No se proporcionó un token de autorización.',
+      );
     }
     try {
       const payload = await this.jwtService.verifyAsync(token, {

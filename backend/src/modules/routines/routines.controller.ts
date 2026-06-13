@@ -125,7 +125,11 @@ export class RoutinesController {
   @Post('trainer/exercises')
   @Roles(Role.TRAINER, Role.ADMIN)
   async createExercise(@Req() req: any, @Body() dto: CreateExerciseDto) {
-    return this.routinesService.createExercise(req.user.sub, req.user.tenantId, dto);
+    return this.routinesService.createExercise(
+      req.user.sub,
+      req.user.tenantId,
+      dto,
+    );
   }
 
   @Get('trainer/templates')
@@ -137,18 +141,29 @@ export class RoutinesController {
   @Post('trainer/templates')
   @Roles(Role.TRAINER, Role.ADMIN)
   async createTemplate(@Req() req: any, @Body() dto: CreateRoutineTemplateDto) {
-    return this.routinesService.createTemplate(req.user.sub, req.user.tenantId, dto);
+    return this.routinesService.createTemplate(
+      req.user.sub,
+      req.user.tenantId,
+      dto,
+    );
   }
 
   @Post('trainer/assign')
   @Roles(Role.TRAINER, Role.ADMIN)
   async assignRoutine(@Req() req: any, @Body() dto: AssignRoutineDto) {
-    return this.routinesService.assignRoutine(req.user.sub, req.user.tenantId, dto);
+    return this.routinesService.assignRoutine(
+      req.user.sub,
+      req.user.tenantId,
+      dto,
+    );
   }
 
   @Get('trainer/progress')
   @Roles(Role.TRAINER, Role.ADMIN)
   async getTrainerProgress(@Req() req: any) {
-    return this.routinesService.getTrainerProgress(req.user.sub, req.user.tenantId);
+    return this.routinesService.getTrainerProgress(
+      req.user.sub,
+      req.user.tenantId,
+    );
   }
 }

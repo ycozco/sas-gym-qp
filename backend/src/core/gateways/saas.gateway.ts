@@ -32,7 +32,9 @@ export class SaasGateway implements OnGatewayConnection, OnGatewayDisconnect {
       client.data.user = payload;
       console.log(`Cliente WebSocket autenticado: ${client.id}`);
     } catch {
-      console.log(`Cliente WebSocket con token invalido desconectado: ${client.id}`);
+      console.log(
+        `Cliente WebSocket con token invalido desconectado: ${client.id}`,
+      );
       client.disconnect();
     }
   }

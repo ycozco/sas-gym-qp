@@ -1,4 +1,15 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { Roles } from '../../core/decorators/roles.decorator';
 import { AuthGuard } from '../../core/guards/auth.guard';
@@ -14,7 +25,10 @@ export class ProductsController {
   @Get()
   @Roles(Role.ADMIN, Role.CAJA)
   list(@Req() req: any, @Query('includeInactive') includeInactive?: string) {
-    return this.productsService.list(req.user.tenantId, includeInactive === 'true');
+    return this.productsService.list(
+      req.user.tenantId,
+      includeInactive === 'true',
+    );
   }
 
   @Post()
@@ -25,7 +39,11 @@ export class ProductsController {
 
   @Patch(':id')
   @Roles(Role.ADMIN)
-  update(@Req() req: any, @Param('id') id: string, @Body() dto: Partial<UpsertProductDto>) {
+  update(
+    @Req() req: any,
+    @Param('id') id: string,
+    @Body() dto: Partial<UpsertProductDto>,
+  ) {
     return this.productsService.update(req.user.tenantId, id, dto);
   }
 

@@ -72,14 +72,16 @@ async function bootstrap() {
   // Validaciones globales usando class-validator
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true,        // Elimina propiedades que no estén en el DTO
-      transform: true,        // Transforma payloads a instancias de sus DTOs correspondientes
+      whitelist: true, // Elimina propiedades que no estén en el DTO
+      transform: true, // Transforma payloads a instancias de sus DTOs correspondientes
       forbidNonWhitelisted: true, // Lanza error si se envían propiedades no permitidas
     }),
   );
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
-  console.log(`Servidor de SaasGym ejecutándose en: http://localhost:${port}/api/v1`);
+  console.log(
+    `Servidor de SaasGym ejecutándose en: http://localhost:${port}/api/v1`,
+  );
 }
 bootstrap();

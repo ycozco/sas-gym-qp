@@ -23,7 +23,10 @@ export class MembersService {
         member_id: memberProfile.id,
         template_id: dto.templateId,
         fecha: dto.fecha ? new Date(dto.fecha) : new Date(),
-        estado: dto.estado === 'SKIPPED' ? SessionState.SKIPPED : SessionState.COMPLETED,
+        estado:
+          dto.estado === 'SKIPPED'
+            ? SessionState.SKIPPED
+            : SessionState.COMPLETED,
         series_log: {
           create: dto.seriesLog.map((log: any) => ({
             exercise_id: log.exerciseId,

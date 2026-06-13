@@ -322,7 +322,7 @@ export class PaymentsService {
 
     if (membershipItem) {
       // Registrar membresía directamente activa
-      let planId: string | null = membershipItem.planId ?? null;
+      const planId: string | null = membershipItem.planId ?? null;
       let planNombre = membershipItem.name;
       let duracionDias = 30;
       let monto = membershipItem.price * membershipItem.qty;

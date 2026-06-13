@@ -109,7 +109,10 @@ export class PaymentsController {
   @Get('me')
   @Roles(Role.MEMBER)
   async getMyPayments(@Req() req: any) {
-    return this.paymentsService.getMemberPayments(req.user.sub, req.user.tenantId);
+    return this.paymentsService.getMemberPayments(
+      req.user.sub,
+      req.user.tenantId,
+    );
   }
 
   @Get('pending')
@@ -215,7 +218,11 @@ export class PaymentsController {
   @Post(':id/void-request')
   @Roles(Role.CAJA, Role.ADMIN)
   async requestVoid(@Req() req: any, @Param('id') id: string) {
-    return this.paymentsService.requestVoid(req.user.sub, req.user.tenantId, id);
+    return this.paymentsService.requestVoid(
+      req.user.sub,
+      req.user.tenantId,
+      id,
+    );
   }
 
   @Post(':id/void-resolve')

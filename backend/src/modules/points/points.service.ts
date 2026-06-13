@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
@@ -25,9 +29,18 @@ export class PointsService {
 
     return {
       usersWithPoints: balances.length,
-      availablePoints: balances.reduce((sum, row) => sum + row.puntos_disponibles, 0),
-      earnedPoints: balances.reduce((sum, row) => sum + row.puntos_totales_ganados, 0),
-      redeemedPoints: balances.reduce((sum, row) => sum + row.puntos_totales_canjeados, 0),
+      availablePoints: balances.reduce(
+        (sum, row) => sum + row.puntos_disponibles,
+        0,
+      ),
+      earnedPoints: balances.reduce(
+        (sum, row) => sum + row.puntos_totales_ganados,
+        0,
+      ),
+      redeemedPoints: balances.reduce(
+        (sum, row) => sum + row.puntos_totales_canjeados,
+        0,
+      ),
       exchanges,
       movements,
     };
@@ -81,7 +94,12 @@ export class PointsService {
   async redeem(
     userId: string,
     tenantId: string,
-    dto: { tipo: 'producto' | 'membresia'; itemId: string; cantidad?: number; notas?: string },
+    dto: {
+      tipo: 'producto' | 'membresia';
+      itemId: string;
+      cantidad?: number;
+      notas?: string;
+    },
   ) {
     const quantity = Math.max(1, Number(dto.cantidad ?? 1));
     const balance = await this.prisma.pointsBalance.findUnique({
@@ -100,7 +118,8 @@ export class PointsService {
       const product = await this.prisma.pointsProduct.findFirst({
         where: { id: dto.itemId, activo: true },
       });
-      if (!product) throw new NotFoundException('Producto de puntos no encontrado.');
+      if (!product)
+        throw new NotFoundException('Producto de puntos no encontrado.');
       if (product.stock > 0 && product.stock < quantity) {
         throw new BadRequestException('No hay stock suficiente para el canje.');
       }
@@ -111,9 +130,12 @@ export class PointsService {
       const membership = await this.prisma.pointsMembership.findFirst({
         where: { id: dto.itemId, activo: true },
       });
-      if (!membership) throw new NotFoundException('Membresía de puntos no encontrada.');
+      if (!membership)
+        throw new NotFoundException('Membresía de puntos no encontrada.');
       if (membership.stock > 0 && membership.stock < quantity) {
-        throw new BadRequestException('No hay stock suficiente para este canje.');
+        throw new BadRequestException(
+          'No hay stock suficiente para este canje.',
+        );
       }
       pointsCost = membership.precio_puntos * quantity;
       membershipId = membership.id;
@@ -121,7 +143,9 @@ export class PointsService {
     }
 
     if (balance.puntos_disponibles < pointsCost) {
-      throw new BadRequestException('Puntos insuficientes para realizar el canje.');
+      throw new BadRequestException(
+        'Puntos insuficientes para realizar el canje.',
+      );
     }
 
     const nextBalance = balance.puntos_disponibles - pointsCost;
@@ -199,7 +223,8 @@ export class PointsService {
         balance: {
           ...balance,
           puntos_disponibles: nextBalance,
-          puntos_totales_canjeados: balance.puntos_totales_canjeados + pointsCost,
+          puntos_totales_canjeados:
+            balance.puntos_totales_canjeados + pointsCost,
         },
       };
     });

@@ -1,4 +1,14 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { Roles } from '../../core/decorators/roles.decorator';
 import { AuthGuard } from '../../core/guards/auth.guard';
@@ -14,8 +24,16 @@ export class AdminController {
 
   @Get('members')
   @Roles(Role.ADMIN, Role.CAJA)
-  listMembers(@Req() req: any, @Query('q') q?: string, @Query('state') state?: string) {
-    return this.adminService.listMembers(req.user.tenantId, q || '', state || 'all');
+  listMembers(
+    @Req() req: any,
+    @Query('q') q?: string,
+    @Query('state') state?: string,
+  ) {
+    return this.adminService.listMembers(
+      req.user.tenantId,
+      q || '',
+      state || 'all',
+    );
   }
 
   @Post('members')
@@ -24,7 +42,11 @@ export class AdminController {
   }
 
   @Patch('members/:id')
-  updateMember(@Req() req: any, @Param('id') id: string, @Body() dto: Partial<UpsertUserDto>) {
+  updateMember(
+    @Req() req: any,
+    @Param('id') id: string,
+    @Body() dto: Partial<UpsertUserDto>,
+  ) {
     return this.adminService.updateMember(req.user.tenantId, id, dto);
   }
 
@@ -44,7 +66,11 @@ export class AdminController {
   }
 
   @Patch('cashiers/:id')
-  updateCashier(@Req() req: any, @Param('id') id: string, @Body() dto: Partial<UpsertUserDto>) {
+  updateCashier(
+    @Req() req: any,
+    @Param('id') id: string,
+    @Body() dto: Partial<UpsertUserDto>,
+  ) {
     return this.adminService.updateCashier(req.user.tenantId, id, dto);
   }
 
@@ -54,7 +80,15 @@ export class AdminController {
   }
 
   @Patch('cashiers/:id/permissions')
-  updatePermissions(@Req() req: any, @Param('id') id: string, @Body('permissions') permissions: string[]) {
-    return this.adminService.updateCashierPermissions(req.user.tenantId, id, permissions || []);
+  updatePermissions(
+    @Req() req: any,
+    @Param('id') id: string,
+    @Body('permissions') permissions: string[],
+  ) {
+    return this.adminService.updateCashierPermissions(
+      req.user.tenantId,
+      id,
+      permissions || [],
+    );
   }
 }

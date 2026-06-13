@@ -28,7 +28,7 @@ export class TenantGuard implements CanActivate {
 
     const request = executionContext.switchToHttp().getRequest();
     const user = request.user;
-    
+
     if (!user) {
       throw new ForbiddenException('Usuario no autenticado.');
     }

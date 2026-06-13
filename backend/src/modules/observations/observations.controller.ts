@@ -31,7 +31,12 @@ export class ObservationsController {
       limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB max
       fileFilter: (req: any, file: any, cb: any) => {
         if (!file.mimetype.match(/\/(jpg|jpeg|png|webp)$/)) {
-          return cb(new BadRequestException('Solo se permiten imágenes (JPG, JPEG, PNG, WEBP).'), false);
+          return cb(
+            new BadRequestException(
+              'Solo se permiten imágenes (JPG, JPEG, PNG, WEBP).',
+            ),
+            false,
+          );
         }
         cb(null, true);
       },
@@ -44,7 +49,8 @@ export class ObservationsController {
           cb(null, uploadPath);
         },
         filename: (req: any, file: any, cb: any) => {
-          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
           const extension = file.originalname.split('.').pop();
           cb(null, `${uniqueSuffix}.${extension}`);
         },
@@ -58,7 +64,9 @@ export class ObservationsController {
     @Body('description') description: string,
   ) {
     if (!description || !category) {
-      throw new BadRequestException('La categoría y descripción son obligatorias.');
+      throw new BadRequestException(
+        'La categoría y descripción son obligatorias.',
+      );
     }
 
     const userId = req.user.sub;

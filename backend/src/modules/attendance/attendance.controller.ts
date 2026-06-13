@@ -1,6 +1,10 @@
 import { Controller, Post, Body, UseGuards, Req } from '@nestjs/common';
 import { AttendanceService } from './attendance.service';
-import { FingerprintService, RegisterFingerprintDto, VerifyFingerprintDto } from './fingerprint.service';
+import {
+  FingerprintService,
+  RegisterFingerprintDto,
+  VerifyFingerprintDto,
+} from './fingerprint.service';
 import { AuthGuard } from '../../core/guards/auth.guard';
 import { TenantGuard } from '../../core/guards/tenant.guard';
 import { RolesGuard } from '../../core/guards/roles.guard';
@@ -30,7 +34,11 @@ export class AttendanceController {
   @Roles(Role.ADMIN, Role.CAJA)
   async verifyQr(@Req() req: any, @Body() dto: VerifyQrDto) {
     const tenantId = req.user.tenantId;
-    return this.attendanceService.verifyQrToken(dto.dni, dto.otpToken, tenantId);
+    return this.attendanceService.verifyQrToken(
+      dto.dni,
+      dto.otpToken,
+      tenantId,
+    );
   }
 
   @Post('simulation-access')

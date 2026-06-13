@@ -10,4 +10,3 @@ import { PrismaModule } from '../../prisma/prisma.module';
   providers: [AttendanceService, FingerprintService],
 })
 export class AttendanceModule {}
-

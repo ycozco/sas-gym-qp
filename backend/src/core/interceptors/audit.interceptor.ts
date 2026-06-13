@@ -21,7 +21,11 @@ export class AuditInterceptor implements NestInterceptor {
         // Interceptamos solo métodos de escritura exitosos
         if (['POST', 'PATCH', 'DELETE', 'PUT'].includes(method)) {
           const user = request.user;
-          if (user && !url.includes('/auth/login') && !url.includes('/auth/forgot-password')) {
+          if (
+            user &&
+            !url.includes('/auth/login') &&
+            !url.includes('/auth/forgot-password')
+          ) {
             try {
               // Determinar la entidad a partir de la URL
               let entidad = 'DESCONOCIDA';

@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { Role } from '@prisma/client';
 
@@ -20,7 +24,9 @@ export class SchedulesService {
     }
 
     return rows.map((schedule) => {
-      const myBooking = schedule.bookings.find((booking) => booking.user_id === userId);
+      const myBooking = schedule.bookings.find(
+        (booking) => booking.user_id === userId,
+      );
       return {
         ...schedule,
         my_booking_status: myBooking?.estado ?? null,
@@ -29,7 +35,12 @@ export class SchedulesService {
     });
   }
 
-  async book(userId: string, tenantId: string, scheduleId: string, fecha?: string) {
+  async book(
+    userId: string,
+    tenantId: string,
+    scheduleId: string,
+    fecha?: string,
+  ) {
     const schedule = await this.prisma.schedule.findFirst({
       where: { id: scheduleId, tenant_id: tenantId, activo: true },
       include: { bookings: true },
@@ -44,15 +55,22 @@ export class SchedulesService {
     }
 
     const sameDayBookings = schedule.bookings.filter(
-      (booking) => booking.fecha.toISOString().slice(0, 10) === bookingDate.toISOString().slice(0, 10),
+      (booking) =>
+        booking.fecha.toISOString().slice(0, 10) ===
+        bookingDate.toISOString().slice(0, 10),
     );
-    const existing = sameDayBookings.find((booking) => booking.user_id === userId);
+    const existing = sameDayBookings.find(
+      (booking) => booking.user_id === userId,
+    );
     if (existing && existing.estado !== 'CANCELLED') {
       return existing;
     }
 
-    const activeBookings = sameDayBookings.filter((booking) => booking.estado !== 'CANCELLED').length;
-    const nextState = activeBookings >= schedule.cupo_maximo ? 'WAITLIST' : 'CONFIRMED';
+    const activeBookings = sameDayBookings.filter(
+      (booking) => booking.estado !== 'CANCELLED',
+    ).length;
+    const nextState =
+      activeBookings >= schedule.cupo_maximo ? 'WAITLIST' : 'CONFIRMED';
 
     if (existing) {
       return this.prisma.booking.update({
@@ -71,7 +89,12 @@ export class SchedulesService {
     });
   }
 
-  async cancel(userId: string, tenantId: string, scheduleId: string, fecha?: string) {
+  async cancel(
+    userId: string,
+    tenantId: string,
+    scheduleId: string,
+    fecha?: string,
+  ) {
     const schedule = await this.prisma.schedule.findFirst({
       where: { id: scheduleId, tenant_id: tenantId, activo: true },
     });
@@ -86,7 +109,10 @@ export class SchedulesService {
         user_id: userId,
         fecha: {
           gte: new Date(bookingDate.toISOString().slice(0, 10)),
-          lt: new Date(new Date(bookingDate.toISOString().slice(0, 10)).getTime() + 24 * 60 * 60 * 1000),
+          lt: new Date(
+            new Date(bookingDate.toISOString().slice(0, 10)).getTime() +
+              24 * 60 * 60 * 1000,
+          ),
         },
       },
     });

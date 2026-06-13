@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Put, Patch, Param, Body, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Patch,
+  Param,
+  Body,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { AnnouncementsService } from './announcements.service';
 import { AuthGuard } from '../../core/guards/auth.guard';
 import { RolesGuard } from '../../core/guards/roles.guard';
@@ -30,7 +40,7 @@ export class AnnouncementsController {
   async createBanner(
     @TenantId() tenantId: string,
     @Request() req: any,
-    @Body() dto: CreateAnnouncementDto
+    @Body() dto: CreateAnnouncementDto,
   ) {
     const authorId = req.user.sub;
     return this.service.create(tenantId, authorId, dto);
@@ -41,17 +51,14 @@ export class AnnouncementsController {
   async updateBanner(
     @Param('id') id: string,
     @TenantId() tenantId: string,
-    @Body() dto: UpdateAnnouncementDto
+    @Body() dto: UpdateAnnouncementDto,
   ) {
     return this.service.update(id, tenantId, dto);
   }
 
   @Patch(':id/toggle')
   @Roles(Role.ADMIN)
-  async toggleActive(
-    @Param('id') id: string,
-    @TenantId() tenantId: string
-  ) {
+  async toggleActive(@Param('id') id: string, @TenantId() tenantId: string) {
     return this.service.toggle(id, tenantId);
   }
 }

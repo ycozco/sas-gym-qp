@@ -51,7 +51,10 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const refreshToken = this.readRefreshCookie(req);
-    const result = await this.authService.refresh(refreshToken, this.requestMeta(req));
+    const result = await this.authService.refresh(
+      refreshToken,
+      this.requestMeta(req),
+    );
     this.setRefreshCookie(res, result.refreshToken);
     const { refreshToken: _refreshToken, ...publicResult } = result;
     return publicResult;
@@ -60,10 +63,7 @@ export class AuthController {
   @Public()
   @HttpCode(HttpStatus.OK)
   @Post('logout')
-  async logout(
-    @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
-  ) {
+  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const refreshToken = this.readRefreshCookie(req);
     await this.authService.revokeRefreshToken(refreshToken);
     this.clearRefreshCookie(res);
@@ -126,7 +126,9 @@ export class AuthController {
   private readRefreshCookie(req: Request): string {
     const cookieHeader = req.headers.cookie || '';
     const cookies = cookieHeader.split(';').map((cookie) => cookie.trim());
-    const match = cookies.find((cookie) => cookie.startsWith('sasgym_refresh='));
+    const match = cookies.find((cookie) =>
+      cookie.startsWith('sasgym_refresh='),
+    );
     return match ? decodeURIComponent(match.split('=').slice(1).join('=')) : '';
   }
 

@@ -1,4 +1,9 @@
-import { CanActivate, ExecutionContext, Injectable, ForbiddenException } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  Injectable,
+  ForbiddenException,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Role } from '@prisma/client';
 import { ROLES_KEY } from '../decorators/roles.decorator';
@@ -12,24 +17,24 @@ export class RolesGuard implements CanActivate {
       context.getHandler(),
       context.getClass(),
     ]);
-    
+
     // Si la ruta no tiene restricción de roles, se permite el acceso (siempre que esté autenticado)
     if (!requiredRoles) {
       return true;
     }
-    
+
     const { user } = context.switchToHttp().getRequest();
     if (!user) {
       throw new ForbiddenException('Usuario no autenticado.');
     }
-    
+
     const hasRole = requiredRoles.some((role) => user.rol === role);
     if (!hasRole) {
       throw new ForbiddenException(
         'Acceso denegado: No tienes permisos suficientes para realizar esta acción.',
       );
     }
-    
+
     return true;
   }
 }

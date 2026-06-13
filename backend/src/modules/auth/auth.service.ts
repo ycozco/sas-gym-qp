@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
@@ -23,10 +27,7 @@ export class AuthService {
     // Buscar al usuario por email o DNI usando consultas parametrizadas seguras de Prisma
     const user = await this.prisma.user.findFirst({
       where: {
-        OR: [
-          { email: emailOrDni },
-          { dni: emailOrDni },
-        ],
+        OR: [{ email: emailOrDni }, { dni: emailOrDni }],
       },
     });
 
@@ -40,7 +41,9 @@ export class AuthService {
     });
 
     if (!tenant) {
-      throw new UnauthorizedException('El gimnasio asociado a tu cuenta no existe.');
+      throw new UnauthorizedException(
+        'El gimnasio asociado a tu cuenta no existe.',
+      );
     }
 
     if (!tenant.activo) {
@@ -53,7 +56,8 @@ export class AuthService {
     if (user.estado !== UserState.ACTIVE) {
       let statusMsg = 'Tu usuario no está activo.';
       if (user.estado === UserState.PENDING) {
-        statusMsg = 'Tu usuario está pendiente de activación por administración.';
+        statusMsg =
+          'Tu usuario está pendiente de activación por administración.';
       } else if (user.estado === UserState.SUSPENDED) {
         statusMsg = 'Tu cuenta ha sido suspendida.';
       } else if (user.estado === UserState.INACTIVE) {
@@ -121,7 +125,10 @@ export class AuthService {
       throw new UnauthorizedException('Sesion no autorizada.');
     }
 
-    const nextRefreshToken = await this.createRefreshSession(session.user.id, meta);
+    const nextRefreshToken = await this.createRefreshSession(
+      session.user.id,
+      meta,
+    );
     const nextHash = this.hashRefreshToken(nextRefreshToken);
     const replacement = await this.prisma.refreshTokenSession.findUnique({
       where: { token_hash: nextHash },
@@ -199,11 +206,16 @@ export class AuthService {
     };
   }
 
-  async updatePreferences(userId: string, preferencesDto: UpdatePreferencesDto) {
+  async updatePreferences(
+    userId: string,
+    preferencesDto: UpdatePreferencesDto,
+  ) {
     const updated = await this.prisma.user.update({
       where: { id: userId },
       data: {
-        theme_preference: this.themePreferenceFromWire(preferencesDto.themeMode),
+        theme_preference: this.themePreferenceFromWire(
+          preferencesDto.themeMode,
+        ),
       },
       select: {
         id: true,
@@ -224,7 +236,9 @@ export class AuthService {
     return ThemePreference.SYSTEM;
   }
 
-  private themePreferenceToWire(value?: ThemePreference | null): 'system' | 'light' | 'dark' {
+  private themePreferenceToWire(
+    value?: ThemePreference | null,
+  ): 'system' | 'light' | 'dark' {
     if (value === ThemePreference.LIGHT) return 'light';
     if (value === ThemePreference.DARK) return 'dark';
     return 'system';

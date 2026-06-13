@@ -40,27 +40,39 @@ describe('AnnouncementsController Security', () => {
 
   describe('Route Guard & Role Rules', () => {
     it('getActiveBanners should allow MEMBER role', () => {
-      const roles: Role[] = Reflect.getMetadata(ROLES_KEY, controller.getActiveBanners);
+      const roles: Role[] = Reflect.getMetadata(
+        ROLES_KEY,
+        controller.getActiveBanners,
+      );
       expect(roles).toBeDefined();
       expect(roles).toContain(Role.MEMBER);
     });
 
     it('createBanner should restrict to ADMIN and NOT allow MEMBER', () => {
-      const roles: Role[] = Reflect.getMetadata(ROLES_KEY, controller.createBanner);
+      const roles: Role[] = Reflect.getMetadata(
+        ROLES_KEY,
+        controller.createBanner,
+      );
       expect(roles).toBeDefined();
       expect(roles).toContain(Role.ADMIN);
       expect(roles).not.toContain(Role.MEMBER);
     });
 
     it('updateBanner should restrict to ADMIN and NOT allow MEMBER', () => {
-      const roles: Role[] = Reflect.getMetadata(ROLES_KEY, controller.updateBanner);
+      const roles: Role[] = Reflect.getMetadata(
+        ROLES_KEY,
+        controller.updateBanner,
+      );
       expect(roles).toBeDefined();
       expect(roles).toContain(Role.ADMIN);
       expect(roles).not.toContain(Role.MEMBER);
     });
 
     it('toggleActive should restrict to ADMIN and NOT allow MEMBER', () => {
-      const roles: Role[] = Reflect.getMetadata(ROLES_KEY, controller.toggleActive);
+      const roles: Role[] = Reflect.getMetadata(
+        ROLES_KEY,
+        controller.toggleActive,
+      );
       expect(roles).toBeDefined();
       expect(roles).toContain(Role.ADMIN);
       expect(roles).not.toContain(Role.MEMBER);

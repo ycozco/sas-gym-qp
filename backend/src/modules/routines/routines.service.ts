@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
@@ -54,7 +58,9 @@ export class RoutinesService {
     return this.prisma.exercise.findMany({
       where: {
         tenant_id: tenantId,
-        ...(trainer ? { OR: [{ trainer_id: trainer.id }, { activo: true }] } : {}),
+        ...(trainer
+          ? { OR: [{ trainer_id: trainer.id }, { activo: true }] }
+          : {}),
       },
       orderBy: [{ grupo_muscular: 'asc' }, { nombre: 'asc' }],
     });
@@ -78,7 +84,9 @@ export class RoutinesService {
       throw new NotFoundException('Perfil de entrenador no encontrado.');
     }
     if (!dto.nombre?.trim() || !dto.grupoMuscular?.trim()) {
-      throw new BadRequestException('Nombre y grupo muscular son obligatorios.');
+      throw new BadRequestException(
+        'Nombre y grupo muscular son obligatorios.',
+      );
     }
 
     return this.prisma.exercise.create({
@@ -137,10 +145,14 @@ export class RoutinesService {
       throw new NotFoundException('Perfil de entrenador no encontrado.');
     }
     if (!dto.nombre?.trim()) {
-      throw new BadRequestException('El nombre de la plantilla es obligatorio.');
+      throw new BadRequestException(
+        'El nombre de la plantilla es obligatorio.',
+      );
     }
     if (!dto.ejercicios?.length) {
-      throw new BadRequestException('La plantilla debe incluir al menos un ejercicio.');
+      throw new BadRequestException(
+        'La plantilla debe incluir al menos un ejercicio.',
+      );
     }
 
     return this.prisma.routineTemplate.create({
@@ -267,18 +279,22 @@ export class RoutinesService {
 
     const memberSummaries = members.map((member) => {
       const sessions = member.workout_sessions;
-      const completedSessions = sessions.filter((session) => session.estado === 'COMPLETED').length;
-      const averageRepsRaw = sessions.flatMap((session) => session.series_log).reduce(
-        (sum, log) => sum + (log.reps_reales ?? 0),
-        0,
-      );
-      const totalLogs = sessions.flatMap((session) => session.series_log).length;
+      const completedSessions = sessions.filter(
+        (session) => session.estado === 'COMPLETED',
+      ).length;
+      const averageRepsRaw = sessions
+        .flatMap((session) => session.series_log)
+        .reduce((sum, log) => sum + (log.reps_reales ?? 0), 0);
+      const totalLogs = sessions.flatMap(
+        (session) => session.series_log,
+      ).length;
       return {
         memberId: member.user_id,
         memberName: member.user.nombre_completo,
         sessions: sessions.length,
         completedSessions,
-        averageReps: totalLogs > 0 ? Number((averageRepsRaw / totalLogs).toFixed(1)) : 0,
+        averageReps:
+          totalLogs > 0 ? Number((averageRepsRaw / totalLogs).toFixed(1)) : 0,
       };
     });
 
@@ -303,8 +319,14 @@ export class RoutinesService {
         volume: Number(volume.toFixed(2)),
       }));
 
-    const totalSessions = memberSummaries.reduce((sum, item) => sum + item.sessions, 0);
-    const totalCompleted = memberSummaries.reduce((sum, item) => sum + item.completedSessions, 0);
+    const totalSessions = memberSummaries.reduce(
+      (sum, item) => sum + item.sessions,
+      0,
+    );
+    const totalCompleted = memberSummaries.reduce(
+      (sum, item) => sum + item.completedSessions,
+      0,
+    );
     const averageReps = memberSummaries.length
       ? Number(
           (
