@@ -5,11 +5,14 @@ import { PrismaService } from '../../prisma/prisma.service';
 export class ReportsService {
   constructor(private prisma: PrismaService) {}
 
-  async getAuditLogs(tenantId: string) {
+  async getAuditLogs(tenantId: string, limit = 20, cursor?: string) {
+    const take = Math.min(limit, 100);
     return this.prisma.auditLog.findMany({
+      take,
+      skip: cursor ? 1 : 0,
+      cursor: cursor ? { id: cursor } : undefined,
       where: { tenant_id: tenantId },
       orderBy: { timestamp: 'desc' },
-      take: 100,
     });
   }
 

@@ -4,6 +4,7 @@ import { AnnouncementsService } from './announcements.service';
 import { Role } from '@prisma/client';
 import { ROLES_KEY } from '../../core/decorators/roles.decorator';
 import { JwtService } from '@nestjs/jwt';
+import { PrismaService } from '../../prisma/prisma.service';
 
 describe('AnnouncementsController Security', () => {
   let controller: AnnouncementsController;
@@ -26,6 +27,14 @@ describe('AnnouncementsController Security', () => {
           provide: JwtService,
           useValue: {
             verifyAsync: jest.fn(),
+          },
+        },
+        {
+          provide: PrismaService,
+          useValue: {
+            tenant: {
+              findUnique: jest.fn(),
+            },
           },
         },
       ],

@@ -15,6 +15,7 @@ import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { UpdatePreferencesDto } from './dto/update-preferences.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { Public } from '../../core/decorators/public.decorator';
 import { AuthGuard } from '../../core/guards/auth.guard';
 import { TenantGuard } from '../../core/guards/tenant.guard';
@@ -95,6 +96,15 @@ export class AuthController {
   ) {
     const userId = req.user.sub;
     return this.authService.updatePreferences(userId, preferencesDto);
+  }
+
+  @Patch('me/profile')
+  async updateProfile(
+    @Req() req: any,
+    @Body() profileDto: UpdateProfileDto,
+  ) {
+    const userId = req.user.sub;
+    return this.authService.updateProfile(userId, profileDto);
   }
 
   private requestMeta(req: Request) {

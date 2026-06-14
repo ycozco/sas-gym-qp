@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { ProductEstado } from '@prisma/client';
 
 export class UpsertProductDto {
   nombre: string;
@@ -15,7 +16,7 @@ export class UpsertProductDto {
   stockActual?: number;
   stockMinimo?: number;
   imagenUrl?: string;
-  estado?: string;
+  estado?: ProductEstado;
   esVisible?: boolean;
 }
 
@@ -29,7 +30,7 @@ export class ProductsService {
         tenant_id: tenantId,
         ...(includeInactive
           ? {}
-          : { es_visible: true, estado: { not: 'inactivo' } }),
+          : { es_visible: true, estado: { not: ProductEstado.inactivo } }),
       },
       include: { categoria: true },
       orderBy: [{ estado: 'asc' }, { nombre: 'asc' }],
@@ -56,7 +57,7 @@ export class ProductsService {
         stock_actual: Number(dto.stockActual ?? 0),
         stock_minimo: Number(dto.stockMinimo ?? 5),
         imagen_url: dto.imagenUrl || null,
-        estado: dto.estado || 'activo',
+        estado: dto.estado || ProductEstado.activo,
         es_visible: dto.esVisible ?? true,
       },
       include: { categoria: true },
@@ -113,7 +114,7 @@ export class ProductsService {
     if (!current) throw new NotFoundException('Producto no encontrado.');
     return this.prisma.product.update({
       where: { id },
-      data: { estado: 'inactivo', es_visible: false },
+      data: { estado: ProductEstado.inactivo, es_visible: false },
       include: { categoria: true },
     });
   }

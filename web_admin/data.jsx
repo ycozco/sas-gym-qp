@@ -41,6 +41,7 @@ const ROLES = {
       ]},
       { group: "Servicio", items: [
         { id: "entrenamientos", label: "Entrenamientos", icon: "dumbbell" },
+        { id: "dietas",         label: "Planes de Dieta", icon: "clipboard" },
         { id: "crm",            label: "CRM",            icon: "mega" },
         { id: "finanzas",       label: "Finanzas",       icon: "wallet" },
       ]},
@@ -75,6 +76,7 @@ const ROLES = {
         { id: "dashboard",      label: "Dashboard",      icon: "grid" },
         { id: "usuarios",       label: "Mis alumnos",    icon: "users" },
         { id: "entrenamientos", label: "Entrenamientos", icon: "dumbbell" },
+        { id: "dietas",         label: "Dietas Alumnos", icon: "clipboard" },
         { id: "clases",         label: "Clases",         icon: "calendar" },
       ]},
     ],

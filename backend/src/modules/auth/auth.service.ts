@@ -9,6 +9,7 @@ import * as bcrypt from 'bcryptjs';
 import { createHash, randomBytes } from 'crypto';
 import { ThemePreference, UserState } from '@prisma/client';
 import { UpdatePreferencesDto } from './dto/update-preferences.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { getRefreshTokenDays } from '../../core/config/env';
 
 export interface AuthRequestMeta {
@@ -228,6 +229,37 @@ export class AuthService {
       themePreference: this.themePreferenceToWire(updated.theme_preference),
       theme_preference: this.themePreferenceToWire(updated.theme_preference),
     };
+  }
+
+  async updateProfile(userId: string, dto: UpdateProfileDto) {
+    const userUpdates: any = {};
+    if (dto.nombreCompleto !== undefined) userUpdates.nombre_completo = dto.nombreCompleto.trim();
+    if (dto.celular !== undefined) userUpdates.celular = dto.celular.trim();
+
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: userUpdates,
+      include: { member_profile: true },
+    });
+
+    if (user.member_profile) {
+      const profileUpdates: any = {};
+      if (dto.nickname !== undefined) profileUpdates.nickname = dto.nickname;
+      if (dto.pesoKg !== undefined) profileUpdates.peso_kg = dto.pesoKg;
+      if (dto.alturaCm !== undefined) profileUpdates.altura_cm = dto.alturaCm;
+      if (dto.objetivo !== undefined) profileUpdates.objetivo = dto.objetivo;
+      if (dto.lesiones !== undefined) profileUpdates.lesiones = dto.lesiones;
+      if (dto.medidasJson !== undefined) profileUpdates.medidas_json = dto.medidasJson;
+
+      if (Object.keys(profileUpdates).length > 0) {
+        await this.prisma.memberProfile.update({
+          where: { user_id: userId },
+          data: profileUpdates,
+        });
+      }
+    }
+
+    return this.getUserProfile(userId);
   }
 
   private themePreferenceFromWire(value: string): ThemePreference {

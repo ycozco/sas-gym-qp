@@ -16,11 +16,15 @@ import { MembershipPlansModule } from './modules/membership-plans/membership-pla
 import { ProductsModule } from './modules/products/products.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { PointsModule } from './modules/points/points.module';
+import { DietsModule } from './modules/diets/diets.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { CoreServicesModule } from './core/services/core-services.module';
+import { RateLimitingGuard } from './core/guards/rate-limiting.guard';
 
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { APP_GUARD } from '@nestjs/core';
 import { AuditInterceptor } from './core/interceptors/audit.interceptor';
+import { IdempotencyInterceptor } from './core/interceptors/idempotency.interceptor';
 
 @Module({
   imports: [
@@ -39,6 +43,8 @@ import { AuditInterceptor } from './core/interceptors/audit.interceptor';
     ProductsModule,
     AdminModule,
     PointsModule,
+    DietsModule,
+    CoreServicesModule,
     ThrottlerModule.forRoot([
       {
         ttl: 60000,
@@ -54,8 +60,16 @@ import { AuditInterceptor } from './core/interceptors/audit.interceptor';
       useClass: ThrottlerGuard,
     },
     {
+      provide: APP_GUARD,
+      useClass: RateLimitingGuard,
+    },
+    {
       provide: APP_INTERCEPTOR,
       useClass: AuditInterceptor,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: IdempotencyInterceptor,
     },
   ],
 })

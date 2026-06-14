@@ -47,7 +47,7 @@ services:
       - ENABLE_QR_SIMULATOR=true
       - ALLOW_TEST_DATA_RESET=true
     command: >
-      sh -c "npm run db:setup:local && npx prisma db seed && npm run start:dev"
+      sh -c "npx prisma generate && npx prisma migrate deploy && npx prisma db seed && npm run start:dev"
     networks:
       - internal-net
       - public-net

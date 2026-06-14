@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { AnnouncementsService } from './announcements.service';
 import { AuthGuard } from '../../core/guards/auth.guard';
+import { TenantGuard } from '../../core/guards/tenant.guard';
 import { RolesGuard } from '../../core/guards/roles.guard';
 import { Roles } from '../../core/decorators/roles.decorator';
 import { TenantId } from '../../core/decorators/tenant-id.decorator';
@@ -19,7 +20,7 @@ import { CreateAnnouncementDto } from './dto/create-announcement.dto';
 import { UpdateAnnouncementDto } from './dto/update-announcement.dto';
 
 @Controller('announcements')
-@UseGuards(AuthGuard, RolesGuard)
+@UseGuards(AuthGuard, TenantGuard, RolesGuard)
 export class AnnouncementsController {
   constructor(private readonly service: AnnouncementsService) {}
 

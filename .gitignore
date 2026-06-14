@@ -47,6 +47,8 @@ backups/
 
 # Graphify
 graphify/graphify-out/
+/graph.json
+/GRAPH_REPORT.md
 
 # Obsidian temporary files
 .obsidian/workspace.json

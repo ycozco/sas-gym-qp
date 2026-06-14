@@ -3,6 +3,7 @@ import {
   PaymentMethod,
   PaymentState,
   PrismaClient,
+  ProductSaleEstado,
   Role,
   ThemePreference,
   UserState,
@@ -502,6 +503,7 @@ async function main() {
     // Configuración de Puntos
     await prisma.pointsConfig.create({
       data: {
+        tenant_id: tenant.id,
         puntos_por_sol: 1.0,
         minimo_para_canje: 100,
         puntos_expiran: false,
@@ -582,8 +584,6 @@ async function main() {
           monto_pendiente: pending,
           pago_completo: pending === 0,
           congelada: status === 'SUSPENDED',
-          razon_congelacion:
-            status === 'SUSPENDED' ? 'Suspension administrativa demo' : null,
         },
       });
       totalMemberships++;
@@ -706,7 +706,7 @@ async function main() {
             subtotal: totalVenta,
             descuento: 0,
             total: totalVenta,
-            estado: 'completada',
+            estado: ProductSaleEstado.completada,
             fecha_venta: now,
           },
         });

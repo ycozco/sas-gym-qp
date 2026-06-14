@@ -321,6 +321,7 @@ export class MembershipBillingService {
     try {
       puntosGanados = await this.accumulatePoints(
         userId,
+        tenantId,
         totalPagado,
         `Compra de membresía: ${planNombre}`,
       );
@@ -340,6 +341,7 @@ export class MembershipBillingService {
 
   private async accumulatePoints(
     userId: string,
+    tenantId: string,
     totalPagado: number,
     descripcion: string,
   ): Promise<number> {
@@ -383,6 +385,7 @@ export class MembershipBillingService {
     // Registrar movimiento de puntos
     await this.prisma.pointsMovement.create({
       data: {
+        tenant_id: tenantId,
         usuario_id: userId,
         tipo: 'ingreso',
         cantidad: puntos,

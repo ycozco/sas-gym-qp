@@ -23,6 +23,7 @@ const SECTIONS = {
   clases: Clases,
   entrenamientos: Entrenamientos,
   crm: CRM,
+  dietas: Dietas,
   // Super Admin (plataforma SaaS)
   gimnasios: Gimnasios,
   planes: PlanesSaaS,
@@ -46,6 +47,7 @@ const TITLE = {
   clases:     { _: "Clases y horarios" },
   entrenamientos: { _: "Entrenamientos y rutinas" },
   crm:        { _: "CRM · campañas y contactos" },
+  dietas:     { _: "Dietas y Nutrición" },
 };
 const titleFor = (section, role) => {
   const t = TITLE[section] || {};
@@ -78,6 +80,7 @@ function App() {
   const [schedules, setSchedules] = React.useState([]);
   const [pointsSummary, setPointsSummary] = React.useState(null);
   const [pointsCatalog, setPointsCatalog] = React.useState(null);
+  const [pointsConfig, setPointsConfig] = React.useState(null);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState("");
   const [section, setSection] = React.useState("dashboard");
@@ -217,14 +220,21 @@ function App() {
     return data;
   }, [authHeaders]);
 
+  const loadDiets = React.useCallback(async (memberId = "", override = authHeaders) => {
+    const query = memberId ? `?memberId=${memberId}` : "";
+    return apiRequest(`/dietas${query}`, override).catch(() => apiRequest(`/diets${query}`, override));
+  }, [authHeaders]);
+
   const loadPointsData = React.useCallback(async (override = authHeaders) => {
-    const [summary, catalog] = await Promise.all([
+    const [summary, catalog, config] = await Promise.all([
       apiRequest("/points/summary", override).catch(() => null),
       apiRequest("/points/catalog", override).catch(() => null),
+      apiRequest("/points/config", override).catch(() => null),
     ]);
     setPointsSummary(summary);
     setPointsCatalog(catalog);
-    return { summary, catalog };
+    setPointsConfig(config);
+    return { summary, catalog, config };
   }, [authHeaders]);
 
   const loadSession = React.useCallback(async (override = authHeaders) => {
@@ -436,6 +446,22 @@ function App() {
   const toggleAdminMember = (id) => apiRequest(`/admin/members/${id}/toggle-active`, { ...authHeaders, method: "POST" }).then(() => loadAdminData());
   const saveAnnouncement = (payload) => apiRequest(payload.id ? `/announcements/${payload.id}` : "/announcements", { ...authHeaders, method: payload.id ? "PUT" : "POST", body: payload }).then(() => loadAnnouncements(true));
   const toggleAnnouncement = (id) => apiRequest(`/announcements/${id}/toggle`, { ...authHeaders, method: "PATCH" }).then(() => loadAnnouncements(true));
+  const saveDiet = (payload) => {
+    if (payload.id) {
+      return apiRequest(`/diets/${payload.id}`, { ...authHeaders, method: "PATCH", body: payload });
+    }
+    return apiRequest("/diets", { ...authHeaders, method: "POST", body: payload });
+  };
+  const deactivateDiet = (id) => apiRequest(`/diets/${id}`, { ...authHeaders, method: "DELETE" });
+  const savePointsConfig = async (payload) => {
+    const data = await apiRequest("/points/config", {
+      ...authHeaders,
+      method: "PUT",
+      body: payload,
+    });
+    setPointsConfig(data);
+    return data;
+  };
 
   if (!role) {
     return (
@@ -478,6 +504,7 @@ function App() {
     schedules,
     pointsSummary,
     pointsCatalog,
+    pointsConfig,
     loading,
     error,
     reloadTenantSettings: loadTenantSettings,
@@ -493,6 +520,10 @@ function App() {
     reloadActiveRoutine: loadActiveRoutine,
     reloadSchedules: loadSchedules,
     reloadPointsData: loadPointsData,
+    loadDiets,
+    saveDiet,
+    deactivateDiet,
+    savePointsConfig,
     saveTenantSettings,
     saveMembershipPlan,
     deactivateMembershipPlan,

@@ -9,6 +9,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 export class PointsService {
   constructor(private readonly prisma: PrismaService) {}
 
+  // ─── RESUMEN GENERAL DEL TENANT ──────────────────────────────────
   async summary(tenantId: string) {
     const [balances, exchanges, movements] = await Promise.all([
       this.prisma.pointsBalance.findMany({
@@ -46,14 +47,15 @@ export class PointsService {
     };
   }
 
-  async catalog() {
+  // ─── CATÁLOGO DE CANJES ───────────────────────────────────────────
+  async catalog(tenantId: string) {
     const [products, memberships] = await Promise.all([
       this.prisma.pointsProduct.findMany({
-        where: { activo: true },
+        where: { activo: true, tenant_id: tenantId },
         orderBy: [{ destacado: 'desc' }, { precio_puntos: 'asc' }],
       }),
       this.prisma.pointsMembership.findMany({
-        where: { activo: true },
+        where: { activo: true, tenant_id: tenantId },
         orderBy: [{ destacada: 'desc' }, { precio_puntos: 'asc' }],
       }),
     ]);
@@ -61,6 +63,7 @@ export class PointsService {
     return { products, memberships };
   }
 
+  // ─── RESUMEN PERSONAL DEL MIEMBRO ─────────────────────────────────
   async memberSummary(userId: string, tenantId: string) {
     const [balance, exchanges, movements] = await Promise.all([
       this.prisma.pointsBalance.findUnique({
@@ -91,6 +94,136 @@ export class PointsService {
     };
   }
 
+  // ─── CONFIGURACIÓN DE PUNTOS DEL TENANT ──────────────────────────
+  async getConfig(tenantId: string) {
+    const config = await this.prisma.pointsConfig.findUnique({
+      where: { tenant_id: tenantId },
+    });
+    if (!config) {
+      return {
+        tenant_id: tenantId,
+        activo: false,
+        puntos_por_sol: 1.0,
+        minimo_para_canje: 100,
+        puntos_expiran: false,
+        dias_expiracion: 365,
+      };
+    }
+    return config;
+  }
+
+  async updateConfig(
+    tenantId: string,
+    dto: {
+      activo?: boolean;
+      puntosPorSol?: number;
+      minCanje?: number;
+      vencimientoDias?: number | null;
+    },
+  ) {
+    const data: Record<string, unknown> = {};
+    if (dto.activo !== undefined) data.activo = dto.activo;
+    if (dto.puntosPorSol !== undefined) data.puntos_por_sol = Number(dto.puntosPorSol);
+    if (dto.minCanje !== undefined) data.minimo_para_canje = Number(dto.minCanje);
+    if (dto.vencimientoDias !== undefined) {
+      data.puntos_expiran = dto.vencimientoDias !== null;
+      if (dto.vencimientoDias !== null) {
+        data.dias_expiracion = Number(dto.vencimientoDias);
+      }
+    }
+
+    return this.prisma.pointsConfig.upsert({
+      where: { tenant_id: tenantId },
+      create: {
+        tenant_id: tenantId,
+        activo: dto.activo ?? false,
+        puntos_por_sol: Number(dto.puntosPorSol ?? 1),
+        minimo_para_canje: Number(dto.minCanje ?? 100),
+        puntos_expiran: dto.vencimientoDias !== null,
+        dias_expiracion: dto.vencimientoDias ?? 365,
+      },
+      update: data,
+    });
+  }
+
+  // ─── LEADERBOARD ──────────────────────────────────────────────────
+  async leaderboard(tenantId: string, limit = 10) {
+    const balances = await this.prisma.pointsBalance.findMany({
+      where: { usuario: { tenant_id: tenantId } },
+      include: {
+        usuario: {
+          select: {
+            id: true,
+            nombre: true,
+            apellido: true,
+            foto_url: true,
+          },
+        },
+      },
+      orderBy: { puntos_totales_ganados: 'desc' },
+      take: Math.min(limit, 50),
+    });
+
+    return balances.map((b, idx) => ({
+      rank: idx + 1,
+      userId: b.usuario_id,
+      nombre: `${b.usuario.nombre} ${b.usuario.apellido ?? ''}`.trim(),
+      fotoUrl: b.usuario.foto_url,
+      puntosDisponibles: b.puntos_disponibles,
+      puntosTotales: b.puntos_totales_ganados,
+      puntosCanjeados: b.puntos_totales_canjeados,
+    }));
+  }
+
+  // ─── AGREGAR PUNTOS MANUALMENTE (ADMIN) ───────────────────────────
+  async adminAddPoints(
+    tenantId: string,
+    dto: {
+      userId: string;
+      puntos: number;
+      descripcion: string;
+    },
+  ) {
+    if (!Number.isInteger(dto.puntos) || dto.puntos <= 0) {
+      throw new BadRequestException('Los puntos deben ser un entero positivo.');
+    }
+
+    // Verificar que el usuario pertenece al tenant
+    const user = await this.prisma.user.findFirst({
+      where: { id: dto.userId, tenant_id: tenantId },
+    });
+    if (!user) throw new NotFoundException('Usuario no encontrado en este gimnasio.');
+
+    const balance = await this.prisma.pointsBalance.upsert({
+      where: { usuario_id: dto.userId },
+      create: {
+        usuario_id: dto.userId,
+        puntos_disponibles: dto.puntos,
+        puntos_totales_ganados: dto.puntos,
+        puntos_totales_canjeados: 0,
+      },
+      update: {
+        puntos_disponibles: { increment: dto.puntos },
+        puntos_totales_ganados: { increment: dto.puntos },
+      },
+    });
+
+    await this.prisma.pointsMovement.create({
+      data: {
+        tenant_id: tenantId,
+        usuario_id: dto.userId,
+        tipo: 'ajuste_manual',
+        cantidad: dto.puntos,
+        saldo_anterior: balance.puntos_disponibles - dto.puntos,
+        saldo_nuevo: balance.puntos_disponibles,
+        descripcion: dto.descripcion,
+      },
+    });
+
+    return { success: true, balance };
+  }
+
+  // ─── REDIMIR PUNTOS (MEMBER) ──────────────────────────────────────
   async redeem(
     userId: string,
     tenantId: string,
@@ -116,7 +249,7 @@ export class PointsService {
 
     if (dto.tipo === 'producto') {
       const product = await this.prisma.pointsProduct.findFirst({
-        where: { id: dto.itemId, activo: true },
+        where: { id: dto.itemId, activo: true, tenant_id: tenantId },
       });
       if (!product)
         throw new NotFoundException('Producto de puntos no encontrado.');
@@ -128,7 +261,7 @@ export class PointsService {
       description = `Canje de producto: ${product.nombre}`;
     } else {
       const membership = await this.prisma.pointsMembership.findFirst({
-        where: { id: dto.itemId, activo: true },
+        where: { id: dto.itemId, activo: true, tenant_id: tenantId },
       });
       if (!membership)
         throw new NotFoundException('Membresía de puntos no encontrada.');
@@ -153,6 +286,7 @@ export class PointsService {
     return this.prisma.$transaction(async (tx) => {
       const exchange = await tx.pointsExchange.create({
         data: {
+          tenant_id: tenantId,
           usuario_id: userId,
           tipo: dto.tipo,
           producto_id: productId,
@@ -180,6 +314,7 @@ export class PointsService {
 
       await tx.pointsMovement.create({
         data: {
+          tenant_id: tenantId,
           usuario_id: userId,
           tipo: 'canje',
           cantidad: pointsCost,
@@ -193,26 +328,18 @@ export class PointsService {
       if (productId) {
         await tx.pointsProduct.update({
           where: { id: productId },
-          data: {
-            stock: {
-              decrement: quantity,
-            },
-          },
+          data: { stock: { decrement: quantity } },
         });
       }
 
       if (membershipId) {
-        const membership = await tx.pointsMembership.findUnique({
+        const mem = await tx.pointsMembership.findUnique({
           where: { id: membershipId },
         });
-        if (membership && membership.stock > 0) {
+        if (mem && mem.stock > 0) {
           await tx.pointsMembership.update({
             where: { id: membershipId },
-            data: {
-              stock: {
-                decrement: quantity,
-              },
-            },
+            data: { stock: { decrement: quantity } },
           });
         }
       }

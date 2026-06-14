@@ -251,6 +251,7 @@ const svg = (paths, fill) => (
        strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths}</svg>
 );
 const I = {
+  clipboard: svg(<><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></>),
   grid:  svg(<><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></>),
   users: svg(<><circle cx="9" cy="8" r="3.5"/><path d="M2 20c0-3.5 3-6 7-6s7 2.5 7 6"/><circle cx="17" cy="7" r="2.5"/><path d="M22 18c0-2.5-2-4-4.5-4"/></>),
   scan:  svg(<><path d="M3 7V5a2 2 0 0 1 2-2h2M3 17v2a2 2 0 0 0 2 2h2M21 7V5a2 2 0 0 0-2-2h-2M21 17v2a2 2 0 0 1-2 2h-2M7 12h10"/></>),
@@ -469,6 +470,24 @@ function Topbar({ title, sub, role, currentUser, onLogout, themeMode, setThemeMo
   );
 }
 
+function MemberSearchBox({ query, setQuery, results, selected, setSelected }) {
+  return (
+    <div>
+      <div className="field"><label>Socio destinatario</label><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Buscar por DNI, nombre, email o celular"/></div>
+      {selected && <div className="state-block ok">Seleccionado: {selected.nombre_completo || selected.name} · DNI {selected.dni} <Btn kind="ghost" size="sm" onClick={() => setSelected(null)}>Quitar</Btn></div>}
+      {!selected && results.length > 0 && <div className="panel" style={{ overflow: "hidden", marginTop: 8 }}>
+        {results.slice(0, 6).map(row => {
+          const user = row.user || row;
+          return <button key={user.id || user.dni} className="lrow" style={{ width: "100%", border: 0, background: "transparent", cursor: "pointer", textAlign: "left" }} onClick={() => setSelected(user)}>
+            <Avatar name={user.nombre_completo || user.name} size={30}/>
+            <div className="l-main"><div className="l-t">{user.nombre_completo || user.name}</div><div className="l-s">DNI {user.dni || "—"} · {user.email || ""}</div></div>
+          </button>;
+        })}
+      </div>}
+    </div>
+  );
+}
+
 Object.assign(window, {
   API_BASE_URL,
   AUTH_TOKEN_KEY,
@@ -487,4 +506,5 @@ Object.assign(window, {
   ErrorBlock,
   Modal,
   I, icon, Avatar, Btn, Badge, StatusBadge, Kpi, Panel, Bars, Donut, Sidebar, Topbar,
+  MemberSearchBox,
 });

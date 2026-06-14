@@ -1,0 +1,129 @@
+services:
+  # ─── BASE DE DATOS ────────────────────────────────────────────────
+  db:
+    image: postgres:15-alpine
+    container_name: gymsmart-postgres-dev
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres_secure_password
+      POSTGRES_DB: gymsmart
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+    networks:
+      - internal-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d gymsmart"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ─── REDIS (RATE LIMITING + IDEMPOTENCIA) ─────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: gymsmart-redis-dev
+    restart: always
+    command: redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis_data_dev:/data
+    networks:
+      - internal-net
+
+  # ─── NESTJS API (MODO DESARROLLO CON HOT RELOAD) ──────────────────
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: gymsmart-api-dev
+    restart: on-failure
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./backend:/app           # Hot reload: refleja cambios del host en tiempo real
+      - /app/node_modules        # Aísla node_modules del host
+    env_file:
+      - ./backend/.env
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres_secure_password@db:5432/gymsmart?schema=public
+      - REDIS_URL=redis://redis:6379
+      - PORT=3000
+      - NODE_ENV=development
+      - TZ=America/Lima
+      - ENABLE_QR_SIMULATOR=true
+      - ALLOW_TEST_DATA_RESET=true
+    command: >
+      sh -c "npx prisma generate && npx prisma migrate deploy && npx prisma db seed && npm run start:dev"
+    networks:
+      - internal-net
+      - public-net
+
+  # ─── FLUTTER WEB APP ──────────────────────────────────────────────
+  frontend-web:
+    build:
+      context: ./mobile_app
+      dockerfile: Dockerfile
+      target: runtime
+      args:
+        APP_ENV: dev
+        APP_MODE: backend
+        ENABLE_QR_SIMULATOR: "true"
+        API_BASE_URL: http://localhost:3000/api/v1
+    container_name: sas_gym_flutter_web_dev
+    ports:
+      - "8383:80"
+    restart: unless-stopped
+    networks:
+      - public-net
+
+  # ─── FLUTTER CI (analyze + test) ─────────────────────────────────
+  flutter-ci:
+    build:
+      context: ./mobile_app
+      dockerfile: Dockerfile
+      target: ci
+    image: sas_gym_flutter_ci:latest
+    profiles: ["ci"]
+
+  # ─── WEB ADMIN + PROTOTIPOS ───────────────────────────────────────
+  web:
+    image: nginx:alpine
+    container_name: sas_gym_frontend_dev
+    ports:
+      - "8282:80"
+    volumes:
+      - ./index.html:/usr/share/nginx/html/index.html:ro
+      - ./web_admin:/usr/share/nginx/html/web:ro
+      - ./mockups/mobile:/usr/share/nginx/html/mockups/mobile:ro
+      - ./mockups/web:/usr/share/nginx/html/mockups/web:ro
+      - ./docs:/usr/share/nginx/html/docs:ro
+    restart: unless-stopped
+    networks:
+      - public-net
+
+  # ─── CLIENTE DE PRUEBAS AISLADO ───────────────────────────────────
+  test-client:
+    image: curlimages/curl:latest
+    container_name: gymsmart-test-client
+    command: sh -c "sleep 3600"
+    networks:
+      - external-test-net
+
+networks:
+  internal-net:
+    driver: bridge
+    internal: true
+  public-net:
+    driver: bridge
+  external-test-net:
+    driver: bridge
+
+volumes:
+  postgres_data_dev:
+  redis_data_dev:

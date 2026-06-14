@@ -53,35 +53,75 @@ function securityBlockMiddleware(
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.use(helmet());
+
+  // ─── SEGURIDAD HTTP ────────────────────────────────────────────────
+  const isProd = process.env.NODE_ENV === 'production';
+
+  app.use(
+    helmet({
+      contentSecurityPolicy: isProd
+        ? {
+            directives: {
+              defaultSrc: ["'self'"],
+              styleSrc: ["'self'", "'unsafe-inline'"],
+              imgSrc: ["'self'", 'data:', 'blob:'],
+              fontSrc: ["'self'"],
+              scriptSrc: ["'self'"],
+              connectSrc: ["'self'"],
+              frameSrc: ["'none'"],
+            },
+          }
+        : false, // Desactivado en dev para facilitar depuración
+      hsts: isProd
+        ? { maxAge: 31536000, includeSubDomains: true }
+        : false,
+      crossOriginEmbedderPolicy: false, // Compatible con Flutter WebView
+    }),
+  );
+
   app.use(securityBlockMiddleware);
 
-  // Servir archivos estáticos localmente desde la carpeta uploads
+  // ─── UPLOADS ESTÁTICOS ────────────────────────────────────────────
   if (getOptionalEnv('PUBLIC_UPLOADS_ENABLED', 'false') === 'true') {
     app.use('/uploads', express.static(join(process.cwd(), 'uploads')));
   }
 
-  // Prefijo global para la API móvil y web
+  // ─── PREFIJO GLOBAL ───────────────────────────────────────────────
   app.setGlobalPrefix('api/v1');
 
+  // ─── CORS ─────────────────────────────────────────────────────────
   app.enableCors({
     origin: getCorsOrigins(),
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-Tenant-ID',
+      'X-Request-ID',
+    ],
   });
 
-  // Validaciones globales usando class-validator
+  // ─── VALIDACIÓN GLOBAL ────────────────────────────────────────────
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true, // Elimina propiedades que no estén en el DTO
-      transform: true, // Transforma payloads a instancias de sus DTOs correspondientes
-      forbidNonWhitelisted: true, // Lanza error si se envían propiedades no permitidas
+      whitelist: true,
+      transform: true,
+      forbidNonWhitelisted: true,
     }),
   );
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
-  console.log(
-    `Servidor de SaasGym ejecutándose en: http://localhost:${port}/api/v1`,
-  );
+
+  const env = process.env.NODE_ENV || 'development';
+  console.log(`
+  ╔════════════════════════════════════════════╗
+  ║   SaaSGYM API — ${env.toUpperCase().padEnd(26)}║
+  ║   Entorno: ${env.padEnd(32)}║
+  ║   Puerto:  ${String(port).padEnd(32)}║
+  ║   Ruta:    /api/v1                         ║
+  ╚════════════════════════════════════════════╝
+  `);
 }
 bootstrap();
