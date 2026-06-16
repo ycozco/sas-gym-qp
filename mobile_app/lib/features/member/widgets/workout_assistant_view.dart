@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../../core/config/app_config.dart';
 import '../../../data/gym_seed.dart';
 import '../../../data/gym_state.dart';
 import '../../../models/gym_models.dart';
@@ -87,7 +88,7 @@ class _WorkoutAssistantViewState extends State<WorkoutAssistantView> {
         _loading = false;
       });
     } catch (e) {
-      debugPrint('Error loading active routine: $e');
+      AppLogger.debug('Error loading active routine', e);
       setState(() {
         _exercises = List.from(memberExercises);
         _loading = false;

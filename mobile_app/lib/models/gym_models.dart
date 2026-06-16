@@ -56,6 +56,88 @@ class MetricItem {
   final String note;
 }
 
+class MembershipPlan {
+  const MembershipPlan({
+    required this.id,
+    required this.name,
+    required this.durationDays,
+    required this.price,
+    this.description,
+    this.color,
+    this.order = 0,
+    this.active = true,
+  });
+
+  final String id;
+  final String name;
+  final int durationDays;
+  final double price;
+  final String? description;
+  final String? color;
+  final int order;
+  final bool active;
+
+  factory MembershipPlan.fromJson(Map<String, dynamic> json) {
+    return MembershipPlan(
+      id: json['id']?.toString() ?? '',
+      name: json['nombre']?.toString() ?? '',
+      description: json['descripcion']?.toString(),
+      durationDays: (json['duracion_dias'] ?? json['duracionDias'] ?? 30) as int,
+      price: (json['precio'] as num?)?.toDouble() ?? 0,
+      color: json['color']?.toString(),
+      order: (json['orden'] ?? 0) as int,
+      active: json['activo'] as bool? ?? true,
+    );
+  }
+}
+
+class TenantSettings {
+  const TenantSettings({
+    required this.id,
+    required this.name,
+    this.logoUrl,
+    this.address,
+    this.phone,
+    this.schedule,
+    this.description,
+    this.primaryColor,
+    this.secondaryColor,
+    this.accentColor,
+    this.graceDays = 1,
+    this.alertDays = 5,
+  });
+
+  final String id;
+  final String name;
+  final String? logoUrl;
+  final String? address;
+  final String? phone;
+  final String? schedule;
+  final String? description;
+  final String? primaryColor;
+  final String? secondaryColor;
+  final String? accentColor;
+  final int graceDays;
+  final int alertDays;
+
+  factory TenantSettings.fromJson(Map<String, dynamic> json) {
+    return TenantSettings(
+      id: json['id']?.toString() ?? '',
+      name: json['nombre']?.toString() ?? 'Gimnasio',
+      logoUrl: json['logo_url']?.toString(),
+      address: json['direccion']?.toString(),
+      phone: json['telefono']?.toString(),
+      schedule: json['horario']?.toString(),
+      description: json['descripcion']?.toString(),
+      primaryColor: json['color_primario']?.toString(),
+      secondaryColor: json['color_secundario']?.toString(),
+      accentColor: json['color_acento']?.toString(),
+      graceDays: (json['dias_gracia'] ?? 1) as int,
+      alertDays: (json['dias_alerta_vencimiento'] ?? 5) as int,
+    );
+  }
+}
+
 class WorkoutDay {
   const WorkoutDay({
     required this.day,
@@ -451,6 +533,7 @@ class LoggedInUser {
   final Map<String, dynamic>? trainerProfile;
   final Map<String, dynamic>? memberProfile;
   final List<dynamic>? memberships;
+  final String themePreference;
 
   LoggedInUser({
     required this.id,
@@ -464,6 +547,7 @@ class LoggedInUser {
     this.trainerProfile,
     this.memberProfile,
     this.memberships,
+    this.themePreference = 'system',
   });
 
   factory LoggedInUser.fromJson(Map<String, dynamic> json) {
@@ -479,6 +563,7 @@ class LoggedInUser {
       trainerProfile: json['trainer_profile'] as Map<String, dynamic>?,
       memberProfile: json['member_profile'] as Map<String, dynamic>?,
       memberships: json['memberships'] as List<dynamic>?,
+      themePreference: (json['theme_preference'] ?? json['themePreference'] ?? 'system').toString().toLowerCase(),
     );
   }
 }

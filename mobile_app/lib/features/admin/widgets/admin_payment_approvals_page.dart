@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../data/gym_state.dart';
 import '../../../models/gym_models.dart';
+import '../../../theme/app_theme_tokens.dart';
 import '../../../widgets/app_shell.dart';
 import '../../../core/network/api_client.dart';
 
@@ -50,16 +51,18 @@ class _AdminPaymentApprovalsPageState extends State<AdminPaymentApprovalsPage> {
     return '$host$path';
   }
 
-  BoxDecoration _cardDecoration() {
+  BoxDecoration _cardDecoration(BuildContext context) {
+    final colors = context.sasColors;
     return BoxDecoration(
-      color: Colors.white,
+      color: colors.surface,
       borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: const Color(0xFFE6E2D8)),
+      border: Border.all(color: colors.border),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.sasColors;
     // Generate list of pending payments
     List<Map<String, dynamic>> pendingList = [];
     if (widget.state.isBackendMode) {
@@ -146,7 +149,7 @@ class _AdminPaymentApprovalsPageState extends State<AdminPaymentApprovalsPage> {
                       padding: const EdgeInsets.only(bottom: 14),
                       child: Container(
                         padding: const EdgeInsets.all(18),
-                        decoration: _cardDecoration(),
+                        decoration: _cardDecoration(context),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -162,9 +165,9 @@ class _AdminPaymentApprovalsPageState extends State<AdminPaymentApprovalsPage> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text(name, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5)),
+                                      Text(name, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5, color: colors.textPrimary)),
                                       const SizedBox(height: 3),
-                                      Text('DNI: $dni', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                                      Text('DNI: $dni', style: TextStyle(fontSize: 12, color: colors.textSecondary)),
                                     ],
                                   ),
                                 ),
@@ -175,32 +178,32 @@ class _AdminPaymentApprovalsPageState extends State<AdminPaymentApprovalsPage> {
                                 ),
                               ],
                             ),
-                            const Divider(height: 24, color: Color(0xFF232329)),
-                            _rowItem('Plan solicitado:', planName),
-                            _rowItem('Importe a pagar:', 'S/ $price'),
-                            _rowItem('Fecha envío:', date),
-                            _rowItem('Método registrado:', method),
+                            Divider(height: 24, color: colors.border),
+                            _rowItem(context, 'Plan solicitado:', planName),
+                            _rowItem(context, 'Importe a pagar:', 'S/ $price'),
+                            _rowItem(context, 'Fecha envío:', date),
+                            _rowItem(context, 'Método registrado:', method),
                             const SizedBox(height: 12),
                             GestureDetector(
                               onTap: () => _showReceiptPreview(context, receiptUrl, price, name),
                               child: Container(
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF1D1D22),
+                                  color: colors.surfaceAlt,
                                   borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: const Color(0xFF2D2D37)),
+                                  border: Border.all(color: colors.border),
                                 ),
                                 child: Row(
                                   children: [
-                                    const Icon(Icons.image_outlined, color: Colors.grey),
+                                    Icon(Icons.image_outlined, color: colors.textSecondary),
                                     const SizedBox(width: 10),
                                     Expanded(
                                       child: Text(
                                         receiptUrl.split('/').last.isEmpty ? 'comprobante.jpg' : receiptUrl.split('/').last,
-                                        style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, decoration: TextDecoration.underline),
+                                        style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, decoration: TextDecoration.underline, color: colors.textPrimary),
                                       ),
                                     ),
-                                    const Icon(Icons.remove_red_eye_outlined, size: 18, color: Colors.grey),
+                                    Icon(Icons.remove_red_eye_outlined, size: 18, color: colors.textSecondary),
                                   ],
                                 ),
                               ),
@@ -282,14 +285,15 @@ class _AdminPaymentApprovalsPageState extends State<AdminPaymentApprovalsPage> {
     );
   }
 
-  Widget _rowItem(String label, String value) {
+  Widget _rowItem(BuildContext context, String label, String value) {
+    final colors = context.sasColors;
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(fontSize: 12.5, color: Colors.grey, fontWeight: FontWeight.w600)),
-          Text(value, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
+          Text(label, style: TextStyle(fontSize: 12.5, color: colors.textSecondary, fontWeight: FontWeight.w600)),
+          Text(value, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: colors.textPrimary)),
         ],
       ),
     );
@@ -299,8 +303,9 @@ class _AdminPaymentApprovalsPageState extends State<AdminPaymentApprovalsPage> {
     showDialog(
       context: context,
       builder: (context) {
+        final colors = context.sasColors;
         return Dialog(
-          backgroundColor: const Color(0xFF16161A),
+          backgroundColor: colors.surface,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           child: Padding(
             padding: const EdgeInsets.all(20),
@@ -321,7 +326,7 @@ class _AdminPaymentApprovalsPageState extends State<AdminPaymentApprovalsPage> {
                     child: Container(
                       width: double.infinity,
                       height: 320,
-                      color: const Color(0xFF1D1D22),
+                      color: colors.surfaceAlt,
                       child: Image.network(
                         _getReceiptUrl(filename),
                         fit: BoxFit.contain,
@@ -340,8 +345,8 @@ class _AdminPaymentApprovalsPageState extends State<AdminPaymentApprovalsPage> {
                     width: double.infinity,
                     height: 320,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1D1D22),
-                      border: Border.all(color: const Color(0xFF2E2E38)),
+                      color: colors.surfaceAlt,
+                      border: Border.all(color: colors.border),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     padding: const EdgeInsets.all(20),
@@ -353,7 +358,7 @@ class _AdminPaymentApprovalsPageState extends State<AdminPaymentApprovalsPage> {
                         const SizedBox(height: 6),
                         Text('S/ ${price.toStringAsFixed(2)}', style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w900, color: Colors.white)),
                         const SizedBox(height: 16),
-                        const Divider(color: Color(0xFF2E2E38)),
+                        Divider(color: colors.border),
                         const SizedBox(height: 10),
                         const ReceiptField('Destinatario', 'SaaS GYM S.A.C.'),
                         const ReceiptField('Operación', '784918239'),

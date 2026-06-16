@@ -133,5 +133,42 @@ export class MembersService {
     // Retornar top 20
     return scoredUsers.slice(0, 20).map((item) => item.user);
   }
-}
 
+  async assignedMembers(trainerUserId: string, tenantId: string) {
+    const trainer = await this.prisma.trainerProfile.findUnique({
+      where: { user_id: trainerUserId },
+    });
+    if (!trainer) return [];
+
+    const members = await this.prisma.user.findMany({
+      where: {
+        tenant_id: tenantId,
+        rol: 'MEMBER',
+        member_profile: { trainer_id: trainer.id },
+      },
+      include: {
+        member_profile: true,
+        memberships: {
+          orderBy: { fecha_vencimiento: 'desc' },
+          take: 1,
+        },
+      },
+      orderBy: { nombre_completo: 'asc' },
+    });
+
+    if (members.length > 0) return members;
+
+    return this.prisma.user.findMany({
+      where: { tenant_id: tenantId, rol: 'MEMBER' },
+      include: {
+        member_profile: true,
+        memberships: {
+          orderBy: { fecha_vencimiento: 'desc' },
+          take: 1,
+        },
+      },
+      orderBy: { nombre_completo: 'asc' },
+      take: 20,
+    });
+  }
+}

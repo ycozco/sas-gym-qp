@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" data-theme="system">
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>GymSmart — Prototipos · Navegación</title>
+<title>GymSmart — Sistema web · Navegación</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@500;600&display=swap" rel="stylesheet"/>
@@ -15,6 +15,18 @@
     --font-display: "Bricolage Grotesque", ui-sans-serif, system-ui;
     --font-body: "Geist", "Plus Jakarta Sans", ui-sans-serif, system-ui;
     --font-mono: "Geist Mono", ui-monospace, monospace;
+  }
+  :root[data-theme="dark"] {
+    --bg: #0B0B0C; --surface: #161618; --surface-2: #1D1D22;
+    --ink: #FFFFFF; --ink-2: rgba(255,255,255,.72); --ink-3: rgba(255,255,255,.56);
+    --border: #2E2E38; --accent: #D2FF3A; --accent-ink: #0B0B0C;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root[data-theme="system"] {
+      --bg: #0B0B0C; --surface: #161618; --surface-2: #1D1D22;
+      --ink: #FFFFFF; --ink-2: rgba(255,255,255,.72); --ink-3: rgba(255,255,255,.56);
+      --border: #2E2E38; --accent: #D2FF3A; --accent-ink: #0B0B0C;
+    }
   }
   * { box-sizing: border-box; }
   body {
@@ -104,9 +116,32 @@
   .doc .d { width: 7px; height: 7px; border-radius: 2px; background: var(--accent); }
 
   footer { margin-top: 30px; font: 500 12px var(--font-mono); color: var(--ink-3); }
+  .theme-seg {
+    display: inline-flex; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 999px; padding: 4px; gap: 2px; margin-top: 20px;
+  }
+  .theme-seg button {
+    appearance: none; border: 0; background: transparent; color: var(--ink-2);
+    border-radius: 999px; cursor: pointer; font: 700 12px var(--font-body); padding: 8px 10px;
+  }
+  .theme-seg button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
 
   @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } body { padding-top: 36px; } }
 </style>
+<script>
+  (function () {
+    const key = "sasgym.theme";
+    const value = localStorage.getItem(key) || "system";
+    document.documentElement.dataset.theme = value;
+    window.setSasGymTheme = function (next) {
+      document.documentElement.dataset.theme = next;
+      localStorage.setItem(key, next);
+      document.querySelectorAll("[data-theme-choice]").forEach((button) => {
+        button.setAttribute("aria-pressed", String(button.dataset.themeChoice === next));
+      });
+    };
+  })();
+</script>
 </head>
 <body>
 <div class="wrap">
@@ -116,12 +151,17 @@
       <span class="dot"></span>
       <span class="wm">Gym<em>Smart</em></span>
     </div>
-    <div class="kicker">Prototipos · Panel de navegación</div>
+    <div class="kicker">Sistema web · Panel de navegación</div>
     <h1>Sistema de gestión de gimnasios</h1>
     <p class="lead">
-      Punto de entrada a los dos prototipos hi-fi del producto. Elige una
-      superficie para explorar sus vistas por rol.
+      Punto de entrada local al panel web real, la app Flutter web, los mockups
+      y la documentación del producto.
     </p>
+    <div class="theme-seg" aria-label="Tema visual">
+      <button data-theme-choice="system" aria-pressed="true" onclick="setSasGymTheme('system')">Sistema</button>
+      <button data-theme-choice="light" aria-pressed="false" onclick="setSasGymTheme('light')">Claro</button>
+      <button data-theme-choice="dark" aria-pressed="false" onclick="setSasGymTheme('dark')">Oscuro</button>
+    </div>
   </header>
 
   <main class="grid">
@@ -157,19 +197,19 @@
       </div>
     </a>
 
-    <!-- Panel Web Admin -->
-    <a class="card" href="mockups/web/index.html">
+    <!-- Panel Web Admin Real -->
+    <a class="card" href="web/index.html">
       <span class="ic" aria-hidden="true">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
              stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>
         </svg>
       </span>
-      <div class="ct">Panel Web de Administración</div>
-      <div class="cpath">mockups/web/</div>
+      <div class="ct">Panel Web Admin Real</div>
+      <div class="cpath">web_admin/ · servido en /web/</div>
       <div class="cd">
-        Panel de escritorio (sidebar + contenido). El inicio de sesión permite
-        entrar como cualquiera de los cuatro roles, cada uno con su navegación.
+        Panel de escritorio conectado al backend NestJS. Login real, tenant
+        activo, configuración del gimnasio, tema y planes de membresía por API.
       </div>
       <div class="roles">
         <span class="chip">Super Admin</span>
@@ -179,8 +219,8 @@
         <span class="chip">Miembro</span>
       </div>
       <div class="cgo">
-        <span>Abrir panel web</span>
-        <span class="count">5 roles · 22 vistas</span>
+        <span>Abrir panel web real</span>
+        <span class="count">API real · tenants</span>
         <span class="arrow" aria-hidden="true">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
@@ -198,8 +238,11 @@
     <a class="doc" href="docs/PLAN_MEJORA_REVISION.md"><span class="d"></span>Plan de Mejora y Revisión</a>
   </nav>
 
-  <footer>GymSmart · CrossHero — prototipos hi-fi · navegación local</footer>
+  <footer>GymSmart · CrossHero — sistema web local · navegación</footer>
 
 </div>
+<script>
+  setSasGymTheme(localStorage.getItem("sasgym.theme") || "system");
+</script>
 </body>
 </html>

@@ -1,7 +1,8 @@
-import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { totp } from 'otplib';
 import { AccessMethod, MembershipState } from '@prisma/client';
+import { getOptionalEnv } from '../../core/config/env';
 
 @Injectable()
 export class AttendanceService {
@@ -10,6 +11,36 @@ export class AttendanceService {
   constructor(private prisma: PrismaService) {
     // Configurar la ventana de tolerancia a ±1 paso de 30 segundos (total 90 segundos)
     totp.options = { step: 30, window: 1 };
+  }
+
+  async simulateAccess(dni: string, tenantId: string): Promise<any> {
+    const simulatorEnabled = getOptionalEnv('ENABLE_QR_SIMULATOR', 'false') === 'true';
+    const isProduction = getOptionalEnv('NODE_ENV', 'development') === 'production';
+    if (!simulatorEnabled || isProduction) {
+      throw new ForbiddenException('El simulador temporal de accesos no esta habilitado.');
+    }
+
+    const user = await this.prisma.user.findFirst({
+      where: {
+        dni,
+        tenant_id: tenantId,
+      },
+      select: {
+        qr_secret: true,
+      },
+    });
+
+    if (!user?.qr_secret) {
+      return this.verifyQrToken(dni, 'SIMULATION_NO_QR_SECRET', tenantId);
+    }
+
+    const token = totp.generate(user.qr_secret);
+    const result = await this.verifyQrToken(dni, token, tenantId);
+    return {
+      ...result,
+      simulation: true,
+      qrPayload: `${dni}|${token}`,
+    };
   }
 
   async verifyQrToken(dni: string, token: string, tenantId: string): Promise<any> {
@@ -83,8 +114,18 @@ export class AttendanceService {
       };
     }
 
-    // 3. Verificar el token TOTP usando la clave secreta
-    const secret = user.qr_secret || (user.dni + '_secure_totp_secret_key_2026');
+    // 3. Verificar el token TOTP usando la clave secreta emitida por backend
+    const secret = user.qr_secret;
+    if (!secret) {
+      return {
+        verdict: 'RED',
+        reason: 'El socio no tiene QR de acceso emitido.',
+        member: {
+          fullName: user.nombre_completo,
+          status: user.estado,
+        },
+      };
+    }
     
     const isValidToken = totp.check(token, secret);
     if (!isValidToken) {

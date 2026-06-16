@@ -3,16 +3,19 @@
 // ═══════════════════════════════════════════════════════════════
 // LOGIN  ·  CU-01 (Inicio de sesión)
 // ═══════════════════════════════════════════════════════════════
-function Login({ onLogin }) {
-  const [role, setRole] = React.useState("admin");
-  const roleList = [
-    { id: "superadmin", n: "Super Admin", s: "Plataforma SaaS" },
-    { id: "admin",   n: "Administrador", s: "Gestión total" },
-    { id: "cajero",  n: "Caja",          s: "Recepción / cobros" },
-    { id: "coach",   n: "Entrenador",    s: "Alumnos y rutinas" },
-    { id: "miembro", n: "Miembro",       s: "Mi cuenta" },
+function Login({ onLogin, loading, error }) {
+  const [emailOrDni, setEmailOrDni] = React.useState("admin1.surco@test.sasgym.com");
+  const [password, setPassword] = React.useState("admin_secure_pass");
+  const quickUsers = [
+    ["Admin Surco", "admin1.surco@test.sasgym.com", "admin_secure_pass"],
+    ["Caja Surco", "caja1.surco@test.sasgym.com", "caja_secure_pass"],
+    ["Trainer Surco", "trainer1.surco@test.sasgym.com", "trainer_secure_pass"],
+    ["Superadmin", "superadmin@test.sasgym.com", "super_secure_pass"],
   ];
-  const submit = (e) => { e.preventDefault(); onLogin(role); };
+  const submit = (e) => {
+    e.preventDefault();
+    onLogin(emailOrDni.trim(), password);
+  };
   return (
     <div className="login">
       <aside className="login-aside">
@@ -32,32 +35,52 @@ function Login({ onLogin }) {
       <main className="login-form">
         <form className="lf-wrap" onSubmit={submit}>
           <h2>Iniciar sesión</h2>
-          <p className="lf-sub">Selecciona tu rol e ingresa tus credenciales.</p>
+          <p className="lf-sub">Ingresa con una cuenta real del backend. El rol y el gimnasio se cargan desde la API.</p>
 
-          <div className="role-pick" role="group" aria-label="Rol">
-            {roleList.map(r => (
-              <button type="button" key={r.id} aria-pressed={role === r.id} onClick={() => setRole(r.id)}>
-                <div className="rp-n">{r.n}</div>
-                <div className="rp-s">{r.s}</div>
+          <div className="role-pick" role="group" aria-label="Accesos demo">
+            {quickUsers.map(([label, email, pass]) => (
+              <button
+                type="button"
+                key={email}
+                aria-pressed={emailOrDni === email}
+                onClick={() => { setEmailOrDni(email); setPassword(pass); }}
+              >
+                <div className="rp-n">{label}</div>
+                <div className="rp-s">{email}</div>
               </button>
             ))}
           </div>
 
           <div className="field">
-            <label htmlFor="lg-email">Correo electrónico</label>
-            <input id="lg-email" type="email" defaultValue="sandra@fitzone.pe" autoComplete="username"/>
+            <label htmlFor="lg-email">Correo, DNI o usuario</label>
+            <input
+              id="lg-email"
+              type="text"
+              value={emailOrDni}
+              onChange={(e) => setEmailOrDni(e.target.value)}
+              autoComplete="username"
+            />
           </div>
           <div className="field">
             <label htmlFor="lg-pass">Contraseña</label>
-            <input id="lg-pass" type="password" defaultValue="demo1234" autoComplete="current-password"/>
+            <input
+              id="lg-pass"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
+            />
           </div>
 
+          <ErrorBlock message={error}/>
           <div className="checkrow">
             <label><input type="checkbox" defaultChecked/> Recordarme</label>
             <a className="link">¿Olvidaste tu contraseña?</a>
           </div>
 
-          <Btn kind="primary" size="lg" block type="submit">Iniciar sesión</Btn>
+          <Btn kind="primary" size="lg" block type="submit" disabled={loading}>
+            {loading ? "Validando..." : "Iniciar sesión"}
+          </Btn>
         </form>
       </main>
     </div>

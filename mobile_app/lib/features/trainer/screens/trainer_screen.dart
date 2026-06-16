@@ -211,8 +211,9 @@ class _TrainerMembersTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Show members assigned to Carlos M. or all members for mock testing
-    final trainerStudents = state.members.where((m) => m.assignedTrainer == 'Carlos M.').toList();
+    final trainerStudents = state.assignedTrainerMembers.isNotEmpty
+        ? state.assignedTrainerMembers
+        : state.members.where((m) => m.assignedTrainer == 'Carlos M.').toList();
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 6, 20, 24),

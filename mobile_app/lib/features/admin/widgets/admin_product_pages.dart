@@ -39,7 +39,10 @@ class AdminProductInventoryPage extends StatelessWidget {
           icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
           onPressed: onBack,
         ),
-        title: const Text('Inventario y Productos', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        title: const Text(
+          'Inventario y Productos',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.add_box_rounded, color: Colors.white),
@@ -68,10 +71,16 @@ class AdminProductInventoryPage extends StatelessWidget {
           Expanded(
             child: filteredProducts.isEmpty
                 ? const Center(
-                    child: Text('No hay productos en el inventario.', style: TextStyle(color: Colors.white38)),
+                    child: Text(
+                      'No hay productos en el inventario.',
+                      style: TextStyle(color: Colors.white38),
+                    ),
                   )
                 : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 8,
+                    ),
                     itemCount: filteredProducts.length,
                     itemBuilder: (context, index) {
                       final p = filteredProducts[index];
@@ -84,8 +93,12 @@ class AdminProductInventoryPage extends StatelessWidget {
                         child: Row(
                           children: [
                             CircleAvatar(
-                              backgroundColor: isLowStock ? Colors.redAccent.withValues(alpha: 0.15) : palette.accent.withValues(alpha: 0.12),
-                              foregroundColor: isLowStock ? Colors.redAccent : palette.accent,
+                              backgroundColor: isLowStock
+                                  ? Colors.redAccent.withValues(alpha: 0.15)
+                                  : palette.accent.withValues(alpha: 0.12),
+                              foregroundColor: isLowStock
+                                  ? Colors.redAccent
+                                  : palette.accent,
                               child: const Icon(Icons.inventory_2_outlined),
                             ),
                             const SizedBox(width: 12),
@@ -93,11 +106,22 @@ class AdminProductInventoryPage extends StatelessWidget {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(p.name, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+                                  Text(
+                                    p.name,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 14,
+                                    ),
+                                  ),
                                   const SizedBox(height: 4),
                                   Text(
                                     'Stock: ${p.stock} unidades · Categoría: ${p.category}',
-                                    style: TextStyle(color: isLowStock ? Colors.redAccent : Colors.white60, fontSize: 11.5),
+                                    style: TextStyle(
+                                      color: isLowStock
+                                          ? Colors.redAccent
+                                          : Colors.white60,
+                                      fontSize: 11.5,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -105,13 +129,24 @@ class AdminProductInventoryPage extends StatelessWidget {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
-                                Text('S/ ${p.price.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
+                                Text(
+                                  'S/ ${p.price.toStringAsFixed(2)}',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 14,
+                                  ),
+                                ),
                                 const SizedBox(height: 6),
                                 GestureDetector(
                                   onTap: () => onEditProduct(p),
                                   child: Text(
                                     'Editar',
-                                    style: TextStyle(color: palette.accent, fontWeight: FontWeight.bold, fontSize: 11.5, decoration: TextDecoration.underline),
+                                    style: TextStyle(
+                                      color: palette.accent,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 11.5,
+                                      decoration: TextDecoration.underline,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -157,9 +192,15 @@ class _AdminProductFormPageState extends State<AdminProductFormPage> {
   void initState() {
     super.initState();
     _nameCtrl = TextEditingController(text: widget.product?.name ?? '');
-    _priceCtrl = TextEditingController(text: widget.product?.price.toString() ?? '');
-    _stockCtrl = TextEditingController(text: widget.product?.stock.toString() ?? '');
-    _categoryCtrl = TextEditingController(text: widget.product?.category ?? 'Bebidas');
+    _priceCtrl = TextEditingController(
+      text: widget.product?.price.toString() ?? '',
+    );
+    _stockCtrl = TextEditingController(
+      text: widget.product?.stock.toString() ?? '',
+    );
+    _categoryCtrl = TextEditingController(
+      text: widget.product?.category ?? 'Bebidas',
+    );
   }
 
   @override
@@ -184,7 +225,10 @@ class _AdminProductFormPageState extends State<AdminProductFormPage> {
           icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
           onPressed: widget.onBack,
         ),
-        title: Text(isEdit ? 'Editar Producto' : 'Nuevo Producto', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        title: Text(
+          isEdit ? 'Editar Producto' : 'Nuevo Producto',
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
       ),
       body: Form(
         key: _formKey,
@@ -198,27 +242,41 @@ class _AdminProductFormPageState extends State<AdminProductFormPage> {
                 children: [
                   TextFormField(
                     controller: _nameCtrl,
-                    decoration: const InputDecoration(labelText: 'Nombre del Producto *'),
-                    validator: (val) => val == null || val.trim().isEmpty ? 'Requerido' : null,
+                    decoration: const InputDecoration(
+                      labelText: 'Nombre del Producto *',
+                    ),
+                    validator: (val) =>
+                        val == null || val.trim().isEmpty ? 'Requerido' : null,
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: _priceCtrl,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Precio (S/) *'),
-                    validator: (val) => val == null || double.tryParse(val) == null ? 'Ingresa precio válido' : null,
+                    decoration: const InputDecoration(
+                      labelText: 'Precio (S/) *',
+                    ),
+                    validator: (val) =>
+                        val == null || double.tryParse(val) == null
+                        ? 'Ingresa precio válido'
+                        : null,
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: _stockCtrl,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Stock Inicial *'),
-                    validator: (val) => val == null || int.tryParse(val) == null ? 'Ingresa stock válido' : null,
+                    decoration: const InputDecoration(
+                      labelText: 'Stock Inicial *',
+                    ),
+                    validator: (val) => val == null || int.tryParse(val) == null
+                        ? 'Ingresa stock válido'
+                        : null,
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: _categoryCtrl,
-                    decoration: const InputDecoration(labelText: 'Categoría (ej: Suplementos, Bebidas)'),
+                    decoration: const InputDecoration(
+                      labelText: 'Categoría (ej: Suplementos, Bebidas)',
+                    ),
                   ),
                 ],
               ),
@@ -245,7 +303,10 @@ class _AdminProductFormPageState extends State<AdminProductFormPage> {
                     );
                     widget.state.updateProduct(widget.product!.name, updated);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Producto actualizado exitosamente.'), backgroundColor: Color(0xFF00B85C)),
+                      const SnackBar(
+                        content: Text('Producto actualizado exitosamente.'),
+                        backgroundColor: Color(0xFF00B85C),
+                      ),
                     );
                   } else {
                     final newP = ProductItem(
@@ -257,13 +318,19 @@ class _AdminProductFormPageState extends State<AdminProductFormPage> {
                     );
                     widget.state.addProduct(newP);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Producto registrado exitosamente.'), backgroundColor: Color(0xFF00B85C)),
+                      const SnackBar(
+                        content: Text('Producto registrado exitosamente.'),
+                        backgroundColor: Color(0xFF00B85C),
+                      ),
                     );
                   }
                   widget.onBack();
                 }
               },
-              child: Text(isEdit ? 'Guardar Cambios' : 'Registrar Producto', style: const TextStyle(fontWeight: FontWeight.bold)),
+              child: Text(
+                isEdit ? 'Guardar Cambios' : 'Registrar Producto',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         ),

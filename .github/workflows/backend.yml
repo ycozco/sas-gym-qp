@@ -1,0 +1,69 @@
+name: backend
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  test-backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres_secure_password
+          POSTGRES_DB: gymsmart
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d gymsmart"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    defaults:
+      run:
+        working-directory: backend
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres_secure_password@localhost:5432/gymsmart?schema=public
+      JWT_SECRET: github_actions_jwt_secret_2026
+      HUELLA_SECRET_KEY: github_actions_huella_secret_2026
+      JWT_ACCESS_TTL: 15m
+      JWT_REFRESH_DAYS: 7
+      CORS_ORIGINS: http://localhost:8282,http://localhost:8383,http://localhost:3000
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Prepare env file
+        run: |
+          cp .env.example .env
+          printf '\nDATABASE_URL="%s"\nJWT_SECRET="%s"\nHUELLA_SECRET_KEY="%s"\n' "$DATABASE_URL" "$JWT_SECRET" "$HUELLA_SECRET_KEY" >> .env
+
+      - name: Install
+        run: npm ci
+
+      - name: Prisma setup
+        run: |
+          npm run prisma:generate
+          npm run db:push
+          npm run seed:test
+
+      - name: Build
+        run: npm run build
+
+      - name: Unit tests
+        run: npm test -- --runInBand
+
+      - name: E2E tests
+        run: npm run test:e2e -- --runInBand

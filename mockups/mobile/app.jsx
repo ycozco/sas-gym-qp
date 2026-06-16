@@ -25,8 +25,15 @@ const FONT_BODY_OPTIONS    = ["Geist", "Plus Jakarta Sans", "DM Sans"];
 function Root() {
   const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
   const [role, setRole] = React.useState(t.role || "member");
+  const [themeMode, setThemeMode] = React.useState(() => {
+    try { return localStorage.getItem("sasgym.theme") || "system"; } catch (e) { return "system"; }
+  });
 
   React.useEffect(() => { setTweak("role", role); /* persist */ }, [role]);
+  React.useEffect(() => {
+    document.documentElement.dataset.theme = themeMode;
+    try { localStorage.setItem("sasgym.theme", themeMode); } catch (e) {}
+  }, [themeMode]);
 
   // Apply tweaks to root vars
   const styleVars = {
@@ -64,6 +71,18 @@ function Root() {
           <span>v1.0 · Hi-fi Prototype</span>
         </div>
       </div>
+
+        <div className="theme-seg" aria-label="Tema visual">
+          {[
+            ["system", "Sistema"],
+            ["light", "Claro"],
+            ["dark", "Oscuro"],
+          ].map(([id, label]) => (
+            <button key={id} aria-pressed={themeMode === id} onClick={() => setThemeMode(id)}>
+              {label}
+            </button>
+          ))}
+        </div>
 
       {/* PHONE STAGE */}
       <div className="stage">

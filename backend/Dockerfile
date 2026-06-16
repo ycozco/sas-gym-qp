@@ -25,4 +25,4 @@ RUN npm run build
 EXPOSE 3000
 
 # Por defecto, iniciar la aplicación en modo desarrollo para permitir tweaks
-CMD ["npm", "run", "start:dev"]
+CMD ["npm", "run", "start:prod"]

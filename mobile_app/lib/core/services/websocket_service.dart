@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
+import '../config/app_config.dart';
 import '../storage/secure_storage.dart';
 import '../network/api_client.dart';
 
@@ -36,7 +37,7 @@ class WebSocketService {
         baseUrl,
         io.OptionBuilder()
             .setTransports(['websocket'])
-            .setQuery({'token': token ?? ''})
+            .setAuth({'token': token ?? ''})
             .disableAutoConnect()
             .build(),
       );
@@ -44,7 +45,7 @@ class WebSocketService {
       _socket?.connect();
 
       _socket?.onConnect((_) {
-        debugPrint('WebSocket conectado con éxito via WebSocketService');
+        AppLogger.debug('WebSocket conectado via WebSocketService');
         _isConnecting = false;
         _reconnectAttempts = 0;
         _reconnectTimer?.cancel();
@@ -53,27 +54,27 @@ class WebSocketService {
       });
 
       _socket?.on('tenant_suspended', (_) {
-        debugPrint('RECIBIDO: EVENTO DE SUSPENSIÓN SAAS via WebSocketService');
+        AppLogger.debug('Recibido evento tenant_suspended via WebSocketService');
         onTenantSuspended?.call();
       });
 
       _socket?.onDisconnect((_) {
-        debugPrint('WebSocket desconectado');
+        AppLogger.debug('WebSocket desconectado');
         onDisconnected?.call();
         _scheduleReconnect();
       });
 
       _socket?.on('connect_error', (err) {
-        debugPrint('WebSocket Error de conexión: $err');
+        AppLogger.debug('WebSocket error de conexion', err);
         _scheduleReconnect();
       });
 
       _socket?.on('connect_timeout', (_) {
-        debugPrint('WebSocket Timeout de conexión');
+        AppLogger.debug('WebSocket timeout de conexion');
         _scheduleReconnect();
       });
     } catch (e) {
-      debugPrint('Error en inicialización WebSocket: $e');
+      AppLogger.debug('Error en inicializacion WebSocket', e);
       _isConnecting = false;
       _scheduleReconnect();
     }
@@ -86,7 +87,7 @@ class WebSocketService {
     final delay = (1 << _reconnectAttempts).clamp(2, 30);
     _reconnectAttempts++;
 
-    debugPrint('WebSocket programando reconexión en $delay segundos (intento $_reconnectAttempts)...');
+    AppLogger.debug('WebSocket programando reconexion en $delay segundos (intento $_reconnectAttempts)');
     _reconnectTimer = Timer(Duration(seconds: delay), () {
       _isConnecting = false;
       connect();

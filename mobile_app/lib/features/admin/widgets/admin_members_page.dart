@@ -30,12 +30,16 @@ class AdminMembersPage extends StatelessWidget {
   Widget build(BuildContext context) {
     // Determine which list to filter
     final rawList = filterState == 'baja_logica'
-        ? state.allMembersIncludingSoftDeleted.where((m) => m.state == 'baja_logica').toList()
+        ? state.allMembersIncludingSoftDeleted
+              .where((m) => m.state == 'baja_logica')
+              .toList()
         : state.members;
 
     // Filter by state and search text
     final filteredMembers = rawList.where((m) {
-      final matchesSearch = m.name.toLowerCase().contains(searchQuery.toLowerCase()) || m.dni.contains(searchQuery);
+      final matchesSearch =
+          m.name.toLowerCase().contains(searchQuery.toLowerCase()) ||
+          m.dni.contains(searchQuery);
       if (!matchesSearch) return false;
 
       if (filterState == 'all' || filterState == 'baja_logica') return true;
@@ -48,10 +52,19 @@ class AdminMembersPage extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Expanded(child: SectionHeader(title: 'Socios Registrados', action: 'Gestión total')),
+              const Expanded(
+                child: SectionHeader(
+                  title: 'Socios Registrados',
+                  action: 'Gestión total',
+                ),
+              ),
               IconButton(
                 onPressed: onCreateMember,
-                icon: Icon(Icons.add_circle_rounded, color: palette.accent, size: 28),
+                icon: Icon(
+                  Icons.add_circle_rounded,
+                  color: palette.accent,
+                  size: 28,
+                ),
                 tooltip: 'Crear Socio',
               ),
             ],
@@ -104,7 +117,10 @@ class AdminMembersPage extends StatelessWidget {
                 ? Center(
                     child: Text(
                       'No se encontraron socios.',
-                      style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   )
                 : ListView.builder(
@@ -112,9 +128,15 @@ class AdminMembersPage extends StatelessWidget {
                     itemBuilder: (context, index) {
                       final m = filteredMembers[index];
                       Color stateColor = const Color(0xFF00B85C);
-                      if (m.state == 'expired') stateColor = const Color(0xFFFF3B30);
-                      if (m.state == 'grace') stateColor = const Color(0xFFFFB300);
-                      if (m.state == 'baja_logica') stateColor = const Color(0xFFFF7A1A);
+                      if (m.state == 'expired') {
+                        stateColor = const Color(0xFFFF3B30);
+                      }
+                      if (m.state == 'grace') {
+                        stateColor = const Color(0xFFFFB300);
+                      }
+                      if (m.state == 'baja_logica') {
+                        stateColor = const Color(0xFFFF7A1A);
+                      }
 
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 10),
@@ -127,26 +149,45 @@ class AdminMembersPage extends StatelessWidget {
                             child: Row(
                               children: [
                                 CircleAvatar(
-                                  backgroundColor: palette.accent.withValues(alpha: 0.12),
+                                  backgroundColor: palette.accent.withValues(
+                                    alpha: 0.12,
+                                  ),
                                   foregroundColor: palette.accent,
                                   child: Text(
-                                    m.name.substring(0, m.name.length >= 2 ? 2 : m.name.length).toUpperCase(),
-                                    style: const TextStyle(fontWeight: FontWeight.w800),
+                                    m.name
+                                        .substring(
+                                          0,
+                                          m.name.length >= 2
+                                              ? 2
+                                              : m.name.length,
+                                        )
+                                        .toUpperCase(),
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         m.name,
-                                        style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w800),
+                                        style: const TextStyle(
+                                          fontSize: 14.5,
+                                          fontWeight: FontWeight.w800,
+                                        ),
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
                                         'DNI: ${m.dni} · Plan: ${m.goal}',
-                                        style: const TextStyle(fontSize: 12, color: Colors.white60, fontWeight: FontWeight.w500),
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.white60,
+                                          fontWeight: FontWeight.w500,
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -160,7 +201,11 @@ class AdminMembersPage extends StatelessWidget {
                                   ),
                                 ),
                                 const SizedBox(width: 8),
-                                const Icon(Icons.chevron_right_rounded, color: Colors.white30, size: 20),
+                                const Icon(
+                                  Icons.chevron_right_rounded,
+                                  color: Colors.white30,
+                                  size: 20,
+                                ),
                               ],
                             ),
                           ),

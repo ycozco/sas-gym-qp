@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../models/gym_models.dart';
 import '../../../../data/gym_state.dart';
+import '../../../../theme/app_theme_tokens.dart';
 import '../../../../widgets/app_shell.dart';
 import 'admin_dashboard_page.dart';
 
@@ -22,8 +23,12 @@ class AdminMorePage extends StatelessWidget {
       key: const PageStorageKey<String>('admin-more'),
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
       children: [
-        const SectionHeader(title: 'Módulos Administrativos', action: 'Más opciones'),
+        const SectionHeader(
+          title: 'Módulos Administrativos',
+          action: 'Más opciones',
+        ),
         _menuItem(
+          context,
           icon: Icons.rate_review_rounded,
           title: 'Bandeja de Pagos Comprobante',
           subtitle: 'Aprobar o rechazar pagos manuales de socios',
@@ -31,6 +36,7 @@ class AdminMorePage extends StatelessWidget {
           onTap: () => onNavigate('payment_approvals'),
         ),
         _menuItem(
+          context,
           icon: Icons.inventory_2_outlined,
           title: 'Inventario de Productos',
           subtitle: 'CRUD completo y eliminación definitiva',
@@ -38,6 +44,7 @@ class AdminMorePage extends StatelessWidget {
           onTap: () => onNavigate('product_inventory'),
         ),
         _menuItem(
+          context,
           icon: Icons.fact_check_outlined,
           title: 'Bitácora de Auditoría',
           subtitle: 'Logs detallados con filtros por rol',
@@ -45,6 +52,7 @@ class AdminMorePage extends StatelessWidget {
           onTap: () => onNavigate('audit_logs'),
         ),
         _menuItem(
+          context,
           icon: Icons.chat_bubble_outline_rounded,
           title: 'Buzón de Observaciones',
           subtitle: 'Reclamos y sugerencias de los socios',
@@ -52,6 +60,7 @@ class AdminMorePage extends StatelessWidget {
           onTap: () => onNavigate('observations'),
         ),
         _menuItem(
+          context,
           icon: Icons.campaign_rounded,
           title: 'Publicar Anuncio',
           subtitle: 'Crear avisos generales para el inicio del socio',
@@ -59,6 +68,7 @@ class AdminMorePage extends StatelessWidget {
           onTap: () => onNavigate('announcement_form'),
         ),
         _menuItem(
+          context,
           icon: Icons.tune_rounded,
           title: 'Ajustes del Gimnasio',
           subtitle: 'Días de gracia, tiempos de alerta y reglas de negocio',
@@ -69,13 +79,15 @@ class AdminMorePage extends StatelessWidget {
     );
   }
 
-  Widget _menuItem({
+  Widget _menuItem(
+    BuildContext context, {
     required IconData icon,
     required String title,
     required String subtitle,
     required Color color,
     required VoidCallback onTap,
   }) {
+    final colors = context.sasColors;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: InkWell(
@@ -83,7 +95,7 @@ class AdminMorePage extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         child: Container(
           padding: const EdgeInsets.all(16),
-          decoration: adminCardDecoration(),
+          decoration: adminCardDecoration(context),
           child: Row(
             children: [
               Container(
@@ -102,17 +114,25 @@ class AdminMorePage extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w800),
+                      style: TextStyle(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w800,
+                        color: colors.textPrimary,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       subtitle,
-                      style: const TextStyle(fontSize: 11.5, color: Colors.white60, fontWeight: FontWeight.w500),
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        color: colors.textSecondary,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right_rounded, color: Colors.white38),
+              Icon(Icons.chevron_right_rounded, color: colors.textMuted),
             ],
           ),
         ),

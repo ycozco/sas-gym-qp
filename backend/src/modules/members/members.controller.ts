@@ -25,5 +25,10 @@ export class MembersController {
     const tenantId = req.user.tenantId;
     return this.membersService.searchMembers(tenantId, query);
   }
-}
 
+  @Get('assigned')
+  @Roles(Role.TRAINER)
+  async assigned(@Req() req: any) {
+    return this.membersService.assignedMembers(req.user.sub, req.user.tenantId);
+  }
+}

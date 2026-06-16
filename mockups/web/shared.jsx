@@ -1,6 +1,145 @@
 // shared.jsx — iconos y componentes reutilizables del panel web.
 // Expone todo en window para que data/dashboards/modules/app lo consuman.
 
+const API_BASE_URL = "http://localhost:3000/api/v1";
+const AUTH_TOKEN_KEY = "sasgym.authToken";
+const TENANT_ID_KEY = "sasgym.tenantId";
+
+function roleFromBackend(role) {
+  return ({
+    SUPER_ADMIN: "superadmin",
+    ADMIN: "admin",
+    CAJA: "cajero",
+    TRAINER: "coach",
+    MEMBER: "miembro",
+  })[role] || "admin";
+}
+
+function apiRequest(path, { method = "GET", body, token, tenantId, headers = {} } = {}) {
+  const finalHeaders = {
+    Accept: "application/json",
+    ...headers,
+  };
+  if (body !== undefined) finalHeaders["Content-Type"] = "application/json";
+  if (token) finalHeaders.Authorization = `Bearer ${token}`;
+  if (tenantId) finalHeaders["X-Tenant-ID"] = tenantId;
+
+  return fetch(`${API_BASE_URL}${path}`, {
+    method,
+    headers: finalHeaders,
+    body: body === undefined ? undefined : JSON.stringify(body),
+  }).then(async (response) => {
+    const text = await response.text();
+    const data = text ? JSON.parse(text) : null;
+    if (!response.ok) {
+      const message = Array.isArray(data?.message)
+        ? data.message.join("\n")
+        : data?.message || `Error HTTP ${response.status}`;
+      throw new Error(message);
+    }
+    return data;
+  });
+}
+
+function normalizeTenantSettings(tenant) {
+  if (!tenant) return null;
+  return {
+    id: tenant.id || "",
+    name: tenant.nombre || "Gimnasio",
+    logoUrl: tenant.logo_url || "",
+    address: tenant.direccion || "",
+    phone: tenant.telefono || "",
+    schedule: tenant.horario || "",
+    description: tenant.descripcion || "",
+    primaryColor: tenant.color_primario || "",
+    secondaryColor: tenant.color_secundario || "",
+    accentColor: tenant.color_acento || "",
+    graceDays: tenant.dias_gracia ?? 1,
+    alertDays: tenant.dias_alerta_vencimiento ?? 5,
+  };
+}
+
+function normalizeMembershipPlan(plan) {
+  return {
+    id: plan.id || "",
+    name: plan.nombre || plan.name || "",
+    description: plan.descripcion || "",
+    durationDays: Number(plan.duracion_dias ?? plan.duracionDias ?? 30),
+    price: Number(plan.precio ?? plan.price ?? 0),
+    color: plan.color || "#2F6BFF",
+    order: Number(plan.orden ?? 0),
+    active: plan.activo ?? true,
+    raw: plan,
+  };
+}
+
+function planToApiPayload(plan) {
+  return {
+    nombre: plan.name.trim(),
+    descripcion: plan.description?.trim() || "",
+    duracionDias: Number(plan.durationDays),
+    precio: Number(plan.price),
+    color: plan.color || "#2F6BFF",
+    orden: Number(plan.order || 0),
+    activo: Boolean(plan.active),
+  };
+}
+
+function colorInk(hex, light = "#FFFFFF", dark = "#0B0B0B") {
+  const value = String(hex || "").replace("#", "");
+  if (!/^[0-9a-f]{6}$/i.test(value)) return dark;
+  const r = parseInt(value.slice(0, 2), 16);
+  const g = parseInt(value.slice(2, 4), 16);
+  const b = parseInt(value.slice(4, 6), 16);
+  const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+  return luminance > 0.58 ? dark : light;
+}
+
+function applyTenantTheme(tenant) {
+  const root = document.documentElement;
+  if (!tenant) {
+    root.style.removeProperty("--tenant-primary");
+    root.style.removeProperty("--tenant-secondary");
+    root.style.removeProperty("--accent");
+    root.style.removeProperty("--accent-ink");
+    return;
+  }
+  const primary = tenant.primaryColor;
+  const secondary = tenant.secondaryColor;
+  const accent = tenant.accentColor;
+  if (primary) root.style.setProperty("--tenant-primary", primary);
+  if (secondary) root.style.setProperty("--tenant-secondary", secondary);
+  if (accent) {
+    root.style.setProperty("--accent", accent);
+    root.style.setProperty("--accent-2", accent);
+    root.style.setProperty("--accent-ink", colorInk(accent));
+  }
+}
+
+function LoadingBlock({ label = "Cargando..." }) {
+  return <div className="state-block">{label}</div>;
+}
+
+function ErrorBlock({ message }) {
+  if (!message) return null;
+  return <div className="state-block error">{message}</div>;
+}
+
+function Modal({ title, children, onClose, footer }) {
+  return (
+    <div className="modal-backdrop" role="dialog" aria-modal="true">
+      <div className="modal">
+        <div className="modal-head">
+          <h3>{title}</h3>
+          <button className="icon-btn" onClick={onClose} aria-label="Cerrar">{I.close}</button>
+        </div>
+        <div className="modal-body">{children}</div>
+        {footer && <div className="modal-foot">{footer}</div>}
+      </div>
+    </div>
+  );
+}
+
 // ─── ICONOS ────────────────────────────────────────────────────
 const svg = (paths, fill) => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill={fill ? "currentColor" : "none"}
@@ -157,8 +296,11 @@ function Donut({ segments, size = 150 }) {
 }
 
 // ─── SIDEBAR ───────────────────────────────────────────────────
-function Sidebar({ role, section, onNavigate }) {
+function Sidebar({ role, section, onNavigate, tenantSettings }) {
   const r = ROLES[role];
+  const gymName = tenantSettings?.name || GYM.name;
+  const gymCity = tenantSettings?.address || GYM.city;
+  const logoLetter = gymName[0] || "G";
   return (
     <aside className="sidebar">
       <div className="brand">
@@ -182,10 +324,10 @@ function Sidebar({ role, section, onNavigate }) {
         ))}
       </nav>
       <div className="gym-card">
-        <span className="logo" aria-hidden="true">{r.platform ? "★" : GYM.name[0]}</span>
+        <span className="logo" aria-hidden="true">{r.platform ? "★" : logoLetter}</span>
         <div style={{ minWidth: 0 }}>
-          <div className="gn">{r.platform ? "GymSmart SaaS" : GYM.name}</div>
-          <div className="gs">{r.platform ? "Plataforma multi-tenant" : GYM.city}</div>
+          <div className="gn">{r.platform ? "GymSmart SaaS" : gymName}</div>
+          <div className="gs">{r.platform ? "Plataforma multi-tenant" : gymCity}</div>
         </div>
       </div>
     </aside>
@@ -193,8 +335,9 @@ function Sidebar({ role, section, onNavigate }) {
 }
 
 // ─── TOPBAR ────────────────────────────────────────────────────
-function Topbar({ title, sub, role, onLogout }) {
+function Topbar({ title, sub, role, currentUser, onLogout }) {
   const r = ROLES[role];
+  const displayName = currentUser?.nombre_completo || currentUser?.nombreCompleto || r.who;
   return (
     <header className="topbar">
       <div>
@@ -206,9 +349,9 @@ function Topbar({ title, sub, role, onLogout }) {
         <span className="badge" style={{ font: "500 11.5px var(--font-mono)" }}>{TODAY.short}</span>
         <button className="icon-btn" aria-label="Notificaciones">{I.bell}<span className="dot-r"/></button>
         <div className="user-chip" role="button" tabIndex={0}>
-          <Avatar name={r.who} size={30}/>
+          <Avatar name={displayName} size={30}/>
           <div>
-            <div className="un">{r.who}</div>
+            <div className="un">{displayName}</div>
             <div className="ur">{r.label}</div>
           </div>
         </div>
@@ -219,5 +362,18 @@ function Topbar({ title, sub, role, onLogout }) {
 }
 
 Object.assign(window, {
+  API_BASE_URL,
+  AUTH_TOKEN_KEY,
+  TENANT_ID_KEY,
+  apiRequest,
+  roleFromBackend,
+  normalizeTenantSettings,
+  normalizeMembershipPlan,
+  planToApiPayload,
+  colorInk,
+  applyTenantTheme,
+  LoadingBlock,
+  ErrorBlock,
+  Modal,
   I, icon, Avatar, Btn, Badge, StatusBadge, Kpi, Panel, Bars, Donut, Sidebar, Topbar,
 });
