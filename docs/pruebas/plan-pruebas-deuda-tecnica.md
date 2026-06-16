@@ -74,6 +74,20 @@ La App Móvil interactúa directamente con los socios, lee códigos QR y soporta
   3. Repetir el proceso cambiando el tema del sistema operativo Android/iOS.
 * **Criterio de Aceptación**: Todos los textos deben cumplir con un contraste mínimo de 4.5:1 (norma WCAG AA). Los componentes dinámicos de color deben usar el preset establecido en el Tenant actual.
 
+### 🧪 Caso 3.4: Caja desde APK en celular físico
+* **Propósito**: Validar que el APK móvil conectado al backend Docker local permite ejecutar el flujo operativo de caja sin duplicidad financiera.
+* **Documento de ejecución**: `docs/pruebas/caja-movil-celular-2026-06-16.md`.
+* **Acciones resumidas**:
+  1. Instalar APK `dev/local` en celular físico conectado a la misma red Wi-Fi que la PC.
+  2. Iniciar sesión como `caja1.surco@test.sasgym.com`.
+  3. Abrir caja con saldo inicial.
+  4. Registrar venta/cobro desde POS.
+  5. Intentar doble tap/doble submit en la confirmación de venta.
+  6. Registrar egreso.
+  7. Cerrar caja.
+  8. Verificar auditoría.
+* **Criterio de Aceptación**: El cierre debe cuadrar con `saldo inicial + ingresos - egresos`, y el doble submit no debe crear cobros duplicados.
+
 ---
 
 ## 📋 4. Formato de Reporte de Deuda Técnica (Plantilla)
