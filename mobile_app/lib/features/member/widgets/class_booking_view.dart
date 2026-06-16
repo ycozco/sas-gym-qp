@@ -5,7 +5,11 @@ import '../../../theme/app_theme_tokens.dart';
 import '../../../widgets/app_shell.dart';
 
 class ClassBookingView extends StatefulWidget {
-  const ClassBookingView({super.key, required this.palette, required this.onBack});
+  const ClassBookingView({
+    super.key,
+    required this.palette,
+    required this.onBack,
+  });
 
   final RolePalette palette;
   final VoidCallback onBack;

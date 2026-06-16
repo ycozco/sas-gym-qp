@@ -14,10 +14,5 @@ void main() async {
   await EncryptedHive.openBox('gym_cache');
   await Hive.openBox('ui_settings_box');
   await SyncQueueService.init();
-  runApp(
-    GymStateProvider(
-      notifier: GymState(),
-      child: const SasGymApp(),
-    ),
-  );
+  runApp(GymStateProvider(notifier: GymState(), child: const SasGymApp()));
 }

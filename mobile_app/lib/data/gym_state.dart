@@ -322,7 +322,8 @@ class GymState extends ChangeNotifier {
   final List<MembershipPlan> _membershipPlans = [];
 
   TenantSettings? get tenantSettings => _tenantSettings;
-  List<MembershipPlan> get membershipPlans => List.unmodifiable(_membershipPlans);
+  List<MembershipPlan> get membershipPlans =>
+      List.unmodifiable(_membershipPlans);
   MembershipPlan? get defaultMembershipPlan =>
       _membershipPlans.isEmpty ? null : _membershipPlans.first;
 
@@ -398,6 +399,7 @@ class GymState extends ChangeNotifier {
     );
     return presets;
   }
+
   List<ProductItem> get products => _products;
   List<CashierAccount> get cashiers => _cashiers;
   List<AuditEntry> get auditLogs => _auditLogs;
@@ -1431,7 +1433,9 @@ class GymState extends ChangeNotifier {
     final value = (raw ?? '').toLowerCase();
     if (value.contains('grace')) return 'grace';
     if (value.contains('active')) return 'active';
-    if (value.contains('pending') || value.contains('inactive')) return 'inactive';
+    if (value.contains('pending') || value.contains('inactive')) {
+      return 'inactive';
+    }
     if (value.contains('suspend')) return 'suspended';
     return 'expired';
   }
@@ -1441,7 +1445,8 @@ class GymState extends ChangeNotifier {
     final latestMembership = memberships.isNotEmpty
         ? memberships.first as Map<String, dynamic>
         : const <String, dynamic>{};
-    final memberProfile = json['member_profile'] as Map<String, dynamic>? ?? const {};
+    final memberProfile =
+        json['member_profile'] as Map<String, dynamic>? ?? const {};
     final trainer = memberProfile['trainer'] as Map<String, dynamic>?;
     final trainerUser = trainer?['user'] as Map<String, dynamic>?;
     final paymentHistory = memberships.map((membership) {
@@ -1450,7 +1455,10 @@ class GymState extends ChangeNotifier {
         id: item['id']?.toString() ?? '',
         planName: item['plan_nombre']?.toString() ?? 'Membresía',
         price: (item['precio'] as num?)?.toDouble() ?? 0,
-        date: item['fecha_inicio']?.toString() ?? item['created_at']?.toString() ?? '',
+        date:
+            item['fecha_inicio']?.toString() ??
+            item['created_at']?.toString() ??
+            '',
         method: 'Sistema',
         state: _mapMembershipState(item['estado']?.toString()),
       );
@@ -1470,7 +1478,9 @@ class GymState extends ChangeNotifier {
       goal: memberProfile['objetivo']?.toString() ?? 'Objetivo pendiente',
       sessions: 0,
       lastSeen: latestMembership['fecha_vencimiento']?.toString() ?? '—',
-      state: _mapMembershipState(latestMembership['estado']?.toString() ?? json['estado']?.toString()),
+      state: _mapMembershipState(
+        latestMembership['estado']?.toString() ?? json['estado']?.toString(),
+      ),
       assignedTrainer: trainerUser?['nombre_completo']?.toString() ?? '',
       paymentHistory: paymentHistory,
       physicalMeasurements: {
@@ -1488,7 +1498,8 @@ class GymState extends ChangeNotifier {
     final categoria = json['categoria'];
     String categoryName = 'General';
     if (categoria is Map<String, dynamic>) {
-      categoryName = categoria['descripcion']?.toString() ??
+      categoryName =
+          categoria['descripcion']?.toString() ??
           categoria['nombre']?.toString() ??
           'General';
     } else if (categoria != null) {
@@ -1507,7 +1518,9 @@ class GymState extends ChangeNotifier {
 
   CashierAccount _cashierFromBackend(Map<String, dynamic> json) {
     final cajas = (json['cajas_registradas'] as List<dynamic>? ?? []);
-    final lastCaja = cajas.isNotEmpty ? cajas.first as Map<String, dynamic> : const <String, dynamic>{};
+    final lastCaja = cajas.isNotEmpty
+        ? cajas.first as Map<String, dynamic>
+        : const <String, dynamic>{};
     return CashierAccount(
       name: json['nombre_completo']?.toString() ?? 'Cajero',
       shift: lastCaja['estado']?.toString() ?? 'Sin turno',
@@ -1522,7 +1535,10 @@ class GymState extends ChangeNotifier {
       id: json['id']?.toString() ?? '',
       planName: membership['plan_nombre']?.toString() ?? 'Membresía',
       price: (json['monto'] as num?)?.toDouble() ?? 0,
-      date: json['fecha_pago']?.toString() ?? json['created_at']?.toString() ?? '',
+      date:
+          json['fecha_pago']?.toString() ??
+          json['created_at']?.toString() ??
+          '',
       method: json['metodo_pago']?.toString() ?? 'Sistema',
       state: (json['estado']?.toString() ?? 'pending').toLowerCase(),
       receiptUrl: json['comprobante_url']?.toString(),
@@ -1552,11 +1568,14 @@ class GymState extends ChangeNotifier {
 
   Future<void> loadProducts() async {
     if (!isBackendMode ||
-        !(_currentUser?.rol == GymRole.admin || _currentUser?.rol == GymRole.cashier)) {
+        !(_currentUser?.rol == GymRole.admin ||
+            _currentUser?.rol == GymRole.cashier)) {
       return;
     }
     try {
-      final includeInactive = _currentUser?.rol == GymRole.admin ? 'true' : 'false';
+      final includeInactive = _currentUser?.rol == GymRole.admin
+          ? 'true'
+          : 'false';
       final response = await ApiClient().dio.get(
         '/products',
         queryParameters: {'includeInactive': includeInactive},
@@ -1689,14 +1708,15 @@ class GymState extends ChangeNotifier {
     }
   }
 
-  Future<Map<String, dynamic>?> bookSchedule(String scheduleId, {DateTime? fecha}) async {
+  Future<Map<String, dynamic>?> bookSchedule(
+    String scheduleId, {
+    DateTime? fecha,
+  }) async {
     if (!isBackendMode || _currentUser?.rol != GymRole.member) return null;
     try {
       final response = await ApiClient().dio.post(
         '/schedules/$scheduleId/book',
-        data: {
-          if (fecha != null) 'fecha': fecha.toIso8601String(),
-        },
+        data: {if (fecha != null) 'fecha': fecha.toIso8601String()},
       );
       await loadSchedules();
       return Map<String, dynamic>.from(response.data as Map);
@@ -1706,14 +1726,15 @@ class GymState extends ChangeNotifier {
     }
   }
 
-  Future<Map<String, dynamic>?> cancelSchedule(String scheduleId, {DateTime? fecha}) async {
+  Future<Map<String, dynamic>?> cancelSchedule(
+    String scheduleId, {
+    DateTime? fecha,
+  }) async {
     if (!isBackendMode || _currentUser?.rol != GymRole.member) return null;
     try {
       final response = await ApiClient().dio.post(
         '/schedules/$scheduleId/cancel',
-        data: {
-          if (fecha != null) 'fecha': fecha.toIso8601String(),
-        },
+        data: {if (fecha != null) 'fecha': fecha.toIso8601String()},
       );
       await loadSchedules();
       return Map<String, dynamic>.from(response.data as Map);
@@ -2545,7 +2566,6 @@ class GymState extends ChangeNotifier {
         if (isBackendMode) {
           _syncThemePreferenceIfNeeded();
           syncOfflineLogs();
-          SyncQueueService.processQueue();
         }
       }
     }
@@ -2622,10 +2642,19 @@ class GymState extends ChangeNotifier {
 
   // Guardado de Sesiones de Entrenamiento
   Future<bool> saveWorkoutSession(Map<String, dynamic> session) async {
+    final syncPayload = _workoutSessionWithIdempotency(session);
     if (isBackendMode) {
       if (_isOnline) {
         try {
-          await ApiClient().dio.post('/members/workout-log', data: session);
+          await ApiClient().dio.post(
+            '/members/workout-log',
+            data: syncPayload,
+            options: Options(
+              headers: {
+                'X-Idempotency-Key': syncPayload['idempotencyKey'].toString(),
+              },
+            ),
+          );
           _addLog(
             'Entrenamiento',
             'Log de esfuerzo',
@@ -2638,15 +2667,17 @@ class GymState extends ChangeNotifier {
         }
       }
 
-      // Guardar en cola offline de Hive
-      final box = Hive.box('gym_cache');
-      final List<dynamic> queue = box.get('offline_workout_queue') ?? [];
-      queue.add(session);
-      await box.put('offline_workout_queue', queue);
+      await SyncQueueService.enqueue(
+        '/members/workout-log',
+        'POST',
+        syncPayload,
+        description: 'Sesión de entrenamiento offline',
+        idempotencyKey: syncPayload['idempotencyKey'].toString(),
+      );
       _addLog(
         'Entrenamiento',
         'Log de esfuerzo (Offline)',
-        'Sin conexión. Sesión guardada localmente.',
+        'Sin conexión. Sesión encolada para sincronización.',
         Colors.orange,
       );
       notifyListeners();
@@ -2663,42 +2694,58 @@ class GymState extends ChangeNotifier {
     }
   }
 
+  Map<String, dynamic> _workoutSessionWithIdempotency(
+    Map<String, dynamic> session,
+  ) {
+    final copy = Map<String, dynamic>.from(session);
+    final existing = copy['idempotencyKey']?.toString();
+    if (existing != null && existing.isNotEmpty) {
+      return copy;
+    }
+    final seed =
+        copy['sessionId'] ??
+        copy['routineId'] ??
+        copy['templateId'] ??
+        DateTime.now().microsecondsSinceEpoch;
+    copy['idempotencyKey'] = 'workout-$seed';
+    return copy;
+  }
+
   Future<void> syncOfflineLogs() async {
     final box = Hive.box('gym_cache');
     final List<dynamic>? queue = box.get('offline_workout_queue');
-    if (queue == null || queue.isEmpty) return;
+    final hasLegacyQueue = queue != null && queue.isNotEmpty;
 
-    AppLogger.debug(
-      'Sincronizando ${queue.length} logs de entrenamiento offline...',
-    );
-
-    final List<dynamic> remaining = [];
-    for (var session in queue) {
-      try {
-        await ApiClient().dio.post('/members/workout-log', data: session);
-        AppLogger.debug('Log offline sincronizado correctamente.');
-      } catch (e) {
-        AppLogger.debug('Fallo al sincronizar log offline, re-encolando', e);
-        remaining.add(session);
+    if (hasLegacyQueue) {
+      for (final session in queue) {
+        final payload = _workoutSessionWithIdempotency(
+          Map<String, dynamic>.from(session as Map),
+        );
+        await SyncQueueService.enqueue(
+          '/members/workout-log',
+          'POST',
+          payload,
+          description: 'Migración de sesión offline legacy',
+          idempotencyKey: payload['idempotencyKey'].toString(),
+        );
       }
+
+      await box.put('offline_workout_queue', []);
     }
 
-    await box.put('offline_workout_queue', remaining);
-    if (remaining.isEmpty) {
-      _addLog(
-        'Sincronización',
-        'Entrenamientos Offline',
-        'Todos los logs pendientes fueron enviados.',
-        Colors.green,
-      );
-    } else {
-      _addLog(
-        'Sincronización',
-        'Entrenamientos Offline',
-        'Fallo al enviar algunos logs (re-encolados).',
-        Colors.orange,
-      );
+    if (!hasLegacyQueue && SyncQueueService.getQueue().isEmpty) {
+      return;
     }
+
+    final allSynced = await SyncQueueService.processQueue();
+    _addLog(
+      'Sincronización',
+      'Entrenamientos Offline',
+      allSynced
+          ? 'Todos los logs pendientes fueron enviados.'
+          : 'Hay logs pendientes en SyncQueue para reintentar.',
+      allSynced ? Colors.green : Colors.orange,
+    );
     notifyListeners();
   }
 

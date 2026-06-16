@@ -29,7 +29,7 @@ RUN if [ "$APP_ENV" = "production" ] && [ -z "$API_BASE_URL" ]; then \
           exit 1 ;; \
       esac; \
     fi
-RUN flutter build web --release --no-wasm-dry-run --pwa-strategy=none \
+RUN flutter build web --release --no-wasm-dry-run \
     --dart-define=APP_ENV=${APP_ENV} \
     --dart-define=APP_MODE=${APP_MODE} \
     --dart-define=ENABLE_QR_SIMULATOR=${ENABLE_QR_SIMULATOR} \

@@ -108,7 +108,7 @@ class MemberAgendaPage extends StatelessWidget {
                         fontSize: 9.5,
                         fontWeight: FontWeight.w700,
                         color: day.today
-                            ? palette.accentInk.withOpacity(0.85)
+                            ? palette.accentInk.withValues(alpha: 0.85)
                             : const Color(0xFF7C7C7C),
                       ),
                     ),
@@ -198,7 +198,7 @@ class MemberAgendaPage extends StatelessWidget {
                         vertical: 8,
                       ),
                       leading: CircleAvatar(
-                        backgroundColor: palette.accent.withOpacity(0.12),
+                        backgroundColor: palette.accent.withValues(alpha: 0.12),
                         foregroundColor: palette.accent,
                         child: Icon(exercise.icon, size: 18),
                       ),

@@ -50,7 +50,12 @@ class _QRPainter extends CustomPainter {
 
     void drawCell(int x, int y) {
       canvas.drawRect(
-        Rect.fromLTWH(x * cellSize, y * cellSize, cellSize + 0.2, cellSize + 0.2),
+        Rect.fromLTWH(
+          x * cellSize,
+          y * cellSize,
+          cellSize + 0.2,
+          cellSize + 0.2,
+        ),
         paint,
       );
     }
@@ -93,7 +98,10 @@ class _QRPainter extends CustomPainter {
           }
           continue;
         }
-        if (x >= gridCount - 11 && x <= gridCount - 7 && y >= gridCount - 11 && y <= gridCount - 7) {
+        if (x >= gridCount - 11 &&
+            x <= gridCount - 7 &&
+            y >= gridCount - 11 &&
+            y <= gridCount - 7) {
           continue;
         }
 

@@ -81,17 +81,34 @@ class _StudentDetailsViewState extends State<StudentDetailsView> {
               children: [
                 CircleAvatar(
                   radius: 36,
-                  backgroundColor: widget.palette.accent.withValues(alpha: 0.12),
+                  backgroundColor: widget.palette.accent.withValues(
+                    alpha: 0.12,
+                  ),
                   foregroundColor: widget.palette.accent,
                   child: Text(
                     m.name.substring(0, 2).toUpperCase(),
-                    style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 24),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 24,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 14),
-                Text(m.name, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w900)),
+                Text(
+                  m.name,
+                  style: const TextStyle(
+                    fontSize: 19,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
                 const SizedBox(height: 4),
-                Text('DNI: ${m.dni} · ${m.email}', style: const TextStyle(fontSize: 12.5, color: Color(0xFF6B6B6B))),
+                Text(
+                  'DNI: ${m.dni} · ${m.email}',
+                  style: const TextStyle(
+                    fontSize: 12.5,
+                    color: Color(0xFF6B6B6B),
+                  ),
+                ),
                 const SizedBox(height: 16),
                 const Divider(height: 1, color: Color(0xFFE8E4D9)),
                 const SizedBox(height: 16),
@@ -121,16 +138,28 @@ class _StudentDetailsViewState extends State<StudentDetailsView> {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.warning_amber_rounded, color: Color(0xFFFF3B30), size: 22),
+                    const Icon(
+                      Icons.warning_amber_rounded,
+                      color: Color(0xFFFF3B30),
+                      size: 22,
+                    ),
                     const SizedBox(width: 8),
                     const Text(
                       'Restricciones y Notas Médicas',
-                      style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14.5, color: Color(0xFFFF3B30)),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 14.5,
+                        color: Color(0xFFFF3B30),
+                      ),
                     ),
                     const Spacer(),
                     IconButton(
-                      icon: Icon(_isEditingNote ? Icons.save_rounded : Icons.edit_note_rounded,
-                          color: const Color(0xFFFF3B30)),
+                      icon: Icon(
+                        _isEditingNote
+                            ? Icons.save_rounded
+                            : Icons.edit_note_rounded,
+                        color: const Color(0xFFFF3B30),
+                      ),
                       onPressed: () {
                         if (_isEditingNote) {
                           widget.onSaveNote(_notesController.text);
@@ -148,7 +177,8 @@ class _StudentDetailsViewState extends State<StudentDetailsView> {
                         controller: _notesController,
                         maxLines: 3,
                         decoration: const InputDecoration(
-                          hintText: 'Añade restricciones por lesión o cuidados especiales...',
+                          hintText:
+                              'Añade restricciones por lesión o cuidados especiales...',
                           border: OutlineInputBorder(),
                           fillColor: null,
                           filled: true,
@@ -169,7 +199,10 @@ class _StudentDetailsViewState extends State<StudentDetailsView> {
           const SizedBox(height: 18),
 
           // Anthropometric Physical measurements
-          SectionHeader(title: 'Medidas Antropométricas', action: 'Ficha Física'),
+          SectionHeader(
+            title: 'Medidas Antropométricas',
+            action: 'Ficha Física',
+          ),
           Container(
             padding: const EdgeInsets.all(18),
             decoration: trainerCardDecoration(context),
@@ -177,8 +210,18 @@ class _StudentDetailsViewState extends State<StudentDetailsView> {
               children: [
                 Row(
                   children: [
-                    Expanded(child: _measureItem('Peso', '${m.physicalMeasurements['peso'] ?? 70.0} kg')),
-                    Expanded(child: _measureItem('Estatura', '${m.physicalMeasurements['altura'] ?? 1.70} m')),
+                    Expanded(
+                      child: _measureItem(
+                        'Peso',
+                        '${m.physicalMeasurements['peso'] ?? 70.0} kg',
+                      ),
+                    ),
+                    Expanded(
+                      child: _measureItem(
+                        'Estatura',
+                        '${m.physicalMeasurements['altura'] ?? 1.70} m',
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -186,9 +229,24 @@ class _StudentDetailsViewState extends State<StudentDetailsView> {
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    Expanded(child: _measureItem('Pecho', '${m.physicalMeasurements['pecho'] ?? 90.0} cm')),
-                    Expanded(child: _measureItem('Cintura', '${m.physicalMeasurements['cintura'] ?? 75.0} cm')),
-                    Expanded(child: _measureItem('Cadera', '${m.physicalMeasurements['cadera'] ?? 95.0} cm')),
+                    Expanded(
+                      child: _measureItem(
+                        'Pecho',
+                        '${m.physicalMeasurements['pecho'] ?? 90.0} cm',
+                      ),
+                    ),
+                    Expanded(
+                      child: _measureItem(
+                        'Cintura',
+                        '${m.physicalMeasurements['cintura'] ?? 75.0} cm',
+                      ),
+                    ),
+                    Expanded(
+                      child: _measureItem(
+                        'Cadera',
+                        '${m.physicalMeasurements['cadera'] ?? 95.0} cm',
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -207,19 +265,43 @@ class _StudentDetailsViewState extends State<StudentDetailsView> {
                 minimumHeight: 52,
               ),
               icon: const Icon(Icons.edit_calendar_rounded),
-              label: const Text('Planificar / Asignar Rutina Semanal', style: TextStyle(fontWeight: FontWeight.w900)),
+              label: const Text(
+                'Planificar / Asignar Rutina Semanal',
+                style: TextStyle(fontWeight: FontWeight.w900),
+              ),
               onPressed: () => widget.onGo('assign-routine', {'member': m}),
             ),
           ),
           const SizedBox(height: 18),
 
           // Past RPE effort history logs
-          SectionHeader(title: 'Historial de Esfuerzo Reciente', action: 'RPE Logs'),
+          SectionHeader(
+            title: 'Historial de Esfuerzo Reciente',
+            action: 'RPE Logs',
+          ),
           Column(
             children: [
-              _rpeLogTile(context, 'Ayer', 'Press de banca', '4 series × 8 rep @ 75kg', 'RPE 9 (Cerca al fallo)'),
-              _rpeLogTile(context, 'Hace 3d', 'Sentadilla con barra', '4 series × 6 rep @ 95kg', 'RPE 8 (2 rep en reserva)'),
-              _rpeLogTile(context, 'Hace 5d', 'Press militar', '3 series × 10 rep @ 40kg', 'RPE 7 (3 rep en reserva)'),
+              _rpeLogTile(
+                context,
+                'Ayer',
+                'Press de banca',
+                '4 series × 8 rep @ 75kg',
+                'RPE 9 (Cerca al fallo)',
+              ),
+              _rpeLogTile(
+                context,
+                'Hace 3d',
+                'Sentadilla con barra',
+                '4 series × 6 rep @ 95kg',
+                'RPE 8 (2 rep en reserva)',
+              ),
+              _rpeLogTile(
+                context,
+                'Hace 5d',
+                'Press militar',
+                '3 series × 10 rep @ 40kg',
+                'RPE 7 (3 rep en reserva)',
+              ),
             ],
           ),
         ],
@@ -230,9 +312,19 @@ class _StudentDetailsViewState extends State<StudentDetailsView> {
   Widget _infoStatColumn(String title, String value) {
     return Column(
       children: [
-        Text(title, style: const TextStyle(fontSize: 11, color: Color(0xFF8E8E8E), fontWeight: FontWeight.bold)),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 11,
+            color: Color(0xFF8E8E8E),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         const SizedBox(height: 6),
-        Text(value, style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w900)),
+        Text(
+          value,
+          style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w900),
+        ),
       ],
     );
   }
@@ -241,9 +333,19 @@ class _StudentDetailsViewState extends State<StudentDetailsView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 11, color: Color(0xFF7A7A7A), fontWeight: FontWeight.bold)),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11,
+            color: Color(0xFF7A7A7A),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         const SizedBox(height: 4),
-        Text(value, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+        Text(
+          value,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+        ),
       ],
     );
   }
@@ -267,27 +369,54 @@ class _StudentDetailsViewState extends State<StudentDetailsView> {
               color: Colors.deepOrange.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.bar_chart_rounded, color: Colors.deepOrange, size: 20),
+            child: const Icon(
+              Icons.bar_chart_rounded,
+              color: Colors.deepOrange,
+              size: 20,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(exercise, style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w800)),
+                Text(
+                  exercise,
+                  style: const TextStyle(
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
                 const SizedBox(height: 2),
-                Text(details, style: const TextStyle(fontSize: 12, color: Color(0xFF6E6E6E))),
+                Text(
+                  details,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF6E6E6E),
+                  ),
+                ),
               ],
             ),
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(time, style: const TextStyle(fontSize: 11, color: Color(0xFF8A8A8A), fontWeight: FontWeight.bold)),
+              Text(
+                time,
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: Color(0xFF8A8A8A),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               const SizedBox(height: 4),
               Text(
                 rpeText,
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.deepOrange),
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.deepOrange,
+                ),
               ),
             ],
           ),

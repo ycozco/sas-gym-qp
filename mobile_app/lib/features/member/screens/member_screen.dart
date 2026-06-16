@@ -43,10 +43,12 @@ class _MemberScreenState extends State<MemberScreen> {
   }
 
   Color _getAccentColor() {
-    final box = Hive.box('gym_cache');
-    final savedColor = box.get('custom_theme_accent');
-    if (savedColor != null && savedColor is int) {
-      return Color(savedColor);
+    if (Hive.isBoxOpen('gym_cache')) {
+      final box = Hive.box('gym_cache');
+      final savedColor = box.get('custom_theme_accent');
+      if (savedColor != null && savedColor is int) {
+        return Color(savedColor);
+      }
     }
     return rolePalettes[GymRole.member]!.accent;
   }
@@ -57,10 +59,12 @@ class _MemberScreenState extends State<MemberScreen> {
     final customAccent = _getAccentColor();
     final palette = RolePalette(
       accent: customAccent,
-      accentInk: customAccent.computeLuminance() > 0.45 ? const Color(0xFF0B0B0B) : Colors.white,
+      accentInk: customAccent.computeLuminance() > 0.45
+          ? const Color(0xFF0B0B0B)
+          : Colors.white,
       surfaceTint: defaultPalette.surfaceTint,
       gradient: LinearGradient(
-        colors: [customAccent.withOpacity(0.15), const Color(0xFF0F0F11)],
+        colors: [customAccent.withValues(alpha: 0.15), const Color(0xFF0F0F11)],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       ),

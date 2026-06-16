@@ -278,8 +278,9 @@ class AdminScannerPage extends StatelessWidget {
       onTriggerVerdict(resultStr, member, dni);
     } else {
       final result = state.recordAttendance(dni);
-      final memberIndex = state.allMembersIncludingSoftDeleted
-          .indexWhere((m) => m.dni == dni);
+      final memberIndex = state.allMembersIncludingSoftDeleted.indexWhere(
+        (m) => m.dni == dni,
+      );
       final MemberRecord? member = memberIndex != -1
           ? state.allMembersIncludingSoftDeleted[memberIndex]
           : null;

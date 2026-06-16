@@ -54,7 +54,10 @@ class MemberSubscriptionPage extends StatelessWidget {
                 children: [
                   Text(
                     'Plan Actual: $planName',
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                   const Spacer(),
                   StatusPill(
@@ -70,7 +73,10 @@ class MemberSubscriptionPage extends StatelessWidget {
               const SizedBox(height: 14),
               Text(
                 'Vigencia: del $startDate al $endDate',
-                style: const TextStyle(fontSize: 12.5, color: Color(0xFF6B6B6B)),
+                style: const TextStyle(
+                  fontSize: 12.5,
+                  color: Color(0xFF6B6B6B),
+                ),
               ),
               const SizedBox(height: 16),
               // Linear indicator
@@ -179,7 +185,7 @@ class MemberSubscriptionPage extends StatelessWidget {
                       width: 42,
                       height: 42,
                       decoration: BoxDecoration(
-                        color: stateColor.withOpacity(0.12),
+                        color: stateColor.withValues(alpha: 0.12),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(

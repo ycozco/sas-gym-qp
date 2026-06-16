@@ -59,15 +59,16 @@ class _CashierMembershipsPageState extends State<CashierMembershipsPage> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     final colors = context.sasColors;
     final filteredMembers = widget.state.members
-        .where((m) =>
-            m.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-            m.dni.contains(_searchQuery) ||
-            m.state.toLowerCase().contains(_searchQuery.toLowerCase()))
+        .where(
+          (m) =>
+              m.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+              m.dni.contains(_searchQuery) ||
+              m.state.toLowerCase().contains(_searchQuery.toLowerCase()),
+        )
         .toList();
 
     return ListView(
@@ -76,7 +77,8 @@ class _CashierMembershipsPageState extends State<CashierMembershipsPage> {
         RoleHeroHeader(
           palette: widget.palette,
           title: 'Membresías',
-          subtitle: 'Busca socios por QR, DNI o Nombre y verifica el estado de su membresía.',
+          subtitle:
+              'Busca socios por QR, DNI o Nombre y verifica el estado de su membresía.',
         ),
         const SizedBox(height: 18),
 
@@ -107,10 +109,16 @@ class _CashierMembershipsPageState extends State<CashierMembershipsPage> {
               style: roleFilledPillButtonStyle(
                 backgroundColor: widget.palette.accent,
                 foregroundColor: widget.palette.accentInk,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
               ),
               icon: const Icon(Icons.person_add_alt_1_rounded, size: 18),
-              label: const Text('Registrar', style: TextStyle(fontWeight: FontWeight.bold)),
+              label: const Text(
+                'Registrar',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               onPressed: () => _showAddMemberDialog(context),
             ),
           ],
@@ -129,7 +137,10 @@ class _CashierMembershipsPageState extends State<CashierMembershipsPage> {
             child: const Center(
               child: Text(
                 'No se encontraron socios con esos criterios.',
-                style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           )
@@ -166,36 +177,73 @@ class _CashierMembershipsPageState extends State<CashierMembershipsPage> {
                   side: BorderSide(color: colors.border),
                 ),
                 child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   leading: CircleAvatar(
                     radius: 22,
-                    backgroundColor: widget.palette.accent.withValues(alpha: 0.12),
+                    backgroundColor: widget.palette.accent.withValues(
+                      alpha: 0.12,
+                    ),
                     child: Text(
-                      m.name.substring(0, m.name.length >= 2 ? 2 : m.name.length).toUpperCase(),
-                      style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: widget.palette.accentInk),
+                      m.name
+                          .substring(0, m.name.length >= 2 ? 2 : m.name.length)
+                          .toUpperCase(),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 13,
+                        color: widget.palette.accentInk,
+                      ),
                     ),
                   ),
-                  title: Text(m.name, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
+                  title: Text(
+                    m.name,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 15,
+                    ),
+                  ),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: 2),
-                      Text('DNI: ${m.dni} · ${m.phone}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                      Text(
+                        'DNI: ${m.dni} · ${m.phone}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
+                      ),
                       const SizedBox(height: 4),
                       Row(
                         children: [
                           Container(
                             width: 8,
                             height: 8,
-                            decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle),
+                            decoration: BoxDecoration(
+                              color: statusColor,
+                              shape: BoxShape.circle,
+                            ),
                           ),
                           const SizedBox(width: 6),
-                          Text(statusText, style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 12)),
+                          Text(
+                            statusText,
+                            style: TextStyle(
+                              color: statusColor,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
                         ],
                       ),
                     ],
                   ),
-                  trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.grey),
+                  trailing: const Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 16,
+                    color: Colors.grey,
+                  ),
                   onTap: () => _showVerifyMembershipDialog(context, m),
                 ),
               );
@@ -226,7 +274,10 @@ class _CashierMembershipsPageState extends State<CashierMembershipsPage> {
                 borderRadius: BorderRadius.circular(20),
                 side: BorderSide(color: colors.border),
               ),
-              title: const Text('Registrar Nuevo Socio', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
+              title: const Text(
+                'Registrar Nuevo Socio',
+                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
+              ),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -234,12 +285,16 @@ class _CashierMembershipsPageState extends State<CashierMembershipsPage> {
                     TextField(
                       controller: dniCtrl,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'DNI / Documento *'),
+                      decoration: const InputDecoration(
+                        labelText: 'DNI / Documento *',
+                      ),
                     ),
                     const SizedBox(height: 8),
                     TextField(
                       controller: nameCtrl,
-                      decoration: const InputDecoration(labelText: 'Nombre Completo *'),
+                      decoration: const InputDecoration(
+                        labelText: 'Nombre Completo *',
+                      ),
                     ),
                     const SizedBox(height: 8),
                     TextField(
@@ -256,20 +311,32 @@ class _CashierMembershipsPageState extends State<CashierMembershipsPage> {
                     const SizedBox(height: 8),
                     TextField(
                       controller: goalCtrl,
-                      decoration: const InputDecoration(labelText: 'Objetivo (ej: Bajar peso)'),
+                      decoration: const InputDecoration(
+                        labelText: 'Objetivo (ej: Bajar peso)',
+                      ),
                     ),
                     const SizedBox(height: 8),
                     TextField(
                       controller: trainerCtrl,
-                      decoration: const InputDecoration(labelText: 'Entrenador Asignado'),
+                      decoration: const InputDecoration(
+                        labelText: 'Entrenador Asignado',
+                      ),
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
                       initialValue: stateSelect,
-                      decoration: const InputDecoration(labelText: 'Estado Inicial'),
+                      decoration: const InputDecoration(
+                        labelText: 'Estado Inicial',
+                      ),
                       items: const [
-                        DropdownMenuItem(value: 'active', child: Text('Activo')),
-                        DropdownMenuItem(value: 'expired', child: Text('Vencido')),
+                        DropdownMenuItem(
+                          value: 'active',
+                          child: Text('Activo'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'expired',
+                          child: Text('Vencido'),
+                        ),
                       ],
                       onChanged: (val) {
                         if (val != null) {
@@ -283,13 +350,22 @@ class _CashierMembershipsPageState extends State<CashierMembershipsPage> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(ctx),
-                  child: const Text('Cancelar', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                  child: const Text(
+                    'Cancelar',
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
                 ElevatedButton(
                   style: roleFilledPillButtonStyle(
                     backgroundColor: widget.palette.accent,
                     foregroundColor: widget.palette.accentInk,
-                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 18,
+                      vertical: 12,
+                    ),
                   ),
                   onPressed: () {
                     if (nameCtrl.text.isNotEmpty && dniCtrl.text.isNotEmpty) {
@@ -311,15 +387,21 @@ class _CashierMembershipsPageState extends State<CashierMembershipsPage> {
                       widget.state.addMember(newMember);
                       Navigator.pop(ctx);
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Nuevo socio registrado con éxito.'), backgroundColor: Color(0xFF00B85C)),
+                        const SnackBar(
+                          content: Text('Nuevo socio registrado con éxito.'),
+                          backgroundColor: Color(0xFF00B85C),
+                        ),
                       );
                     }
                   },
-                  child: const Text('Registrar', style: TextStyle(fontWeight: FontWeight.bold)),
+                  child: const Text(
+                    'Registrar',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ),
               ],
             );
-          }
+          },
         );
       },
     );
@@ -364,7 +446,10 @@ class _CashierMembershipsPageState extends State<CashierMembershipsPage> {
               Expanded(
                 child: Text(
                   member.name,
-                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 18,
+                  ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -378,27 +463,57 @@ class _CashierMembershipsPageState extends State<CashierMembershipsPage> {
                 _detailRow('DNI / ID:', member.dni),
                 _detailRow('Email:', member.email),
                 _detailRow('Teléfono:', member.phone),
-                _detailRow('Entrenador:', member.assignedTrainer.isEmpty ? 'Ninguno' : member.assignedTrainer),
+                _detailRow(
+                  'Entrenador:',
+                  member.assignedTrainer.isEmpty
+                      ? 'Ninguno'
+                      : member.assignedTrainer,
+                ),
                 _detailRow('Objetivo:', member.goal),
                 const Divider(height: 24, color: Color(0xFFE8E4D9)),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Estado de Membresía:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey)),
+                    const Text(
+                      'Estado de Membresía:',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        color: Colors.grey,
+                      ),
+                    ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: statusColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+                        border: Border.all(
+                          color: statusColor.withValues(alpha: 0.3),
+                        ),
                       ),
-                      child: Text(statusText, style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 12)),
+                      child: Text(
+                        statusText,
+                        style: TextStyle(
+                          color: statusColor,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 12),
                 if (member.paymentHistory.isNotEmpty) ...[
-                  const Text('Historial de Planes:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
+                  const Text(
+                    'Historial de Planes:',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13.5,
+                    ),
+                  ),
                   const SizedBox(height: 6),
                   ...member.paymentHistory.map((pay) {
                     return Container(
@@ -415,11 +530,29 @@ class _CashierMembershipsPageState extends State<CashierMembershipsPage> {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(pay.planName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
-                              Text('${pay.date} · ${pay.method}', style: const TextStyle(color: Colors.grey, fontSize: 10.5)),
+                              Text(
+                                pay.planName,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12.5,
+                                ),
+                              ),
+                              Text(
+                                '${pay.date} · ${pay.method}',
+                                style: const TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 10.5,
+                                ),
+                              ),
                             ],
                           ),
-                          Text('S/ ${pay.price}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12)),
+                          Text(
+                            'S/ ${pay.price}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 12,
+                            ),
+                          ),
                         ],
                       ),
                     );
@@ -430,7 +563,11 @@ class _CashierMembershipsPageState extends State<CashierMembershipsPage> {
                       padding: EdgeInsets.symmetric(vertical: 12.0),
                       child: Text(
                         'No registra historial de pagos de membresía.',
-                        style: TextStyle(color: Colors.grey, fontSize: 12, fontStyle: FontStyle.italic),
+                        style: TextStyle(
+                          color: Colors.grey,
+                          fontSize: 12,
+                          fontStyle: FontStyle.italic,
+                        ),
                       ),
                     ),
                   ),
@@ -440,13 +577,22 @@ class _CashierMembershipsPageState extends State<CashierMembershipsPage> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cerrar', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+              child: const Text(
+                'Cerrar',
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
             ElevatedButton(
               style: roleFilledPillButtonStyle(
                 backgroundColor: widget.palette.accent,
                 foregroundColor: widget.palette.accentInk,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
               ),
               onPressed: () {
                 Navigator.pop(ctx);
@@ -456,7 +602,10 @@ class _CashierMembershipsPageState extends State<CashierMembershipsPage> {
                   _showAssignPlanDialog(context, member);
                 }
               },
-              child: const Text('Vender Plan', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: const Text(
+                'Vender Plan',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         );
@@ -464,15 +613,40 @@ class _CashierMembershipsPageState extends State<CashierMembershipsPage> {
     );
   }
 
-  void _showAssignPlanDialog(BuildContext context, MemberRecord member, {String? defaultPlan, double? defaultPrice}) {
+  void _showAssignPlanDialog(
+    BuildContext context,
+    MemberRecord member, {
+    String? defaultPlan,
+    double? defaultPrice,
+  }) {
     final colors = context.sasColors;
     final plans = widget.state.membershipPlans.isNotEmpty
         ? widget.state.membershipPlans.where((p) => p.active).toList()
         : const [
-            MembershipPlan(id: '', name: 'Plan Mensual Oro', durationDays: 30, price: 150),
-            MembershipPlan(id: '', name: 'Plan Mensual Plata', durationDays: 30, price: 120),
-            MembershipPlan(id: '', name: 'Plan Trimestral Platinium', durationDays: 90, price: 400),
-            MembershipPlan(id: '', name: 'Pase por un Dia', durationDays: 1, price: 25),
+            MembershipPlan(
+              id: '',
+              name: 'Plan Mensual Oro',
+              durationDays: 30,
+              price: 150,
+            ),
+            MembershipPlan(
+              id: '',
+              name: 'Plan Mensual Plata',
+              durationDays: 30,
+              price: 120,
+            ),
+            MembershipPlan(
+              id: '',
+              name: 'Plan Trimestral Platinium',
+              durationDays: 90,
+              price: 400,
+            ),
+            MembershipPlan(
+              id: '',
+              name: 'Pase por un Dia',
+              durationDays: 1,
+              price: 25,
+            ),
           ];
     MembershipPlan selectedPlan = plans.firstWhere(
       (p) => p.name == defaultPlan,
@@ -492,16 +666,29 @@ class _CashierMembershipsPageState extends State<CashierMembershipsPage> {
                 borderRadius: BorderRadius.circular(16),
                 side: BorderSide(color: colors.border),
               ),
-              title: Text('Asignar Membresía a ${member.name}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16.5)),
+              title: Text(
+                'Asignar Membresía a ${member.name}',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 16.5,
+                ),
+              ),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   DropdownButtonFormField<String>(
-                    initialValue: selectedPlan.id.isNotEmpty ? selectedPlan.id : selectedPlan.name,
-                    decoration: const InputDecoration(labelText: 'Plan de Membresía'),
+                    initialValue: selectedPlan.id.isNotEmpty
+                        ? selectedPlan.id
+                        : selectedPlan.name,
+                    decoration: const InputDecoration(
+                      labelText: 'Plan de Membresía',
+                    ),
                     items: plans.map((p) {
                       final value = p.id.isNotEmpty ? p.id : p.name;
-                      return DropdownMenuItem(value: value, child: Text('${p.name} (S/ ${p.price})'));
+                      return DropdownMenuItem(
+                        value: value,
+                        child: Text('${p.name} (S/ ${p.price})'),
+                      );
                     }).toList(),
                     onChanged: (val) {
                       if (val != null) {
@@ -519,12 +706,20 @@ class _CashierMembershipsPageState extends State<CashierMembershipsPage> {
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
                     initialValue: paymentMethod,
-                    decoration: const InputDecoration(labelText: 'Método de Pago'),
+                    decoration: const InputDecoration(
+                      labelText: 'Método de Pago',
+                    ),
                     items: const [
-                      DropdownMenuItem(value: 'Efectivo', child: Text('Efectivo')),
+                      DropdownMenuItem(
+                        value: 'Efectivo',
+                        child: Text('Efectivo'),
+                      ),
                       DropdownMenuItem(value: 'Yape', child: Text('Yape')),
                       DropdownMenuItem(value: 'Plin', child: Text('Plin')),
-                      DropdownMenuItem(value: 'Tarjeta', child: Text('Tarjeta')),
+                      DropdownMenuItem(
+                        value: 'Tarjeta',
+                        child: Text('Tarjeta'),
+                      ),
                     ],
                     onChanged: (val) {
                       if (val != null) {
@@ -537,13 +732,22 @@ class _CashierMembershipsPageState extends State<CashierMembershipsPage> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(ctx),
-                  child: const Text('Cancelar', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                  child: const Text(
+                    'Cancelar',
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
                 ElevatedButton(
                   style: roleFilledPillButtonStyle(
                     backgroundColor: widget.palette.accent,
                     foregroundColor: widget.palette.accentInk,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
                   ),
                   onPressed: () async {
                     if (widget.state.isBackendMode) {
@@ -551,7 +755,13 @@ class _CashierMembershipsPageState extends State<CashierMembershipsPage> {
                         final ok = await widget.state.chargePOSBackend(
                           memberDni: member.dni,
                           cartItems: [
-                            {'planId': selectedPlan.id, 'name': selectedPlan.name, 'price': price, 'qty': 1, 'icon': 'membership'}
+                            {
+                              'planId': selectedPlan.id,
+                              'name': selectedPlan.name,
+                              'price': price,
+                              'qty': 1,
+                              'icon': 'membership',
+                            },
                           ],
                           total: price,
                           paymentMethod: paymentMethod,
@@ -559,14 +769,24 @@ class _CashierMembershipsPageState extends State<CashierMembershipsPage> {
                         if (ok && context.mounted) {
                           Navigator.pop(ctx);
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Membresía asignada y cobrada con éxito.'), backgroundColor: Color(0xFF00B85C)),
+                            const SnackBar(
+                              content: Text(
+                                'Membresía asignada y cobrada con éxito.',
+                              ),
+                              backgroundColor: Color(0xFF00B85C),
+                            ),
                           );
                         }
                       } catch (e) {
                         if (context.mounted) {
                           Navigator.pop(ctx);
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Error al asignar la membresía en el backend.'), backgroundColor: Colors.red),
+                            const SnackBar(
+                              content: Text(
+                                'Error al asignar la membresía en el backend.',
+                              ),
+                              backgroundColor: Colors.red,
+                            ),
                           );
                         }
                       }
@@ -574,22 +794,36 @@ class _CashierMembershipsPageState extends State<CashierMembershipsPage> {
                       widget.state.chargePOS(
                         memberDni: member.dni,
                         cartItems: [
-                          {'planId': selectedPlan.id, 'name': selectedPlan.name, 'price': price, 'qty': 1, 'icon': 'membership'}
+                          {
+                            'planId': selectedPlan.id,
+                            'name': selectedPlan.name,
+                            'price': price,
+                            'qty': 1,
+                            'icon': 'membership',
+                          },
                         ],
                         total: price,
                         paymentMethod: paymentMethod,
                       );
                       Navigator.pop(ctx);
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Membresía asignada exitosamente (Demo).'), backgroundColor: Color(0xFF00B85C)),
+                        const SnackBar(
+                          content: Text(
+                            'Membresía asignada exitosamente (Demo).',
+                          ),
+                          backgroundColor: Color(0xFF00B85C),
+                        ),
                       );
                     }
                   },
-                  child: const Text('Confirmar Venta', style: TextStyle(fontWeight: FontWeight.bold)),
+                  child: const Text(
+                    'Confirmar Venta',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ),
               ],
             );
-          }
+          },
         );
       },
     );
@@ -600,10 +834,25 @@ class _CashierMembershipsPageState extends State<CashierMembershipsPage> {
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
-          Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey)),
+          Text(
+            label,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+              color: Colors.grey,
+            ),
+          ),
           const SizedBox(width: 8),
           Expanded(
-            child: Text(val, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Color(0xFF111111)), overflow: TextOverflow.ellipsis),
+            child: Text(
+              val,
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+                color: Color(0xFF111111),
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ],
       ),

@@ -50,6 +50,7 @@ La App Móvil interactúa directamente con los socios, lee códigos QR y soporta
 
 ### 🧪 Caso 3.1: Robustez de la Cola de Sincronización Offline (SyncQueue)
 * **Propósito**: Validar que la aplicación encolar de manera segura las peticiones y conserve las llaves de idempotencia sin corromper los datos financieros.
+* **Documento de ejecución**: `docs/pruebas/syncqueue-offline-movil-2026-06-16.md`.
 * **Acciones**:
   1. Activar el Modo Avión en el dispositivo/emulador móvil.
   2. Intentar registrar una asistencia o marcar el check-in de una rutina de entrenamiento.

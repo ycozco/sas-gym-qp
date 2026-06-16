@@ -3,7 +3,11 @@ import '../../../models/gym_models.dart';
 import '../../../theme/app_theme_tokens.dart';
 
 class NotificationsView extends StatelessWidget {
-  const NotificationsView({super.key, required this.palette, required this.onBack});
+  const NotificationsView({
+    super.key,
+    required this.palette,
+    required this.onBack,
+  });
 
   final RolePalette palette;
   final VoidCallback onBack;

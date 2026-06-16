@@ -8,7 +8,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(RedisService.name);
 
   onModuleInit() {
-    const redisUrl = getOptionalEnv('REDIS_URL', 'redis://localhost:6379');
+    const redisUrl = this.getRedisUrl();
     this.logger.log(`Conectando a Redis en ${redisUrl}`);
     this.client = new Redis(redisUrl, {
       maxRetriesPerRequest: 3,
@@ -62,5 +62,16 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       await this.client.expire(key, ttlSeconds);
     }
     return val;
+  }
+
+  private getRedisUrl(): string {
+    const configuredUrl = getOptionalEnv('REDIS_URL');
+    if (configuredUrl) return configuredUrl;
+
+    const host = getOptionalEnv('REDIS_HOST', 'localhost');
+    const port = getOptionalEnv('REDIS_PORT', '6379');
+    const password = getOptionalEnv('REDIS_PASSWORD');
+    const encodedPassword = password ? `:${encodeURIComponent(password)}@` : '';
+    return `redis://${encodedPassword}${host}:${port}`;
   }
 }

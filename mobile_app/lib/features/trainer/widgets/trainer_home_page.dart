@@ -17,10 +17,6 @@ class TrainerHomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TrainerMembersList(
-      palette: palette,
-      state: state,
-      onGo: onGo,
-    );
+    return TrainerMembersList(palette: palette, state: state, onGo: onGo);
   }
 }

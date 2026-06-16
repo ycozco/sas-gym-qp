@@ -1,4 +1,4 @@
-FROM node:20-alpine
+FROM node:22-alpine
 
 # Instalar dependencias necesarias para compilar ciertos paquetes si fuera necesario
 RUN apk add --no-cache libc6-compat openssl

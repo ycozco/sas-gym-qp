@@ -1,14 +1,18 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 import '../core/network/api_client.dart';
+import '../core/services/sync_queue_service.dart';
 
-class ActiveRoutineNotifier extends StateNotifier<AsyncValue<Map<String, dynamic>?>> {
-  ActiveRoutineNotifier() : super(const AsyncValue.loading());
+class ActiveRoutineNotifier
+    extends StateNotifier<AsyncValue<Map<String, dynamic>?>> {
+  ActiveRoutineNotifier({Dio? dio})
+    : _dio = dio ?? ApiClient().dio,
+      super(const AsyncValue.loading());
 
-  /**
-   * Carga la rutina activa del miembro, intentando del servidor si hay conexión,
-   * o haciendo fallback a la caché local de Hive.
-   */
+  final Dio _dio;
+
+  /// Carga la rutina activa del miembro desde servidor o caché local.
   Future<Map<String, dynamic>?> loadActiveRoutine({
     required bool isOnline,
     required bool isBackendMode,
@@ -19,7 +23,7 @@ class ActiveRoutineNotifier extends StateNotifier<AsyncValue<Map<String, dynamic
 
       if (isBackendMode && isOnline) {
         try {
-          final response = await ApiClient().dio.get('/routines/active');
+          final response = await _dio.get('/routines/active');
           if (response.data != null) {
             final data = Map<String, dynamic>.from(response.data as Map);
             await box.put('active_routine', data);
@@ -47,37 +51,65 @@ class ActiveRoutineNotifier extends StateNotifier<AsyncValue<Map<String, dynamic
     }
   }
 
-  /**
-   * Registra una sesión de entrenamiento (workout session) de forma online u offline.
-   */
+  /// Registra una sesión de entrenamiento de forma online u offline.
   Future<bool> saveWorkoutSession(
     Map<String, dynamic> session, {
     required bool isOnline,
     required bool isBackendMode,
   }) async {
+    final syncPayload = _withIdempotency(session);
     if (isBackendMode) {
       if (isOnline) {
         try {
-          await ApiClient().dio.post('/members/workout-log', data: session);
+          await _dio.post(
+            '/members/workout-log',
+            data: syncPayload,
+            options: Options(
+              headers: {
+                'X-Idempotency-Key': syncPayload['idempotencyKey'].toString(),
+              },
+            ),
+          );
           return true;
         } catch (e) {
           // Error en red, guardar en cola offline
         }
       }
 
-      // Guardar localmente en Hive
-      final box = Hive.box('gym_cache');
-      final List<dynamic> queue = box.get('offline_workout_queue') ?? [];
-      queue.add(session);
-      await box.put('offline_workout_queue', queue);
+      await SyncQueueService.enqueue(
+        '/members/workout-log',
+        'POST',
+        syncPayload,
+        description: 'Sesión de entrenamiento offline',
+        idempotencyKey: syncPayload['idempotencyKey'].toString(),
+      );
       return false;
     }
     // Modo demo
     return true;
   }
+
+  Map<String, dynamic> _withIdempotency(Map<String, dynamic> session) {
+    final copy = Map<String, dynamic>.from(session);
+    final existing = copy['idempotencyKey']?.toString();
+    if (existing != null && existing.isNotEmpty) {
+      return copy;
+    }
+    final seed =
+        copy['sessionId'] ??
+        copy['routineId'] ??
+        copy['templateId'] ??
+        DateTime.now().microsecondsSinceEpoch;
+    copy['idempotencyKey'] = 'workout-$seed';
+    return copy;
+  }
 }
 
 // Proveedor de estado de la rutina activa
-final activeRoutineProvider = StateNotifierProvider<ActiveRoutineNotifier, AsyncValue<Map<String, dynamic>?>>((ref) {
-  return ActiveRoutineNotifier();
-});
+final activeRoutineProvider =
+    StateNotifierProvider<
+      ActiveRoutineNotifier,
+      AsyncValue<Map<String, dynamic>?>
+    >((ref) {
+      return ActiveRoutineNotifier();
+    });

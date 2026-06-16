@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../../data/gym_seed.dart';
 import '../../../data/gym_state.dart';
 import '../../../models/gym_models.dart';
-import '../../../theme/app_theme_tokens.dart';
 import '../../../widgets/app_shell.dart';
 import '../../member/widgets/report_observation_view.dart';
 import '../widgets/trainer_home_page.dart';
@@ -32,24 +31,30 @@ class _TrainerScreenState extends State<TrainerScreen> {
     {
       'name': 'Rutina A: Fuerza Pecho',
       'muscle': 'Pecho / Hombro',
-      'exercises': ['Press de banca', 'Press militar', 'Aperturas en máquina']
+      'exercises': ['Press de banca', 'Press militar', 'Aperturas en máquina'],
     },
     {
       'name': 'Rutina B: Hipertrofia Pierna',
       'muscle': 'Cuádriceps / Glúteo',
-      'exercises': ['Sentadilla con barra', 'Hip thrust', 'Prensa inclinada']
+      'exercises': ['Sentadilla con barra', 'Hip thrust', 'Prensa inclinada'],
     },
     {
       'name': 'Rutina C: Espalda & Pull',
       'muscle': 'Espalda / Bíceps',
-      'exercises': ['Peso muerto convencional', 'Remo con barra', 'Curl bíceps mancuerna']
+      'exercises': [
+        'Peso muerto convencional',
+        'Remo con barra',
+        'Curl bíceps mancuerna',
+      ],
     },
   ];
 
   // Selected student's notes
   final Map<String, String> _studentNotes = {
-    '12345678': 'Restricción: evitar press tras nuca por molestia en manguito rotador izquierdo.',
-    '87654321': 'Objetivo: pérdida de grasa. Cuidar rodilla derecha en sentadillas profundas.',
+    '12345678':
+        'Restricción: evitar press tras nuca por molestia en manguito rotador izquierdo.',
+    '87654321':
+        'Objetivo: pérdida de grasa. Cuidar rodilla derecha en sentadillas profundas.',
     '11223344': 'Fuerza máxima. Sin lesiones reportadas.',
     '44332211': 'Tonificación general. Hipermovilidad en codos.',
   };
@@ -73,13 +78,13 @@ class _TrainerScreenState extends State<TrainerScreen> {
     final state = GymStateProvider.of(context);
     final palette = rolePalettes[GymRole.trainer]!;
     final backendTemplates = state.trainerTemplates.map((item) {
-      final exercises = (item['ejercicios'] as List<dynamic>? ?? const [])
-          .map((entry) {
-            final row = entry as Map<String, dynamic>;
-            final exercise = row['exercise'] as Map<String, dynamic>? ?? const {};
-            return exercise['nombre']?.toString() ?? 'Ejercicio';
-          })
-          .toList();
+      final exercises = (item['ejercicios'] as List<dynamic>? ?? const []).map((
+        entry,
+      ) {
+        final row = entry as Map<String, dynamic>;
+        final exercise = row['exercise'] as Map<String, dynamic>? ?? const {};
+        return exercise['nombre']?.toString() ?? 'Ejercicio';
+      }).toList();
       return {
         'id': item['id']?.toString() ?? '',
         'name': item['nombre']?.toString() ?? 'Plantilla',
@@ -87,8 +92,9 @@ class _TrainerScreenState extends State<TrainerScreen> {
         'exercises': exercises,
       };
     }).toList();
-    final effectiveTemplates =
-        backendTemplates.isNotEmpty ? backendTemplates : _routineTemplates;
+    final effectiveTemplates = backendTemplates.isNotEmpty
+        ? backendTemplates
+        : _routineTemplates;
 
     Widget? activeView;
 
@@ -126,19 +132,12 @@ class _TrainerScreenState extends State<TrainerScreen> {
           onBack: _back,
         );
       } else if (screen == 'report-observation') {
-        activeView = ReportObservationView(
-          palette: palette,
-          onBack: _back,
-        );
+        activeView = ReportObservationView(palette: palette, onBack: _back);
       }
     }
 
     if (activeView != null) {
-      return Column(
-        children: [
-          Expanded(child: activeView),
-        ],
-      );
+      return Column(children: [Expanded(child: activeView)]);
     }
 
     return Scaffold(
@@ -148,7 +147,12 @@ class _TrainerScreenState extends State<TrainerScreen> {
           Expanded(
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 200),
-              child: _buildTab(_currentTab, state, palette, key: ValueKey<int>(_currentTab)),
+              child: _buildTab(
+                _currentTab,
+                state,
+                palette,
+                key: ValueKey<int>(_currentTab),
+              ),
             ),
           ),
           RoleNavBar(
@@ -183,16 +187,17 @@ class _TrainerScreenState extends State<TrainerScreen> {
         available: item['activo'] != false,
       );
     }).toList();
-    final effectiveExercises =
-        backendExercises.isNotEmpty ? backendExercises : _localExercises;
+    final effectiveExercises = backendExercises.isNotEmpty
+        ? backendExercises
+        : _localExercises;
     final backendTemplates = state.trainerTemplates.map((item) {
-      final exercises = (item['ejercicios'] as List<dynamic>? ?? const [])
-          .map((entry) {
-            final row = entry as Map<String, dynamic>;
-            final exercise = row['exercise'] as Map<String, dynamic>? ?? const {};
-            return exercise['nombre']?.toString() ?? 'Ejercicio';
-          })
-          .toList();
+      final exercises = (item['ejercicios'] as List<dynamic>? ?? const []).map((
+        entry,
+      ) {
+        final row = entry as Map<String, dynamic>;
+        final exercise = row['exercise'] as Map<String, dynamic>? ?? const {};
+        return exercise['nombre']?.toString() ?? 'Ejercicio';
+      }).toList();
       return {
         'id': item['id']?.toString() ?? '',
         'name': item['nombre']?.toString() ?? 'Plantilla',
@@ -200,8 +205,9 @@ class _TrainerScreenState extends State<TrainerScreen> {
         'exercises': exercises,
       };
     }).toList();
-    final effectiveTemplates =
-        backendTemplates.isNotEmpty ? backendTemplates : _routineTemplates;
+    final effectiveTemplates = backendTemplates.isNotEmpty
+        ? backendTemplates
+        : _routineTemplates;
 
     switch (tab) {
       case 0:
@@ -227,7 +233,11 @@ class _TrainerScreenState extends State<TrainerScreen> {
                 _localExercises.insert(0, newEx);
               });
             }
-            state.addAnnouncement('ENTRENAMIENTO', 'Nuevo ejercicio: ${newEx.name}', 'Se agregó ${newEx.name} a la biblioteca global.');
+            state.addAnnouncement(
+              'ENTRENAMIENTO',
+              'Nuevo ejercicio: ${newEx.name}',
+              'Se agregó ${newEx.name} a la biblioteca global.',
+            );
           },
         );
       case 2:
@@ -240,10 +250,12 @@ class _TrainerScreenState extends State<TrainerScreen> {
                 state.trainerExercises.isNotEmpty) {
               final payload = exercises
                   .map((exerciseName) {
-                    final match = state.trainerExercises.cast<Map<String, dynamic>?>().firstWhere(
-                      (item) => item?['nombre']?.toString() == exerciseName,
-                      orElse: () => null,
-                    );
+                    final match = state.trainerExercises
+                        .cast<Map<String, dynamic>?>()
+                        .firstWhere(
+                          (item) => item?['nombre']?.toString() == exerciseName,
+                          orElse: () => null,
+                        );
                     if (match == null) return null;
                     return {
                       'exerciseId': match['id'],
@@ -280,11 +292,7 @@ class _TrainerScreenState extends State<TrainerScreen> {
           progress: state.trainerProgress,
         );
       default:
-        return TrainerProfileTab(
-          key: key,
-          palette: palette,
-          onGo: _go,
-        );
+        return TrainerProfileTab(key: key, palette: palette, onGo: _go);
     }
   }
 }

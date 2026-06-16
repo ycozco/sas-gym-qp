@@ -6,9 +6,12 @@ const requiredFiles = [
   'web_admin/index.html',
   'web_admin/shared.jsx',
   'web_admin/app.jsx',
-  'web_admin/modules.jsx',
-  'web_admin/modules2.jsx',
   'web_admin/dashboards.jsx',
+  'web_admin/src/features/members/Socios.jsx',
+  'web_admin/src/features/memberships/Membresias.jsx',
+  'web_admin/src/features/cashier/Caja.jsx',
+  'web_admin/src/features/inventory/Productos.jsx',
+  'web_admin/src/features/diets/Dietas.jsx',
   'web_admin/styles.css',
 ];
 
@@ -26,8 +29,11 @@ const indexMarkers = [
   'shared.jsx',
   'data.jsx',
   'dashboards.jsx',
-  'modules.jsx',
-  'modules2.jsx',
+  'src/features/members/Socios.jsx',
+  'src/features/memberships/Membresias.jsx',
+  'src/features/cashier/Caja.jsx',
+  'src/features/inventory/Productos.jsx',
+  'src/features/diets/Dietas.jsx',
   'app.jsx',
 ];
 

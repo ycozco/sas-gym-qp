@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 enum AppEnvironment { dev, staging, prod }
+
 enum AppMode { backend, demo }
 
 class AppConfig {
@@ -104,11 +105,17 @@ class AppLogger {
           'Bearer ********',
         )
         .replaceAll(
-          RegExp(r'''token["']?\s*[:=]\s*["']?[^,\s}\]]+''', caseSensitive: false),
+          RegExp(
+            r'''token["']?\s*[:=]\s*["']?[^,\s}\]]+''',
+            caseSensitive: false,
+          ),
           'token=********',
         )
         .replaceAll(
-          RegExp(r'''password["']?\s*[:=]\s*["']?[^,\s}\]]+''', caseSensitive: false),
+          RegExp(
+            r'''password["']?\s*[:=]\s*["']?[^,\s}\]]+''',
+            caseSensitive: false,
+          ),
           'password=********',
         );
   }

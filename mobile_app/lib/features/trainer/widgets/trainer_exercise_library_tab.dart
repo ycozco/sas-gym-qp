@@ -18,7 +18,8 @@ class TrainerExerciseLibraryTab extends StatefulWidget {
   final Function(ExerciseItem) onAddExercise;
 
   @override
-  State<TrainerExerciseLibraryTab> createState() => _TrainerExerciseLibraryTabState();
+  State<TrainerExerciseLibraryTab> createState() =>
+      _TrainerExerciseLibraryTabState();
 }
 
 class _TrainerExerciseLibraryTabState extends State<TrainerExerciseLibraryTab> {
@@ -26,14 +27,25 @@ class _TrainerExerciseLibraryTabState extends State<TrainerExerciseLibraryTab> {
   String _selectedMuscle = 'Todos';
   String? _expandedExerciseName;
 
-  final List<String> _muscleFilters = ['Todos', 'Pecho', 'Hombro', 'Pierna', 'Espalda', 'Bíceps', 'Tríceps'];
+  final List<String> _muscleFilters = [
+    'Todos',
+    'Pecho',
+    'Hombro',
+    'Pierna',
+    'Espalda',
+    'Bíceps',
+    'Tríceps',
+  ];
 
   @override
   Widget build(BuildContext context) {
     final colors = context.sasColors;
     final filtered = widget.exercises.where((ex) {
-      final matchesSearch = ex.name.toLowerCase().contains(_searchQuery.toLowerCase());
-      final matchesMuscle = _selectedMuscle == 'Todos' || ex.muscle == _selectedMuscle;
+      final matchesSearch = ex.name.toLowerCase().contains(
+        _searchQuery.toLowerCase(),
+      );
+      final matchesMuscle =
+          _selectedMuscle == 'Todos' || ex.muscle == _selectedMuscle;
       return matchesSearch && matchesMuscle;
     }).toList();
 
@@ -58,10 +70,7 @@ class _TrainerExerciseLibraryTabState extends State<TrainerExerciseLibraryTab> {
             child: TextField(
               onChanged: (val) => setState(() => _searchQuery = val),
               decoration: InputDecoration(
-                prefixIcon: Icon(
-                  Icons.search_rounded,
-                  color: colors.textMuted,
-                ),
+                prefixIcon: Icon(Icons.search_rounded, color: colors.textMuted),
                 hintText: 'Buscar ejercicio...',
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(vertical: 14),
@@ -87,9 +96,7 @@ class _TrainerExerciseLibraryTabState extends State<TrainerExerciseLibraryTab> {
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 12,
-                        color: isSelected
-                            ? Colors.white
-                            : colors.textPrimary,
+                        color: isSelected ? Colors.white : colors.textPrimary,
                       ),
                     ),
                     selected: isSelected,
@@ -117,7 +124,10 @@ class _TrainerExerciseLibraryTabState extends State<TrainerExerciseLibraryTab> {
               padding: const EdgeInsets.symmetric(vertical: 14),
             ),
             icon: const Icon(Icons.add_rounded),
-            label: const Text('Nuevo Ejercicio a la Biblioteca', style: TextStyle(fontWeight: FontWeight.w900)),
+            label: const Text(
+              'Nuevo Ejercicio a la Biblioteca',
+              style: TextStyle(fontWeight: FontWeight.w900),
+            ),
             onPressed: () => _showAddExerciseDialog(context),
           ),
           const SizedBox(height: 18),
@@ -137,18 +147,34 @@ class _TrainerExerciseLibraryTabState extends State<TrainerExerciseLibraryTab> {
                   child: Column(
                     children: [
                       ListTile(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
                         leading: CircleAvatar(
-                          backgroundColor: widget.palette.accent.withValues(alpha: 0.12),
+                          backgroundColor: widget.palette.accent.withValues(
+                            alpha: 0.12,
+                          ),
                           foregroundColor: widget.palette.accent,
                           child: Icon(exercise.icon, size: 18),
                         ),
-                        title: Text(exercise.name, style: const TextStyle(fontWeight: FontWeight.w800)),
-                        subtitle: Text('${exercise.muscle} · ${exercise.sets}×${exercise.reps} · ${exercise.weight ?? 0}kg'),
-                        trailing: Icon(isExpanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded),
+                        title: Text(
+                          exercise.name,
+                          style: const TextStyle(fontWeight: FontWeight.w800),
+                        ),
+                        subtitle: Text(
+                          '${exercise.muscle} · ${exercise.sets}×${exercise.reps} · ${exercise.weight ?? 0}kg',
+                        ),
+                        trailing: Icon(
+                          isExpanded
+                              ? Icons.keyboard_arrow_up_rounded
+                              : Icons.keyboard_arrow_down_rounded,
+                        ),
                         onTap: () {
                           setState(() {
-                            _expandedExerciseName = isExpanded ? null : exercise.name;
+                            _expandedExerciseName = isExpanded
+                                ? null
+                                : exercise.name;
                           });
                         },
                       ),
@@ -157,12 +183,19 @@ class _TrainerExerciseLibraryTabState extends State<TrainerExerciseLibraryTab> {
                           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                           child: Column(
                             children: [
-                              const Divider(height: 1, color: Color(0xFFE8E4D9)),
+                              const Divider(
+                                height: 1,
+                                color: Color(0xFFE8E4D9),
+                              ),
                               const SizedBox(height: 12),
                               // Simulated stick figure animations
                               const Text(
                                 'Visualización de Ejecución Técnica (Simulado)',
-                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF888888)),
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF888888),
+                                ),
                               ),
                               const SizedBox(height: 10),
                               ExerciseAnim(
@@ -213,13 +246,18 @@ class _TrainerExerciseLibraryTabState extends State<TrainerExerciseLibraryTab> {
                 borderRadius: BorderRadius.circular(12),
                 side: BorderSide(color: colors.border),
               ),
-              title: const Text('Nuevo Ejercicio', style: TextStyle(fontWeight: FontWeight.w900)),
+              title: const Text(
+                'Nuevo Ejercicio',
+                style: TextStyle(fontWeight: FontWeight.w900),
+              ),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     TextField(
-                      decoration: const InputDecoration(labelText: 'Nombre del Ejercicio'),
+                      decoration: const InputDecoration(
+                        labelText: 'Nombre del Ejercicio',
+                      ),
                       onChanged: (val) => name = val,
                     ),
                     DropdownButtonFormField<String>(
@@ -230,20 +268,28 @@ class _TrainerExerciseLibraryTabState extends State<TrainerExerciseLibraryTab> {
                       onChanged: (val) {
                         if (val != null) setDlgState(() => muscle = val);
                       },
-                      decoration: const InputDecoration(labelText: 'Grupo Muscular'),
+                      decoration: const InputDecoration(
+                        labelText: 'Grupo Muscular',
+                      ),
                     ),
                     TextField(
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'Series (ej. 4)'),
+                      decoration: const InputDecoration(
+                        labelText: 'Series (ej. 4)',
+                      ),
                       onChanged: (val) => sets = int.tryParse(val) ?? 4,
                     ),
                     TextField(
-                      decoration: const InputDecoration(labelText: 'Repeticiones (ej. 10-12)'),
+                      decoration: const InputDecoration(
+                        labelText: 'Repeticiones (ej. 10-12)',
+                      ),
                       onChanged: (val) => reps = val,
                     ),
                     TextField(
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'Peso Inicial (kg)'),
+                      decoration: const InputDecoration(
+                        labelText: 'Peso Inicial (kg)',
+                      ),
                       onChanged: (val) => weight = double.tryParse(val) ?? 20.0,
                     ),
                   ],
@@ -264,20 +310,25 @@ class _TrainerExerciseLibraryTabState extends State<TrainerExerciseLibraryTab> {
                   ),
                   onPressed: () {
                     if (name.isNotEmpty) {
-                      widget.onAddExercise(ExerciseItem(
-                        name: name,
-                        muscle: muscle,
-                        sets: sets,
-                        reps: reps,
-                        weight: weight.toInt(),
-                        restSeconds: 90,
-                        icon: Icons.fitness_center_rounded,
-                        available: true,
-                      ));
+                      widget.onAddExercise(
+                        ExerciseItem(
+                          name: name,
+                          muscle: muscle,
+                          sets: sets,
+                          reps: reps,
+                          weight: weight.toInt(),
+                          restSeconds: 90,
+                          icon: Icons.fitness_center_rounded,
+                          available: true,
+                        ),
+                      );
                       Navigator.pop(ctx);
                     }
                   },
-                  child: Text('Agregar', style: TextStyle(color: widget.palette.accentInk)),
+                  child: Text(
+                    'Agregar',
+                    style: TextStyle(color: widget.palette.accentInk),
+                  ),
                 ),
               ],
             );

@@ -1,14 +1,18 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 import '../core/network/api_client.dart';
 
-class ActiveDietNotifier extends StateNotifier<AsyncValue<Map<String, dynamic>?>> {
-  ActiveDietNotifier() : super(const AsyncValue.loading());
+class ActiveDietNotifier
+    extends StateNotifier<AsyncValue<Map<String, dynamic>?>> {
+  ActiveDietNotifier({Dio? dio})
+    : _dio = dio ?? ApiClient().dio,
+      super(const AsyncValue.loading());
 
-  /**
-   * Carga la dieta activa del miembro, intentando del servidor si hay conexión,
-   * o haciendo fallback a la caché local de Hive.
-   */
+  final Dio _dio;
+
+  /// Carga la dieta activa del miembro, intentando del servidor si hay conexión,
+  /// o haciendo fallback a la caché local de Hive.
   Future<Map<String, dynamic>?> loadActiveDiet({
     required bool isOnline,
     required bool isBackendMode,
@@ -19,7 +23,7 @@ class ActiveDietNotifier extends StateNotifier<AsyncValue<Map<String, dynamic>?>
 
       if (isBackendMode && isOnline) {
         try {
-          final response = await ApiClient().dio.get('/diets/me');
+          final response = await _dio.get('/diets/me');
           if (response.data != null) {
             final data = Map<String, dynamic>.from(response.data as Map);
             await box.put('active_diet', data);
@@ -49,6 +53,10 @@ class ActiveDietNotifier extends StateNotifier<AsyncValue<Map<String, dynamic>?>
 }
 
 // Proveedor de estado de la dieta activa
-final activeDietProvider = StateNotifierProvider<ActiveDietNotifier, AsyncValue<Map<String, dynamic>?>>((ref) {
-  return ActiveDietNotifier();
-});
+final activeDietProvider =
+    StateNotifierProvider<
+      ActiveDietNotifier,
+      AsyncValue<Map<String, dynamic>?>
+    >((ref) {
+      return ActiveDietNotifier();
+    });

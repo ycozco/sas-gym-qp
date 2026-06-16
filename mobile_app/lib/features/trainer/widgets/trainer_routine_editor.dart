@@ -68,7 +68,12 @@ class _AssignRoutineViewState extends State<AssignRoutineView> {
         children: [
           Text(
             'Matriz Semanal de Entrenamientos',
-            style: TextStyle(fontSize: 13, letterSpacing: 1.1, fontWeight: FontWeight.w900, color: widget.palette.accent),
+            style: TextStyle(
+              fontSize: 13,
+              letterSpacing: 1.1,
+              fontWeight: FontWeight.w900,
+              color: widget.palette.accent,
+            ),
           ),
           const SizedBox(height: 4),
           Text(
@@ -85,7 +90,10 @@ class _AssignRoutineViewState extends State<AssignRoutineView> {
 
               return Container(
                 margin: const EdgeInsets.only(bottom: 12),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 decoration: trainerCardDecoration(context),
                 child: Row(
                   children: [
@@ -94,7 +102,9 @@ class _AssignRoutineViewState extends State<AssignRoutineView> {
                       width: 46,
                       height: 46,
                       decoration: BoxDecoration(
-                        color: isRest ? const Color(0xFFEEEEEE) : widget.palette.accent.withValues(alpha: 0.12),
+                        color: isRest
+                            ? const Color(0xFFEEEEEE)
+                            : widget.palette.accent.withValues(alpha: 0.12),
                         shape: BoxShape.circle,
                       ),
                       alignment: Alignment.center,
@@ -103,7 +113,9 @@ class _AssignRoutineViewState extends State<AssignRoutineView> {
                         style: TextStyle(
                           fontWeight: FontWeight.w900,
                           fontSize: 14,
-                          color: isRest ? const Color(0xFF666666) : widget.palette.accent,
+                          color: isRest
+                              ? const Color(0xFF666666)
+                              : widget.palette.accent,
                         ),
                       ),
                     ),
@@ -112,8 +124,14 @@ class _AssignRoutineViewState extends State<AssignRoutineView> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Rutina Asignada',
-                              style: TextStyle(fontSize: 11, color: Color(0xFF888888), fontWeight: FontWeight.bold)),
+                          const Text(
+                            'Rutina Asignada',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Color(0xFF888888),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                           const SizedBox(height: 2),
                           Text(
                             activeTemplate,
@@ -130,7 +148,10 @@ class _AssignRoutineViewState extends State<AssignRoutineView> {
                     ),
                     // Action dropdown trigger
                     PopupMenuButton<String>(
-                      icon: const Icon(Icons.arrow_drop_down_circle_outlined, color: Color(0xFF666666)),
+                      icon: const Icon(
+                        Icons.arrow_drop_down_circle_outlined,
+                        color: Color(0xFF666666),
+                      ),
                       onSelected: (value) {
                         setState(() {
                           _weeklyRoutines[day] = value;
@@ -138,7 +159,10 @@ class _AssignRoutineViewState extends State<AssignRoutineView> {
                       },
                       itemBuilder: (context) {
                         return [
-                          const PopupMenuItem(value: 'Descanso', child: Text('Descanso')),
+                          const PopupMenuItem(
+                            value: 'Descanso',
+                            child: Text('Descanso'),
+                          ),
                           ...widget.templates.map((t) {
                             return PopupMenuItem(
                               value: t['name'] as String,
@@ -165,15 +189,20 @@ class _AssignRoutineViewState extends State<AssignRoutineView> {
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
               onPressed: () async {
-                final memberUserId = state.findMemberUserIdByDni(widget.member.dni);
+                final memberUserId = state.findMemberUserIdByDni(
+                  widget.member.dni,
+                );
                 final selectedTemplateName = _weeklyRoutines.values.firstWhere(
                   (value) => value != 'Descanso',
                   orElse: () => '',
                 );
-                final selectedTemplate = widget.templates.cast<Map<String, dynamic>?>().firstWhere(
-                  (item) => item?['name']?.toString() == selectedTemplateName,
-                  orElse: () => null,
-                );
+                final selectedTemplate = widget.templates
+                    .cast<Map<String, dynamic>?>()
+                    .firstWhere(
+                      (item) =>
+                          item?['name']?.toString() == selectedTemplateName,
+                      orElse: () => null,
+                    );
 
                 if (memberUserId != null &&
                     selectedTemplate != null &&
@@ -182,10 +211,12 @@ class _AssignRoutineViewState extends State<AssignRoutineView> {
                     memberUserId: memberUserId,
                     templateId: selectedTemplate['id'].toString(),
                     agendaSemanal: _weeklyRoutines.map((key, value) {
-                      final templateMatch = widget.templates.cast<Map<String, dynamic>?>().firstWhere(
-                        (item) => item?['name']?.toString() == value,
-                        orElse: () => null,
-                      );
+                      final templateMatch = widget.templates
+                          .cast<Map<String, dynamic>?>()
+                          .firstWhere(
+                            (item) => item?['name']?.toString() == value,
+                            orElse: () => null,
+                          );
                       return MapEntry(
                         key,
                         templateMatch?['id']?.toString().isNotEmpty == true
@@ -195,18 +226,27 @@ class _AssignRoutineViewState extends State<AssignRoutineView> {
                     }),
                   );
                 } else {
-                  state.addAnnouncement('RUTINA', 'Rutina asignada a ${widget.member.name}', 'Se actualizó la matriz semanal de rutinas.');
+                  state.addAnnouncement(
+                    'RUTINA',
+                    'Rutina asignada a ${widget.member.name}',
+                    'Se actualizó la matriz semanal de rutinas.',
+                  );
                 }
                 if (!context.mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('Matriz semanal de ${widget.member.name} guardada y publicada'),
+                    content: Text(
+                      'Matriz semanal de ${widget.member.name} guardada y publicada',
+                    ),
                     backgroundColor: const Color(0xFF00B85C),
                   ),
                 );
                 widget.onBack();
               },
-              child: const Text('Guardar y Publicar Rutina', style: TextStyle(fontWeight: FontWeight.w900)),
+              child: const Text(
+                'Guardar y Publicar Rutina',
+                style: TextStyle(fontWeight: FontWeight.w900),
+              ),
             ),
           ),
         ],
