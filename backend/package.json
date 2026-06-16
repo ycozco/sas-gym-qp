@@ -18,7 +18,7 @@
     "migrate:deploy": "prisma migrate deploy",
     "seed:local": "prisma db seed",
     "seed:test": "ts-node prisma/seed-test.ts",
-    "db:setup:local": "npm run prisma:generate && npm run migrate:deploy",
+    "db:setup:local": "npm run prisma:generate && npm run db:push",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../theme/app_theme_tokens.dart';
+import '../../../models/gym_models.dart';
 import '../../../widgets/app_shell.dart';
 import 'trainer_shared_utils.dart';
 

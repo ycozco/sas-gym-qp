@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
-import '../../../data/gym_state.dart';
-import '../../../theme/app_theme_tokens.dart';
+import '../../../data/gym_seed.dart';
+import '../../../models/gym_models.dart';
 import '../../../widgets/app_shell.dart';
 import '../widgets/workout_assistant_view.dart';
 import '../widgets/pay_membership_view.dart';

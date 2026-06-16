@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../data/gym_state.dart';
-import '../../../theme/app_theme_tokens.dart';
+import '../../../models/gym_models.dart';
 import 'trainer_members_list.dart';
 
 class TrainerHomePage extends StatelessWidget {

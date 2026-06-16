@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../models/gym_models.dart';
 import '../../../theme/app_theme_tokens.dart';
 
 class NotificationsView extends StatelessWidget {

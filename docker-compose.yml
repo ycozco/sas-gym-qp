@@ -23,6 +23,18 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7-alpine
+    container_name: gymsmart-redis
+    restart: unless-stopped
+    networks:
+      - internal-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   # ─── NESTJS BACKEND API (NEXO ENTRE RED INTERNA Y PÚBLICA) ───────
   api:
     build:
@@ -32,6 +44,8 @@ services:
     restart: on-failure
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     ports:
       - "3000:3000"
@@ -46,8 +60,9 @@ services:
       - TZ=America/Lima # Forzar zona horaria en el contenedor para turnos POS
       - ENABLE_QR_SIMULATOR=true
       - ALLOW_TEST_DATA_RESET=true
+      - REDIS_URL=redis://redis:6379
     command: >
-      sh -c "npx prisma generate && npx prisma migrate deploy && npx prisma db seed && npm run start:dev"
+      sh -c "npm run db:setup:local && npm run seed:local && npm run start:dev"
     networks:
       - internal-net
       - public-net
