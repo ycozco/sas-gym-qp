@@ -60,6 +60,7 @@ La App Móvil interactúa directamente con los socios, lee códigos QR y soporta
 
 ### 🧪 Caso 3.2: Control de Accesos y Barreras Visuales (Socio Suspendido)
 * **Propósito**: Bloquear la interfaz del socio si su membresía está suspendida o vencida, impidiendo la generación del QR de acceso.
+* **Documento de ejecución**: `docs/pruebas/socio-vencido-suspendido-qr-2026-06-16.md`.
 * **Acciones**:
   1. En el backend, cambiar el estado del socio a `SUSPENDED` o `EXPIRED`.
   2. Abrir la app e iniciar sesión con la cuenta de dicho socio.

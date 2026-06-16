@@ -14,10 +14,7 @@ LoggedInUser _memberWithQrSecret() {
     nombreCompleto: 'Member Test',
     dni: '11111111',
     estado: 'ACTIVE',
-    memberProfile: {
-      'objetivo': 'QA',
-      'qr_secret': 'backend-issued-secret',
-    },
+    memberProfile: {'objetivo': 'QA', 'qr_secret': 'backend-issued-secret'},
   );
 }
 
@@ -29,9 +26,22 @@ LoggedInUser _memberWithoutQrSecret() {
     nombreCompleto: 'Member Test',
     dni: '11111111',
     estado: 'ACTIVE',
-    memberProfile: {
-      'objetivo': 'QA',
-    },
+    memberProfile: {'objetivo': 'QA'},
+  );
+}
+
+LoggedInUser _expiredMemberWithQrSecret() {
+  return LoggedInUser(
+    id: 'member-id',
+    email: 'expired@example.com',
+    rol: GymRole.member,
+    nombreCompleto: 'Expired Member Test',
+    dni: '22222222',
+    estado: 'ACTIVE',
+    memberProfile: {'objetivo': 'QA', 'qr_secret': 'backend-issued-secret'},
+    memberships: [
+      {'estado': 'EXPIRED'},
+    ],
   );
 }
 
@@ -59,7 +69,9 @@ void main() {
     expect(state.auditLogs, isEmpty);
   });
 
-  testWidgets('member QR renders when backend qr_secret exists', (tester) async {
+  testWidgets('member QR renders when backend qr_secret exists', (
+    tester,
+  ) async {
     final state = GymState(startBackground: false);
     addTearDown(state.dispose);
     state.setCurrentGymActiveForTest(active: true);
@@ -83,7 +95,9 @@ void main() {
     expect(find.textContaining('QR no disponible'), findsNothing);
   });
 
-  testWidgets('member QR without backend secret shows unavailable state', (tester) async {
+  testWidgets('member QR without backend secret shows unavailable state', (
+    tester,
+  ) async {
     final state = GymState(startBackground: false);
     addTearDown(state.dispose);
     state.setCurrentGymActiveForTest(active: true);
@@ -107,4 +121,31 @@ void main() {
     expect(find.textContaining('Token:'), findsNothing);
   });
 
+  testWidgets(
+    'expired member cannot render access QR even with backend secret',
+    (tester) async {
+      final state = GymState(startBackground: false);
+      addTearDown(state.dispose);
+      state.setCurrentGymActiveForTest(active: true);
+      state.setCurrentUserForTest(_expiredMemberWithQrSecret());
+
+      await tester.pumpWidget(
+        GymStateProvider(
+          notifier: state,
+          child: MaterialApp(
+            home: FullQRView(
+              palette: rolePalettes[GymRole.member]!,
+              onBack: () {},
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.text('QR BLOQUEADO'), findsOneWidget);
+      expect(find.textContaining('membresía está vencida'), findsOneWidget);
+      expect(find.textContaining('Token:'), findsNothing);
+    },
+  );
 }
