@@ -103,6 +103,10 @@ class GymState extends ChangeNotifier {
   bool get authLoading => _authLoading;
   String? get authError => _authError;
 
+  // --- Caja / Turno State ---
+  CashierSession? _activeCaja;
+  CashierSession? get activeCaja => _activeCaja;
+
   void _initAuthListener() {
     ApiClient.onUnauthorized = () {
       _currentUser = null;
@@ -163,9 +167,11 @@ class GymState extends ChangeNotifier {
         loadCashiers();
         loadObservations();
         loadAuditLogs();
+        checkActiveCaja();
       } else if (_currentUser?.rol == GymRole.cashier) {
         loadAdminMembers();
         loadProducts();
+        checkActiveCaja();
       } else if (_currentUser?.rol == GymRole.trainer) {
         loadAssignedTrainerMembers();
         loadTrainerExercises();
@@ -232,9 +238,11 @@ class GymState extends ChangeNotifier {
         loadCashiers();
         loadObservations();
         loadAuditLogs();
+        checkActiveCaja();
       } else if (_currentUser?.rol == GymRole.cashier) {
         loadAdminMembers();
         loadProducts();
+        checkActiveCaja();
       } else if (_currentUser?.rol == GymRole.trainer) {
         loadAssignedTrainerMembers();
         loadTrainerExercises();
@@ -457,6 +465,7 @@ class GymState extends ChangeNotifier {
     _trainerExercises.clear();
     _trainerTemplates.clear();
     _trainerProgress = null;
+    _activeCaja = null;
   }
 
   bool get isBackendMode => _currentUser != null;
@@ -1063,6 +1072,200 @@ class GymState extends ChangeNotifier {
     }
   }
 
+  // --- High-level Unified Caja State Methods ---
+
+  Future<CashierSession?> checkActiveCaja() async {
+    if (!isBackendMode) {
+      return _activeCaja;
+    }
+    try {
+      final data = await getActiveCajaBackend();
+      if (data != null && data['id'] != null) {
+        _activeCaja = CashierSession.fromJson(data);
+      } else {
+        _activeCaja = null;
+      }
+      notifyListeners();
+      return _activeCaja;
+    } catch (e) {
+      _activeCaja = null;
+      notifyListeners();
+      return null;
+    }
+  }
+
+  Future<CashierSession> openCaja(double initialCash, {String? obs}) async {
+    if (!isBackendMode) {
+      final newCaja = CashierSession(
+        id: 'demo-caja-${DateTime.now().millisecondsSinceEpoch}',
+        cajeroId: _currentUser?.id ?? 'demo-cajero',
+        montoApertura: initialCash,
+        totalVentasEfectivo: 0.0,
+        totalVentasTransferencia: 0.0,
+        totalVentasYape: 0.0,
+        totalVentasPOS: 0.0,
+        totalIngresos: initialCash,
+        diferencia: 0.0,
+        estado: 'abierta',
+        fechaApertura: DateTime.now().toIso8601String(),
+        observaciones: obs,
+      );
+      _activeCaja = newCaja;
+      _addLog(
+        'Caja',
+        'Apertura de Caja',
+        'Abrió caja con saldo S/ $initialCash',
+        const Color(0xFF00B85C),
+      );
+      notifyListeners();
+      return newCaja;
+    }
+
+    final data = await openCajaBackend(initialCash, obs);
+    if (data == null) throw Exception('Fallo al abrir caja en el servidor');
+    final session = CashierSession.fromJson(data);
+    _activeCaja = session;
+    notifyListeners();
+    return session;
+  }
+
+  Future<bool> registerEgreso(double amount, String motive, {String? paymentMethod, String? extraDesc}) async {
+    if (!isBackendMode) {
+      _addLog(
+        'Caja',
+        'Egreso de Caja',
+        'Registró egreso de S/ $amount por: $motive [metodo:${paymentMethod ?? 'efectivo'}]',
+        Colors.redAccent,
+      );
+      notifyListeners();
+      return true;
+    }
+
+    final res = await createEgressBackend(
+      monto: amount,
+      motivo: motive,
+      metodoPago: paymentMethod,
+      descripcionAdicional: extraDesc,
+    );
+    return res != null;
+  }
+
+  Future<CajaDetails?> getCajaDetails() async {
+    if (!isBackendMode) {
+      double revenueCash = 0;
+      double revenueCard = 0;
+      double revenueTransfer = 0;
+      double revenueYape = 0;
+
+      final reg = RegExp(r'S/\s*([0-9.]+)');
+      final logs = _auditLogs.where((l) => l.actor.contains('Caja')).toList();
+      for (var l in logs) {
+        if (l.action.contains('Cobró') || l.action.contains('Venta')) {
+          final match = reg.firstMatch(l.detail);
+          if (match != null) {
+            final double val = double.tryParse(match.group(1)!) ?? 0.0;
+            if (l.detail.toLowerCase().contains('yape') || l.detail.toLowerCase().contains('plin')) {
+              revenueYape += val;
+            } else if (l.detail.toLowerCase().contains('tarjeta') || l.detail.toLowerCase().contains('pos')) {
+              revenueCard += val;
+            } else if (l.detail.toLowerCase().contains('transferencia')) {
+              revenueTransfer += val;
+            } else {
+              revenueCash += val;
+            }
+          }
+        }
+      }
+
+      final double opening = _activeCaja?.montoApertura ?? 150.0;
+      final double expectedCash = opening + revenueCash;
+      final double expectedTotal = revenueCash + revenueCard + revenueTransfer + revenueYape;
+
+      return CajaDetails(
+        caja: _activeCaja!,
+        movements: [],
+        stats: CajaStats(
+          efectivoIngreso: revenueCash,
+          efectivoEgreso: 0,
+          transferenciaIngreso: revenueTransfer,
+          transferenciaEgreso: 0,
+          yapeIngreso: revenueYape,
+          yapeEgreso: 0,
+          posIngreso: revenueCard,
+          posEgreso: 0,
+          totalVentasEfectivo: revenueCash,
+          totalVentasTransferencia: revenueTransfer,
+          totalVentasYape: revenueYape,
+          totalVentasPOS: revenueCard,
+          efectivoEsperado: expectedCash,
+          totalEsperado: expectedTotal,
+        ),
+      );
+    }
+
+    final data = await getCajaDetailsBackend();
+    if (data == null) return null;
+    return CajaDetails.fromJson(data);
+  }
+
+  Future<CashierSession> closeCaja({
+    required double cash,
+    required double transfer,
+    required double yape,
+    required double pos,
+    String? observations,
+  }) async {
+    if (!isBackendMode) {
+      final details = await getCajaDetails();
+      final double opening = _activeCaja?.montoApertura ?? 150.0;
+      final double expectedTotal = details?.stats.totalEsperado ?? 0;
+      final double totalCierre = cash + transfer + yape + pos;
+      final double diff = totalCierre - (opening + expectedTotal);
+
+      final closedCaja = CashierSession(
+        id: _activeCaja?.id ?? 'demo-caja',
+        cajeroId: _activeCaja?.cajeroId ?? 'demo-cajero',
+        montoApertura: opening,
+        montoCierreEfectivo: cash,
+        montoCierreTransferencia: transfer,
+        montoCierreYape: yape,
+        montoCierrePOS: pos,
+        totalVentasEfectivo: details?.stats.totalVentasEfectivo ?? 0.0,
+        totalVentasTransferencia: details?.stats.totalVentasTransferencia ?? 0.0,
+        totalVentasYape: details?.stats.totalVentasYape ?? 0.0,
+        totalVentasPOS: details?.stats.totalVentasPOS ?? 0.0,
+        totalIngresos: opening + expectedTotal,
+        diferencia: diff,
+        estado: 'cerrada',
+        fechaApertura: _activeCaja?.fechaApertura ?? DateTime.now().toIso8601String(),
+        fechaCierre: DateTime.now().toIso8601String(),
+        observaciones: observations,
+      );
+      _activeCaja = null;
+      _addLog(
+        'Caja',
+        'Cierre de Caja',
+        'Cerró caja. Diferencia: S/ $diff',
+        const Color(0xFF5C5C5C),
+      );
+      notifyListeners();
+      return closedCaja;
+    }
+
+    final data = await closeCajaBackend(
+      cash: cash,
+      transfer: transfer,
+      yape: yape,
+      pos: pos,
+      observations: observations,
+    );
+    if (data == null) throw Exception('Fallo al cerrar caja en el servidor');
+    final session = CashierSession.fromJson(data);
+    _activeCaja = null;
+    notifyListeners();
+    return session;
+  }
+
   // --- Ventas de Membresías ---
 
   Future<Map<String, dynamic>?> registerMembershipSaleBackend({
@@ -1508,11 +1711,16 @@ class GymState extends ChangeNotifier {
   CashierAccount _cashierFromBackend(Map<String, dynamic> json) {
     final cajas = (json['cajas_registradas'] as List<dynamic>? ?? []);
     final lastCaja = cajas.isNotEmpty ? cajas.first as Map<String, dynamic> : const <String, dynamic>{};
+    final List<CashierSession> sessionList = cajas
+        .map((c) => CashierSession.fromJson(c as Map<String, dynamic>))
+        .toList();
     return CashierAccount(
+      id: json['id']?.toString(),
       name: json['nombre_completo']?.toString() ?? 'Cajero',
       shift: lastCaja['estado']?.toString() ?? 'Sin turno',
       permissions: const ['POS', 'Caja', 'Ventas'],
       active: (json['estado']?.toString() ?? '').toUpperCase() == 'ACTIVE',
+      sessionHistory: sessionList,
     );
   }
 
@@ -2508,6 +2716,20 @@ class GymState extends ChangeNotifier {
         paymentHistory: [],
       ),
     ]);
+
+    _activeCaja = CashierSession(
+      id: 'demo-caja-id',
+      cajeroId: 'demo-cajero-id',
+      montoApertura: 150.0,
+      totalVentasEfectivo: 0.0,
+      totalVentasTransferencia: 0.0,
+      totalVentasYape: 0.0,
+      totalVentasPOS: 0.0,
+      totalIngresos: 150.0,
+      diferencia: 0.0,
+      estado: 'abierta',
+      fechaApertura: DateTime.now().toIso8601String(),
+    );
   }
 
   // --- FASE 5 & 6: Connectivity, Hive & WebSockets ---

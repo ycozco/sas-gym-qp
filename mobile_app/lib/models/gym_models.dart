@@ -424,29 +424,37 @@ class AuditEntry {
 }
 
 class CashierAccount {
+  final String? id;
   final String name;
   final String shift;
   final List<String> permissions;
   final bool active;
+  final List<CashierSession> sessionHistory;
 
   CashierAccount({
+    this.id,
     required this.name,
     required this.shift,
     required this.permissions,
     required this.active,
+    this.sessionHistory = const [],
   });
 
   CashierAccount copyWith({
+    String? id,
     String? name,
     String? shift,
     List<String>? permissions,
     bool? active,
+    List<CashierSession>? sessionHistory,
   }) {
     return CashierAccount(
+      id: id ?? this.id,
       name: name ?? this.name,
       shift: shift ?? this.shift,
       permissions: permissions ?? this.permissions,
       active: active ?? this.active,
+      sessionHistory: sessionHistory ?? this.sessionHistory,
     );
   }
 }
@@ -741,11 +749,87 @@ class PointsMovement {
       id: json['id'] as String,
       usuarioId: json['usuario_id'] as String,
       tipo: json['tipo'] as String,
-      cantidad: json['cantidad'] as int,
-      saldoAnterior: json['saldo_anterior'] as int,
-      saldoNuevo: json['saldo_nuevo'] as int,
-      descripcion: json['descripcion'] as String,
-      createdAt: json['created_at'] as String,
+      cantidad: (json['cantidad'] ?? json['amount'] ?? 0) as int,
+      saldoAnterior: json['saldo_anterior'] as int? ?? 0,
+      saldoNuevo: json['saldo_nuevo'] as int? ?? 0,
+      descripcion: json['descripcion'] as String? ?? '',
+      createdAt: json['created_at'] as String? ?? '',
     );
   }
 }
+
+class CajaStats {
+  final double efectivoIngreso;
+  final double efectivoEgreso;
+  final double transferenciaIngreso;
+  final double transferenciaEgreso;
+  final double yapeIngreso;
+  final double yapeEgreso;
+  final double posIngreso;
+  final double posEgreso;
+  final double totalVentasEfectivo;
+  final double totalVentasTransferencia;
+  final double totalVentasYape;
+  final double totalVentasPOS;
+  final double efectivoEsperado;
+  final double totalEsperado;
+
+  CajaStats({
+    required this.efectivoIngreso,
+    required this.efectivoEgreso,
+    required this.transferenciaIngreso,
+    required this.transferenciaEgreso,
+    required this.yapeIngreso,
+    required this.yapeEgreso,
+    required this.posIngreso,
+    required this.posEgreso,
+    required this.totalVentasEfectivo,
+    required this.totalVentasTransferencia,
+    required this.totalVentasYape,
+    required this.totalVentasPOS,
+    required this.efectivoEsperado,
+    required this.totalEsperado,
+  });
+
+  factory CajaStats.fromJson(Map<String, dynamic> json) {
+    return CajaStats(
+      efectivoIngreso: (json['efivo_ingreso'] ?? json['efectivo_ingreso'] as num? ?? 0).toDouble(),
+      efectivoEgreso: (json['efectivo_egreso'] as num? ?? 0).toDouble(),
+      transferenciaIngreso: (json['transferencia_ingreso'] as num? ?? 0).toDouble(),
+      transferenciaEgreso: (json['transferencia_egreso'] as num? ?? 0).toDouble(),
+      yapeIngreso: (json['yape_ingreso'] as num? ?? 0).toDouble(),
+      yapeEgreso: (json['yape_egreso'] as num? ?? 0).toDouble(),
+      posIngreso: (json['pos_ingreso'] as num? ?? 0).toDouble(),
+      posEgreso: (json['pos_egreso'] as num? ?? 0).toDouble(),
+      totalVentasEfectivo: (json['total_ventas_efectivo'] as num? ?? 0).toDouble(),
+      totalVentasTransferencia: (json['total_ventas_transferencia'] as num? ?? 0).toDouble(),
+      totalVentasYape: (json['total_ventas_yape'] as num? ?? 0).toDouble(),
+      totalVentasPOS: (json['total_ventas_pos'] as num? ?? 0).toDouble(),
+      efectivoEsperado: (json['efectivo_esperado'] as num? ?? 0).toDouble(),
+      totalEsperado: (json['total_esperado'] as num? ?? 0).toDouble(),
+    );
+  }
+}
+
+class CajaDetails {
+  final CashierSession caja;
+  final List<MovimientoCaja> movements;
+  final CajaStats stats;
+
+  CajaDetails({
+    required this.caja,
+    required this.movements,
+    required this.stats,
+  });
+
+  factory CajaDetails.fromJson(Map<String, dynamic> json) {
+    return CajaDetails(
+      caja: CashierSession.fromJson(json['caja'] as Map<String, dynamic>),
+      movements: (json['movements'] as List<dynamic>? ?? [])
+          .map((m) => MovimientoCaja.fromJson(m as Map<String, dynamic>))
+          .toList(),
+      stats: CajaStats.fromJson(json['stats'] as Map<String, dynamic>),
+    );
+  }
+}
+
