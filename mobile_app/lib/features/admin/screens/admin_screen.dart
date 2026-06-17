@@ -16,6 +16,7 @@ import '../widgets/admin_more_page.dart';
 import '../widgets/admin_product_pages.dart';
 import '../widgets/admin_ops_pages.dart';
 import '../widgets/admin_verdict_view.dart';
+import '../widgets/admin_caja_audit_page.dart';
 
 class AdminScreen extends StatefulWidget {
   const AdminScreen({super.key});
@@ -170,6 +171,12 @@ class _AdminScreenState extends State<AdminScreen> {
           state: state,
           onBack: _back,
         );
+      } else if (screen == 'caja_audit') {
+        activeView = AdminCajaAuditPage(
+          palette: palette,
+          state: state,
+          onBack: _back,
+        );
       }
     }
 
@@ -220,6 +227,7 @@ class _AdminScreenState extends State<AdminScreen> {
           onGoCreateMember: () => _go('member_form'),
           onGoSettings: () => _go('settings'),
           onGoAuditLogs: () => _go('audit_logs'),
+          onGoCajaAudit: () => _go('caja_audit'),
         );
       case 1:
         return AdminMembersPage(
