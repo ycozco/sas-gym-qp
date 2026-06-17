@@ -440,6 +440,8 @@ function App() {
   const closeCaja = (payload) => apiRequest("/payments/caja/close", { ...authHeaders, method: "POST", body: payload });
   const simulateAccess = (dni) => apiRequest("/attendance/simulation-access", { ...authHeaders, method: "POST", body: { dni } });
   const chargePOS = (payload) => apiRequest("/payments/pos-charge", { ...authHeaders, method: "POST", body: payload });
+  const editCajaOpeningAmount = (payload) => apiRequest("/payments/caja/edit-opening-amount", { ...authHeaders, method: "PATCH", body: payload });
+  const adminEditCaja = (id, payload) => apiRequest(`/payments/caja/${id}/admin-edit`, { ...authHeaders, method: "PATCH", body: payload });
   const toggleTenant = (id) => apiRequest(`/tenants/${id}/toggle`, { ...authHeaders, method: "POST" }).then(() => loadTenants());
   const resolvePayment = (id, status, comments = "") => apiRequest(`/payments/${id}/resolve`, { ...authHeaders, method: "POST", body: { status, comments } }).then(() => loadAdminData());
   const saveAdminMember = (member) => apiRequest(member.id ? `/admin/members/${member.id}` : "/admin/members", { ...authHeaders, method: member.id ? "PATCH" : "POST", body: member }).then(() => loadAdminData());
@@ -538,6 +540,8 @@ function App() {
     closeCaja,
     simulateAccess,
     chargePOS,
+    editCajaOpeningAmount,
+    adminEditCaja,
     toggleTenant,
     resolvePayment,
     saveAdminMember,

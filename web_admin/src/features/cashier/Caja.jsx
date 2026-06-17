@@ -19,6 +19,26 @@ function Caja({ app }) {
   const [message, setMessage] = React.useState("");
   const [error, setError] = React.useState("");
   const [busy, setBusy] = React.useState(false);
+  const [isEditingOpening, setIsEditingOpening] = React.useState(false);
+  const [newOpeningAmount, setNewOpeningAmount] = React.useState("");
+  const [editingSession, setEditingSession] = React.useState(null);
+  const [sessionForm, setSessionForm] = React.useState({
+    montoApertura: "",
+    fechaApertura: "",
+    fechaCierre: "",
+    estado: "cerrada",
+    montoCierreEfectivo: "",
+    montoCierreTransferencia: "",
+    montoCierreYape: "",
+    montoCierrePOS: "",
+    observaciones: ""
+  });
+
+  React.useEffect(() => {
+    if (details?.caja) {
+      setNewOpeningAmount(String(details.caja.monto_apertura || 0));
+    }
+  }, [details]);
 
   const products = app?.products?.length
     ? app.products.filter(p => p.visible && p.status !== "inactivo")
@@ -107,6 +127,43 @@ function Caja({ app }) {
     () => app.openCaja({ montoApertura: Number(openAmount || 0), observaciones: "Apertura desde panel web" }),
     "Caja abierta correctamente.",
   );
+
+  const updateOpeningAmount = () => run(async () => {
+    await app.editCajaOpeningAmount({ montoApertura: Number(newOpeningAmount) });
+    setIsEditingOpening(false);
+  }, "Monto inicial actualizado.");
+
+  const startEditSession = (session) => {
+    setSessionForm({
+      montoApertura: String(session.montoApertura || session.monto_apertura || 0),
+      fechaApertura: session.fechaApertura || session.fecha_apertura || "",
+      fechaCierre: session.fechaCierre || session.fecha_cierre || "",
+      estado: session.estado || "cerrada",
+      montoCierreEfectivo: String(session.montoCierreEfectivo ?? session.monto_cierre_efectivo ?? 0),
+      montoCierreTransferencia: String(session.montoCierreTransferencia ?? session.monto_cierre_transferencia ?? 0),
+      montoCierreYape: String(session.montoCierreYape ?? session.monto_cierre_yape ?? 0),
+      montoCierrePOS: String(session.montoCierrePOS ?? session.monto_cierre_pos ?? 0),
+      observaciones: session.observaciones || ""
+    });
+    setEditingSession(session);
+  };
+
+  const saveEditedSession = () => run(async () => {
+    await app.adminEditCaja(editingSession.id, {
+      montoApertura: Number(sessionForm.montoApertura),
+      fechaApertura: sessionForm.fechaApertura,
+      fechaCierre: sessionForm.fechaCierre || null,
+      estado: sessionForm.estado,
+      montoCierreEfectivo: Number(sessionForm.montoCierreEfectivo),
+      montoCierreTransferencia: Number(sessionForm.montoCierreTransferencia),
+      montoCierreYape: Number(sessionForm.montoCierreYape),
+      montoCierrePOS: Number(sessionForm.montoCierrePOS),
+      observaciones: sessionForm.observaciones
+    });
+    setEditingSession(null);
+    if (app.reloadAdminData) await app.reloadAdminData();
+  }, "Turno de caja actualizado y auditado con éxito.");
+
   const registerEgress = () => run(async () => {
     await app.createCajaEgress({ monto: Number(egressAmount), motivo: egressReason || "Egreso operativo", metodoPago: "efectivo" });
     setEgressAmount(""); setEgressReason("");
@@ -171,19 +228,24 @@ function Caja({ app }) {
     })),
   ].sort((a, b) => new Date(b.at) - new Date(a.at));
 
-  return (
-    <div className="content-wrap">
-      <ErrorBlock message={error}/>
-      {message && <div className="state-block ok">{message}</div>}
-      <div className="seg" role="tablist" aria-label="Caja" style={{ marginBottom: 16 }}>
-        {[
-          ["turno", "Turno"],
-          ["pos", "POS productos"],
-          ["membresias", "Membresías"],
-          ["asistencia", "Asistencia"],
-          ["ventas", "Ventas"],
-        ].map(([id, label]) => <button key={id} role="tab" aria-selected={tab === id} onClick={() => setTab(id)}>{label}</button>)}
-      </div>
+      const tabs = [
+        ["turno", "Turno"],
+        ["pos", "POS productos"],
+        ["membresias", "Membresías"],
+        ["asistencia", "Asistencia"],
+        ["ventas", "Ventas"],
+      ];
+      if (app?.currentUser?.rol === "ADMIN" || app?.currentUser?.rol === "SUPER_ADMIN") {
+        tabs.push(["auditoria", "Auditoría de Cajas"]);
+      }
+
+      return (
+        <div className="content-wrap">
+          <ErrorBlock message={error}/>
+          {message && <div className="state-block ok">{message}</div>}
+          <div className="seg" role="tablist" aria-label="Caja" style={{ marginBottom: 16 }}>
+            {tabs.map(([id, label]) => <button key={id} role="tab" aria-selected={tab === id} onClick={() => setTab(id)}>{label}</button>)}
+          </div>
 
       {tab === "turno" && (
         <div className="grid k-2-1">
@@ -191,7 +253,18 @@ function Caja({ app }) {
             {caja ? (
               <>
                 <div style={{ font: "800 34px var(--font-display)" }}>S/ {(stats?.efectivo_esperado ?? caja.monto_apertura ?? 0).toFixed(2)}</div>
-                <div className="cell-sub">Efectivo esperado · saldo inicial S/ {caja.monto_apertura}</div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                  <div className="cell-sub">Efectivo esperado · saldo inicial S/ {caja.monto_apertura}</div>
+                  {!isEditingOpening ? (
+                    <Btn kind="ghost" size="sm" onClick={() => setIsEditingOpening(true)}>Editar Inicial</Btn>
+                  ) : (
+                    <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                      <input style={{ width: 80, height: 26, fontSize: 13, padding: "2px 6px" }} type="number" value={newOpeningAmount} onChange={e => setNewOpeningAmount(e.target.value)} />
+                      <Btn kind="accent" size="sm" onClick={updateOpeningAmount}>✔</Btn>
+                      <Btn kind="ghost" size="sm" onClick={() => setIsEditingOpening(false)}>✘</Btn>
+                    </div>
+                  )}
+                </div>
                 <div className="divider"/>
                 <div className="row-2">
                   <div className="field"><label>Monto egreso</label><input type="number" value={egressAmount} onChange={e => setEgressAmount(e.target.value)}/></div>
@@ -312,6 +385,141 @@ function Caja({ app }) {
             </tbody>
           </table>
         </Panel>
+      )}
+
+      {tab === "auditoria" && (
+        editingSession === null ? (
+          <Panel title="Historial y Auditoría de Cajas" sub="Monitoreo global de turnos y discrepancias" bodyPad={false}>
+            <table className="tbl">
+              <thead>
+                <tr>
+                  <th>Cajero</th>
+                  <th>Fecha Apertura</th>
+                  <th>Fecha Cierre</th>
+                  <th>Estado</th>
+                  <th className="num">Monto Apertura</th>
+                  <th className="num">Ingresos Netos</th>
+                  <th className="num">Diferencia (Arqueo)</th>
+                  <th className="num">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(app.cashiers || []).flatMap(cashier => 
+                  (cashier.sessionHistory || cashier.cajas_registradas || []).map(session => (
+                    <tr key={session.id}>
+                      <td>
+                        <div className="cell-main">{cashier.name || cashier.nombre_completo}</div>
+                        <div className="cell-sub">DNI {cashier.dni}</div>
+                      </td>
+                      <td>{new Date(session.fechaApertura || session.fecha_apertura).toLocaleString()}</td>
+                      <td>{session.fechaCierre || session.fecha_cierre ? new Date(session.fechaCierre || session.fecha_cierre).toLocaleString() : "—"}</td>
+                      <td>
+                        {session.estado === "abierta" ? (
+                          <Badge kind="ok" dot>Abierta</Badge>
+                        ) : (
+                          <Badge dot>Cerrada</Badge>
+                        )}
+                      </td>
+                      <td className="num">S/ {Number(session.montoApertura ?? session.monto_apertura ?? 0).toFixed(2)}</td>
+                      <td className="num">S/ {Number(session.totalIngresos ?? session.total_ingresos ?? 0).toFixed(2)}</td>
+                      <td className="num" style={{ color: Number(session.diferencia ?? 0) !== 0 ? "var(--danger)" : "var(--ok)" }}>
+                        S/ {Number(session.diferencia ?? 0).toFixed(2)}
+                      </td>
+                      <td className="num">
+                        <Btn kind="ghost" size="sm" onClick={() => startEditSession({ ...session, cajero: cashier })}>Editar</Btn>
+                      </td>
+                    </tr>
+                  ))
+                )}
+                {!(app.cashiers || []).some(c => (c.sessionHistory || c.cajas_registradas || []).length > 0) && (
+                  <tr>
+                    <td colSpan="8">
+                      <div className="empty">No hay turnos registrados en la base de datos.</div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </Panel>
+        ) : (
+          <div className="grid k-2-1">
+            <Panel title="Editar Turno de Caja (Auditoría)" sub={`Cajero: ${editingSession.cajero?.name || "Desconocido"}`}>
+              <form onSubmit={(e) => { e.preventDefault(); saveEditedSession(); }} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                <div className="row-2">
+                  <div className="field">
+                    <label>Estado del Turno</label>
+                    <select value={sessionForm.estado} onChange={e => setSessionForm({ ...sessionForm, estado: e.target.value })}>
+                      <option value="abierta">Abierta (En Curso)</option>
+                      <option value="cerrada">Cerrada</option>
+                    </select>
+                  </div>
+                  <div className="field">
+                    <label>Monto Apertura (Inicial)</label>
+                    <input type="number" step="0.01" value={sessionForm.montoApertura} onChange={e => setSessionForm({ ...sessionForm, montoApertura: e.target.value })} required />
+                  </div>
+                </div>
+
+                <div className="row-2">
+                  <div className="field">
+                    <label>Fecha y Hora Apertura</label>
+                    <input type="text" value={sessionForm.fechaApertura} onChange={e => setSessionForm({ ...sessionForm, fechaApertura: e.target.value })} required />
+                  </div>
+                  <div className="field">
+                    <label>Fecha y Hora Cierre</label>
+                    <input type="text" value={sessionForm.fechaCierre} onChange={e => setSessionForm({ ...sessionForm, fechaCierre: e.target.value })} placeholder="Ej: ISO-String o vacío" />
+                  </div>
+                </div>
+
+                {sessionForm.estado === "cerrada" && (
+                  <>
+                    <div className="row-2">
+                      <div className="field">
+                        <label>Cierre Efectivo</label>
+                        <input type="number" step="0.01" value={sessionForm.montoCierreEfectivo} onChange={e => setSessionForm({ ...sessionForm, montoCierreEfectivo: e.target.value })} />
+                      </div>
+                      <div className="field">
+                        <label>Cierre Transferencia</label>
+                        <input type="number" step="0.01" value={sessionForm.montoCierreTransferencia} onChange={e => setSessionForm({ ...sessionForm, montoCierreTransferencia: e.target.value })} />
+                      </div>
+                    </div>
+                    <div className="row-2">
+                      <div className="field">
+                        <label>Cierre Yape/Plin</label>
+                        <input type="number" step="0.01" value={sessionForm.montoCierreYape} onChange={e => setSessionForm({ ...sessionForm, montoCierreYape: e.target.value })} />
+                      </div>
+                      <div className="field">
+                        <label>Cierre Tarjeta/POS</label>
+                        <input type="number" step="0.01" value={sessionForm.montoCierrePOS} onChange={e => setSessionForm({ ...sessionForm, montoCierrePOS: e.target.value })} />
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                <div className="field">
+                  <label>Observaciones / Justificación</label>
+                  <textarea rows="3" value={sessionForm.observaciones} onChange={e => setSessionForm({ ...sessionForm, observaciones: e.target.value })} />
+                </div>
+
+                <div className="modal-foot inline">
+                  <Btn kind="ghost" type="button" onClick={() => setEditingSession(null)}>Cancelar</Btn>
+                  <Btn kind="primary" type="submit" disabled={busy}>Guardar Cambios</Btn>
+                </div>
+              </form>
+            </Panel>
+            <Panel title="Detalle de Auditoría" sub="Diferencias y Descuadres">
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                <Kpi icon="trend" value={`S/ ${Number(editingSession.totalIngresos ?? editingSession.total_ingresos ?? 0).toFixed(2)}`} label="Ingresos Reportados" dir="up" />
+                <div className="divider" />
+                <div style={{ font: "500 13px var(--font-body)", color: "var(--ink-2)", lineHeight: 1.5 }}>
+                  • <b>Monto Apertura Original:</b> S/ {Number(editingSession.montoApertura ?? editingSession.monto_apertura ?? 0).toFixed(2)}<br />
+                  • <b>Diferencia de Cierre:</b> S/ {Number(editingSession.diferencia ?? 0).toFixed(2)}<br />
+                  • <b>Observaciones iniciales:</b> {editingSession.observaciones || "Ninguna"}<br /><br />
+                  <span style={{ color: "var(--warning)" }}>⚠️ Al guardar los cambios, el sistema recalculará automáticamente la diferencia del arqueo en función de las transacciones asociadas a este turno.</span>
+                </div>
+              </div>
+            </Panel>
+          </div>
+        )
       )}
     </div>
   );
