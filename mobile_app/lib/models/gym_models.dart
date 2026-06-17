@@ -640,6 +640,46 @@ class CashierSession {
     this.fechaCierre,
   });
 
+  CashierSession copyWith({
+    String? id,
+    String? cajeroId,
+    double? montoApertura,
+    double? montoCierreEfectivo,
+    double? montoCierreTransferencia,
+    double? montoCierreYape,
+    double? montoCierrePOS,
+    double? totalVentasEfectivo,
+    double? totalVentasTransferencia,
+    double? totalVentasYape,
+    double? totalVentasPOS,
+    double? totalIngresos,
+    double? diferencia,
+    String? observaciones,
+    String? estado,
+    String? fechaApertura,
+    String? fechaCierre,
+  }) {
+    return CashierSession(
+      id: id ?? this.id,
+      cajeroId: cajeroId ?? this.cajeroId,
+      montoApertura: montoApertura ?? this.montoApertura,
+      montoCierreEfectivo: montoCierreEfectivo ?? this.montoCierreEfectivo,
+      montoCierreTransferencia: montoCierreTransferencia ?? this.montoCierreTransferencia,
+      montoCierreYape: montoCierreYape ?? this.montoCierreYape,
+      montoCierrePOS: montoCierrePOS ?? this.montoCierrePOS,
+      totalVentasEfectivo: totalVentasEfectivo ?? this.totalVentasEfectivo,
+      totalVentasTransferencia: totalVentasTransferencia ?? this.totalVentasTransferencia,
+      totalVentasYape: totalVentasYape ?? this.totalVentasYape,
+      totalVentasPOS: totalVentasPOS ?? this.totalVentasPOS,
+      totalIngresos: totalIngresos ?? this.totalIngresos,
+      diferencia: diferencia ?? this.diferencia,
+      observaciones: observaciones ?? this.observaciones,
+      estado: estado ?? this.estado,
+      fechaApertura: fechaApertura ?? this.fechaApertura,
+      fechaCierre: fechaCierre ?? this.fechaCierre,
+    );
+  }
+
   factory CashierSession.fromJson(Map<String, dynamic> json) {
     return CashierSession(
       id: json['id'] as String,

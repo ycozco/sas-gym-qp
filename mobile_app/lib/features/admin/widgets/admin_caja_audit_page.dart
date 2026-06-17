@@ -42,6 +42,18 @@ class _AdminCajaAuditPageState extends State<AdminCajaAuditPage> {
     }
   }
 
+  void _showEditSessionDialog(BuildContext context, CashierSession session) {
+    showDialog(
+      context: context,
+      builder: (context) => _AdminEditCajaDialog(
+        palette: widget.palette,
+        state: widget.state,
+        session: session,
+        onSuccess: () => _refreshCashiers(),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = context.sasColors;
@@ -216,7 +228,6 @@ class _AdminCajaAuditPageState extends State<AdminCajaAuditPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 isOpen ? 'Turno Activo (En Curso)' : 'Turno Cerrado',
@@ -226,6 +237,16 @@ class _AdminCajaAuditPageState extends State<AdminCajaAuditPage> {
                   color: isOpen ? widget.palette.accent : colors.textPrimary,
                 ),
               ),
+              const SizedBox(width: 6),
+              InkWell(
+                onTap: () => _showEditSessionDialog(context, session),
+                borderRadius: BorderRadius.circular(4),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                  child: Icon(Icons.edit_rounded, size: 12, color: widget.palette.accent),
+                ),
+              ),
+              const Spacer(),
               Text(
                 _formatDate(session.fechaApertura),
                 style: TextStyle(fontSize: 11, color: colors.textMuted),
@@ -307,5 +328,300 @@ class _AdminCajaAuditPageState extends State<AdminCajaAuditPage> {
     } catch (_) {
       return isoStr;
     }
+  }
+}
+
+class _AdminEditCajaDialog extends StatefulWidget {
+  const _AdminEditCajaDialog({
+    required this.palette,
+    required this.state,
+    required this.session,
+    required this.onSuccess,
+  });
+
+  final RolePalette palette;
+  final GymState state;
+  final CashierSession session;
+  final VoidCallback onSuccess;
+
+  @override
+  State<_AdminEditCajaDialog> createState() => _AdminEditCajaDialogState();
+}
+
+class _AdminEditCajaDialogState extends State<_AdminEditCajaDialog> {
+  late final TextEditingController _montoAperturaCtrl;
+  late final TextEditingController _fechaAperturaCtrl;
+  late final TextEditingController _fechaCierreCtrl;
+  late final TextEditingController _montoCierreEfectivoCtrl;
+  late final TextEditingController _montoCierreTransferenciaCtrl;
+  late final TextEditingController _montoCierreYapeCtrl;
+  late final TextEditingController _montoCierrePOSCtrl;
+  late final TextEditingController _observacionesCtrl;
+  late String _estado;
+
+  final _formKey = GlobalKey<FormState>();
+  bool _loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _estado = widget.session.estado;
+    _montoAperturaCtrl = TextEditingController(text: widget.session.montoApertura.toStringAsFixed(2));
+    _fechaAperturaCtrl = TextEditingController(text: widget.session.fechaApertura);
+    _fechaCierreCtrl = TextEditingController(text: widget.session.fechaCierre ?? '');
+    _montoCierreEfectivoCtrl = TextEditingController(text: (widget.session.montoCierreEfectivo ?? 0.0).toStringAsFixed(2));
+    _montoCierreTransferenciaCtrl = TextEditingController(text: (widget.session.montoCierreTransferencia ?? 0.0).toStringAsFixed(2));
+    _montoCierreYapeCtrl = TextEditingController(text: (widget.session.montoCierreYape ?? 0.0).toStringAsFixed(2));
+    _montoCierrePOSCtrl = TextEditingController(text: (widget.session.montoCierrePOS ?? 0.0).toStringAsFixed(2));
+    _observacionesCtrl = TextEditingController(text: widget.session.observaciones ?? '');
+  }
+
+  @override
+  void dispose() {
+    _montoAperturaCtrl.dispose();
+    _fechaAperturaCtrl.dispose();
+    _fechaCierreCtrl.dispose();
+    _montoCierreEfectivoCtrl.dispose();
+    _montoCierreTransferenciaCtrl.dispose();
+    _montoCierreYapeCtrl.dispose();
+    _montoCierrePOSCtrl.dispose();
+    _observacionesCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.sasColors;
+
+    return AlertDialog(
+      backgroundColor: colors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: colors.border),
+      ),
+      title: Row(
+        children: [
+          Icon(Icons.edit_rounded, color: widget.palette.accent),
+          const SizedBox(width: 8),
+          Text(
+            'Editar Turno de Caja',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: colors.textPrimary,
+            ),
+          ),
+        ],
+      ),
+      content: SizedBox(
+        width: 340,
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                DropdownButtonFormField<String>(
+                  value: _estado,
+                  dropdownColor: colors.surface,
+                  style: TextStyle(color: colors.textPrimary, fontSize: 14),
+                  decoration: InputDecoration(
+                    labelText: 'Estado',
+                    labelStyle: TextStyle(color: colors.textMuted),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: colors.border),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'abierta', child: Text('Abierta')),
+                    DropdownMenuItem(value: 'cerrada', child: Text('Cerrada')),
+                  ],
+                  onChanged: (val) {
+                    if (val != null) {
+                      setState(() {
+                        _estado = val;
+                      });
+                    }
+                  },
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _montoAperturaCtrl,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  style: TextStyle(color: colors.textPrimary, fontSize: 14),
+                  decoration: InputDecoration(
+                    labelText: 'Monto Apertura (S/)',
+                    labelStyle: TextStyle(color: colors.textMuted),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: colors.border),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  validator: (val) => val == null || val.isEmpty ? 'Requerido' : null,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _fechaAperturaCtrl,
+                  style: TextStyle(color: colors.textPrimary, fontSize: 13),
+                  decoration: InputDecoration(
+                    labelText: 'Fecha Apertura (Horario)',
+                    labelStyle: TextStyle(color: colors.textMuted),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: colors.border),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  validator: (val) => val == null || val.isEmpty ? 'Requerido' : null,
+                ),
+                if (_estado == 'cerrada') ...[
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _fechaCierreCtrl,
+                    style: TextStyle(color: colors.textPrimary, fontSize: 13),
+                    decoration: InputDecoration(
+                      labelText: 'Fecha Cierre',
+                      labelStyle: TextStyle(color: colors.textMuted),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: colors.border),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _montoCierreEfectivoCtrl,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    style: TextStyle(color: colors.textPrimary, fontSize: 14),
+                    decoration: InputDecoration(
+                      labelText: 'Cierre Efectivo (S/)',
+                      labelStyle: TextStyle(color: colors.textMuted),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: colors.border),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _montoCierreTransferenciaCtrl,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    style: TextStyle(color: colors.textPrimary, fontSize: 14),
+                    decoration: InputDecoration(
+                      labelText: 'Cierre Transferencia (S/)',
+                      labelStyle: TextStyle(color: colors.textMuted),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: colors.border),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _montoCierreYapeCtrl,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    style: TextStyle(color: colors.textPrimary, fontSize: 14),
+                    decoration: InputDecoration(
+                      labelText: 'Cierre Yape/Plin (S/)',
+                      labelStyle: TextStyle(color: colors.textMuted),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: colors.border),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _montoCierrePOSCtrl,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    style: TextStyle(color: colors.textPrimary, fontSize: 14),
+                    decoration: InputDecoration(
+                      labelText: 'Cierre Tarjeta/POS (S/)',
+                      labelStyle: TextStyle(color: colors.textMuted),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: colors.border),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _observacionesCtrl,
+                  style: TextStyle(color: colors.textPrimary, fontSize: 14),
+                  maxLines: 2,
+                  decoration: InputDecoration(
+                    labelText: 'Observaciones / Justificación',
+                    labelStyle: TextStyle(color: colors.textMuted),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: colors.border),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _loading ? null : () => Navigator.pop(context),
+          child: Text('Cancelar', style: TextStyle(color: colors.textMuted)),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: widget.palette.accent,
+            foregroundColor: widget.palette.accentInk,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+          onPressed: _loading
+              ? null
+              : () async {
+                  if (!_formKey.currentState!.validate()) return;
+                  setState(() => _loading = true);
+                  try {
+                    await widget.state.adminEditCaja(
+                      widget.session.id,
+                      montoApertura: double.parse(_montoAperturaCtrl.text),
+                      fechaApertura: _fechaAperturaCtrl.text,
+                      fechaCierre: _fechaCierreCtrl.text.isEmpty ? null : _fechaCierreCtrl.text,
+                      estado: _estado,
+                      montoCierreEfectivo: double.parse(_montoCierreEfectivoCtrl.text),
+                      montoCierreTransferencia: double.parse(_montoCierreTransferenciaCtrl.text),
+                      montoCierreYape: double.parse(_montoCierreYapeCtrl.text),
+                      montoCierrePOS: double.parse(_montoCierrePOSCtrl.text),
+                      observaciones: _observacionesCtrl.text,
+                    );
+                    if (context.mounted) {
+                      widget.onSuccess();
+                      Navigator.pop(context);
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Error: ${e.toString()}'),
+                          backgroundColor: Colors.redAccent,
+                        ),
+                      );
+                    }
+                  } finally {
+                    if (mounted) setState(() => _loading = false);
+                  }
+                },
+          child: _loading
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Guardar'),
+        ),
+      ],
+    );
   }
 }

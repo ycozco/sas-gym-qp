@@ -1266,6 +1266,125 @@ class GymState extends ChangeNotifier {
     return session;
   }
 
+  Future<bool> editCajaOpeningAmount(double newAmount) async {
+    if (!isBackendMode) {
+      if (_activeCaja != null) {
+        _activeCaja = _activeCaja!.copyWith(
+          montoApertura: newAmount,
+          totalIngresos: newAmount,
+        );
+        _addLog(
+          'Caja',
+          'Ajuste de Caja',
+          'Cajero actualizó saldo inicial a S/ $newAmount',
+          Colors.orange,
+        );
+        notifyListeners();
+      }
+      return true;
+    }
+
+    try {
+      final response = await ApiClient().dio.patch(
+        '/payments/caja/edit-opening-amount',
+        data: {
+          'montoApertura': newAmount,
+        },
+      );
+      if (response.data != null) {
+        _activeCaja = CashierSession.fromJson(response.data);
+        _addLog(
+          'Caja',
+          'Ajuste de Caja (API)',
+          'Actualizó saldo inicial a S/ $newAmount',
+          Colors.orange,
+        );
+        notifyListeners();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      AppLogger.debug('Error al editar monto inicial', e);
+      rethrow;
+    }
+  }
+
+  Future<bool> adminEditCaja(
+    String id, {
+    double? montoApertura,
+    String? fechaApertura,
+    String? fechaCierre,
+    String? estado,
+    double? montoCierreEfectivo,
+    double? montoCierreTransferencia,
+    double? montoCierreYape,
+    double? montoCierrePOS,
+    String? observaciones,
+  }) async {
+    if (!isBackendMode) {
+      final idx = _cashiers.indexWhere((c) => c.sessionHistory.any((s) => s.id == id));
+      if (idx != -1) {
+        final c = _cashiers[idx];
+        final sessionIdx = c.sessionHistory.indexWhere((s) => s.id == id);
+        if (sessionIdx != -1) {
+          final original = c.sessionHistory[sessionIdx];
+          final updated = original.copyWith(
+            montoApertura: montoApertura,
+            fechaApertura: fechaApertura,
+            fechaCierre: fechaCierre,
+            estado: estado,
+            montoCierreEfectivo: montoCierreEfectivo,
+            montoCierreTransferencia: montoCierreTransferencia,
+            montoCierreYape: montoCierreYape,
+            montoCierrePOS: montoCierrePOS,
+            observaciones: observaciones,
+          );
+          c.sessionHistory[sessionIdx] = updated;
+          _addLog(
+            'Auditoría',
+            'Modificación de Caja',
+            'Admin editó caja de cajero ${c.name}',
+            Colors.purple,
+          );
+          notifyListeners();
+        }
+      }
+      return true;
+    }
+
+    try {
+      final payload = <String, dynamic>{};
+      if (montoApertura != null) payload['montoApertura'] = montoApertura;
+      if (fechaApertura != null) payload['fechaApertura'] = fechaApertura;
+      if (fechaCierre != null) payload['fechaCierre'] = fechaCierre;
+      if (estado != null) payload['estado'] = estado;
+      if (montoCierreEfectivo != null) payload['montoCierreEfectivo'] = montoCierreEfectivo;
+      if (montoCierreTransferencia != null) payload['montoCierreTransferencia'] = montoCierreTransferencia;
+      if (montoCierreYape != null) payload['montoCierreYape'] = montoCierreYape;
+      if (montoCierrePOS != null) payload['montoCierrePOS'] = montoCierrePOS;
+      if (observaciones != null) payload['observaciones'] = observaciones;
+
+      await ApiClient().dio.patch(
+        '/payments/caja/$id/admin-edit',
+        data: payload,
+      );
+
+      _addLog(
+        'Auditoría',
+        'Modificación de Caja (API)',
+        'Admin editó caja ID: $id',
+        Colors.purple,
+      );
+
+      await loadCashiers();
+      notifyListeners();
+      return true;
+    } catch (e) {
+      AppLogger.debug('Error al editar caja administrativamente', e);
+      rethrow;
+    }
+  }
+
   // --- Ventas de Membresías ---
 
   Future<Map<String, dynamic>?> registerMembershipSaleBackend({

@@ -274,12 +274,41 @@ class _CashierHomePageState extends State<CashierHomePage> {
                       height: 14,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : Text(
-                      'Apertura: S/ ${activeCaja.montoApertura.toStringAsFixed(0)}',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: colors.textSecondary,
+                  : InkWell(
+                      onTap: () {
+                        showDialog(
+                          context: context,
+                          builder: (context) => AjustarMontoAperturaDialog(
+                            palette: widget.palette,
+                            state: widget.state,
+                            initialAmount: activeCaja.montoApertura,
+                            onSuccess: () {
+                              _loadCajaDetails();
+                            },
+                          ),
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(4),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                        child: Row(
+                          children: [
+                            Text(
+                              'Apertura: S/ ${activeCaja.montoApertura.toStringAsFixed(0)}',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: colors.textSecondary,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Icon(
+                              Icons.edit_rounded,
+                              size: 10,
+                              color: widget.palette.accent,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
             ],

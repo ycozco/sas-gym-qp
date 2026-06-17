@@ -720,3 +720,150 @@ class _ArqueoCajaDialogState extends State<ArqueoCajaDialog> {
     );
   }
 }
+
+class AjustarMontoAperturaDialog extends StatefulWidget {
+  const AjustarMontoAperturaDialog({
+    super.key,
+    required this.palette,
+    required this.state,
+    required this.initialAmount,
+    required this.onSuccess,
+  });
+
+  final RolePalette palette;
+  final GymState state;
+  final double initialAmount;
+  final VoidCallback onSuccess;
+
+  @override
+  State<AjustarMontoAperturaDialog> createState() => _AjustarMontoAperturaDialogState();
+}
+
+class _AjustarMontoAperturaDialogState extends State<AjustarMontoAperturaDialog> {
+  late final TextEditingController _montoCtrl;
+  final _formKey = GlobalKey<FormState>();
+  bool _loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _montoCtrl = TextEditingController(text: widget.initialAmount.toStringAsFixed(2));
+  }
+
+  @override
+  void dispose() {
+    _montoCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.sasColors;
+
+    return AlertDialog(
+      backgroundColor: colors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: colors.border),
+      ),
+      title: Row(
+        children: [
+          Icon(Icons.edit_rounded, color: widget.palette.accent),
+          const SizedBox(width: 8),
+          Text(
+            'Corregir Saldo Inicial',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: colors.textPrimary,
+            ),
+          ),
+        ],
+      ),
+      content: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Ajusta el monto en efectivo con el que abriste la caja. Se auditará el cambio.',
+              style: TextStyle(fontSize: 12, color: colors.textSecondary),
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _montoCtrl,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              style: TextStyle(color: colors.textPrimary, fontSize: 14),
+              decoration: InputDecoration(
+                labelText: 'Monto de Apertura (S/)',
+                labelStyle: TextStyle(color: colors.textMuted),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: colors.border),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: widget.palette.accent),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              validator: (val) {
+                if (val == null || val.trim().isEmpty) return 'Requerido';
+                final n = double.tryParse(val);
+                if (n == null || n < 0) return 'Monto inválido';
+                return null;
+              },
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _loading ? null : () => Navigator.pop(context),
+          child: Text('Cancelar', style: TextStyle(color: colors.textMuted)),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: widget.palette.accent,
+            foregroundColor: widget.palette.accentInk,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+          onPressed: _loading
+              ? null
+              : () async {
+                  if (!_formKey.currentState!.validate()) return;
+                  setState(() => _loading = true);
+                  try {
+                    final val = double.parse(_montoCtrl.text);
+                    await widget.state.editCajaOpeningAmount(val);
+                    if (context.mounted) {
+                      widget.onSuccess();
+                      Navigator.pop(context);
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Error: ${e.toString()}'),
+                          backgroundColor: Colors.redAccent,
+                        ),
+                      );
+                    }
+                  } finally {
+                    if (mounted) setState(() => _loading = false);
+                  }
+                },
+          child: _loading
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Guardar'),
+        ),
+      ],
+    );
+  }
+}
