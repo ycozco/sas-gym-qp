@@ -56,6 +56,55 @@ export class EgressDto {
   descripcionAdicional?: string;
 }
 
+export class AdminEditCajaDto {
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  montoApertura?: number;
+
+  @IsOptional()
+  @IsString()
+  fechaApertura?: string;
+
+  @IsOptional()
+  @IsString()
+  fechaCierre?: string;
+
+  @IsOptional()
+  @IsString()
+  estado?: 'abierta' | 'cerrada';
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  montoCierreEfectivo?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  montoCierreTransferencia?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  montoCierreYape?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  montoCierrePOS?: number;
+
+  @IsOptional()
+  @IsString()
+  observaciones?: string;
+}
+
+export class CajeroEditOpeningAmountDto {
+  @IsNumber()
+  @Min(0)
+  montoApertura: number;
+}
+
 @Injectable()
 export class CashierSessionService {
   constructor(private prisma: PrismaService) {}
@@ -140,6 +189,22 @@ export class CashierSessionService {
     const caja = await this.getActiveCaja(cajeroId, tenantId);
     if (!caja) {
       throw new NotFoundException('No tienes una caja abierta actualmente.');
+    }
+    return this.getCajaSessionDetailsById(caja.id, tenantId);
+  }
+
+  async getCajaSessionDetailsById(cajaId: string, tenantId: string) {
+    const caja = await this.prisma.caja.findFirst({
+      where: {
+        id: cajaId,
+        tenant_id: tenantId,
+      },
+      include: {
+        movimientos: true,
+      },
+    });
+    if (!caja) {
+      throw new NotFoundException('La caja especificada no existe.');
     }
 
     // Obtener todos los pagos de membresías en esta caja que están aprobados
@@ -280,17 +345,6 @@ export class CashierSessionService {
     const details = await this.getCajaSessionDetails(cajeroId, tenantId);
     const { caja, stats } = details;
 
-    const totalSistema =
-      stats.efectivo_esperado +
-      stats.total_ventas_transferencia -
-      stats.transferencia_egreso +
-      stats.total_ventas_yape -
-      stats.yape_egreso +
-      stats.total_ventas_pos -
-      stats.pos_egreso;
-    // O de forma equivalente: totalSistema = stats.efectivo_esperado + neto_transferencia + neto_yape + neto_pos
-    // que es igual a caja.monto_apertura + stats.total_esperado
-
     const totalCierre =
       dto.montoCierreEfectivo +
       dto.montoCierreTransferencia +
@@ -315,6 +369,151 @@ export class CashierSessionService {
         total_ingresos: stats.total_esperado + caja.monto_apertura, // Total ingresos incluye saldo inicial
         diferencia: diferencia,
         observaciones: dto.observaciones || caja.observaciones || '',
+      },
+    });
+
+    return updatedCaja;
+  }
+
+  async adminEditCaja(
+    tenantId: string,
+    id: string,
+    dto: AdminEditCajaDto,
+    actorId: string,
+    actorName: string,
+  ) {
+    const originalCaja = await this.prisma.caja.findFirst({
+      where: { id, tenant_id: tenantId },
+    });
+    if (!originalCaja) {
+      throw new NotFoundException('La caja especificada no existe.');
+    }
+
+    const dataToUpdate: any = {};
+    if (dto.montoApertura !== undefined) dataToUpdate.monto_apertura = dto.montoApertura;
+    if (dto.fechaApertura !== undefined) dataToUpdate.fecha_apertura = new Date(dto.fechaApertura);
+    if (dto.fechaCierre !== undefined) dataToUpdate.fecha_cierre = dto.fechaCierre ? new Date(dto.fechaCierre) : null;
+    if (dto.estado !== undefined) dataToUpdate.estado = dto.estado;
+    if (dto.montoCierreEfectivo !== undefined) dataToUpdate.monto_cierre_efectivo = dto.montoCierreEfectivo;
+    if (dto.montoCierreTransferencia !== undefined) dataToUpdate.monto_cierre_transferencia = dto.montoCierreTransferencia;
+    if (dto.montoCierreYape !== undefined) dataToUpdate.monto_cierre_yape = dto.montoCierreYape;
+    if (dto.montoCierrePOS !== undefined) dataToUpdate.monto_cierre_pos = dto.montoCierrePOS;
+    if (dto.observaciones !== undefined) dataToUpdate.observaciones = dto.observaciones;
+
+    if (dto.montoApertura !== undefined) {
+      const initialMove = await this.prisma.movimientoCaja.findFirst({
+        where: {
+          caja_id: id,
+          tipo: 'ingreso',
+          descripcion: { contains: 'Saldo inicial' },
+        },
+      });
+      if (initialMove) {
+        await this.prisma.movimientoCaja.update({
+          where: { id: initialMove.id },
+          data: { monto: dto.montoApertura },
+        });
+      }
+    }
+
+    let caja = await this.prisma.caja.update({
+      where: { id },
+      data: dataToUpdate,
+    });
+
+    const details = await this.getCajaSessionDetailsById(id, tenantId);
+    const { stats } = details;
+
+    if (caja.estado === 'cerrada') {
+      const totalCierre =
+        (caja.monto_cierre_efectivo ?? 0) +
+        (caja.monto_cierre_transferencia ?? 0) +
+        (caja.monto_cierre_yape ?? 0) +
+        (caja.monto_cierre_pos ?? 0);
+      const diferencia = totalCierre - (caja.monto_apertura + stats.total_esperado);
+      caja = await this.prisma.caja.update({
+        where: { id },
+        data: {
+          total_ventas_efectivo: stats.total_ventas_efectivo,
+          total_ventas_transferencia: stats.total_ventas_transferencia,
+          total_ventas_yape: stats.total_ventas_yape,
+          total_ventas_pos: stats.total_ventas_pos,
+          total_ingresos: stats.total_esperado + caja.monto_apertura,
+          diferencia,
+        },
+      });
+    } else {
+      caja = await this.prisma.caja.update({
+        where: { id },
+        data: {
+          fecha_cierre: null,
+          monto_cierre_efectivo: null,
+          monto_cierre_transferencia: null,
+          monto_cierre_yape: null,
+          monto_cierre_pos: null,
+          diferencia: 0,
+          total_ingresos: caja.monto_apertura,
+        },
+      });
+    }
+
+    await this.prisma.auditLog.create({
+      data: {
+        tenant_id: tenantId,
+        actor_id: actorId,
+        actor_name: actorName,
+        rol: 'ADMIN',
+        accion: 'UPDATE',
+        entidad: 'Caja',
+        detalles: { antes: originalCaja, despues: caja },
+      },
+    });
+
+    return caja;
+  }
+
+  async cajeroEditOpeningAmount(
+    cajeroId: string,
+    tenantId: string,
+    dto: CajeroEditOpeningAmountDto,
+  ) {
+    const caja = await this.getActiveCaja(cajeroId, tenantId);
+    if (!caja) {
+      throw new NotFoundException('No tienes una caja abierta actualmente.');
+    }
+    const originalCaja = { ...caja };
+
+    const initialMove = await this.prisma.movimientoCaja.findFirst({
+      where: {
+        caja_id: caja.id,
+        tipo: 'ingreso',
+        descripcion: { contains: 'Saldo inicial' },
+      },
+    });
+    if (initialMove) {
+      await this.prisma.movimientoCaja.update({
+        where: { id: initialMove.id },
+        data: { monto: dto.montoApertura },
+      });
+    }
+
+    const updatedCaja = await this.prisma.caja.update({
+      where: { id: caja.id },
+      data: {
+        monto_apertura: dto.montoApertura,
+        total_ingresos: dto.montoApertura,
+      },
+    });
+
+    await this.prisma.auditLog.create({
+      data: {
+        tenant_id: tenantId,
+        actor_id: cajeroId,
+        actor_name: 'Caja',
+        rol: 'CAJA',
+        accion: 'UPDATE',
+        entidad: 'Caja',
+        detalles: { antes: originalCaja, despues: updatedCaja, nota: 'Ajuste de monto inicial por cajero' },
       },
     });
 

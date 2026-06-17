@@ -19,6 +19,8 @@ import {
   OpenCajaDto,
   CloseCajaDto,
   EgressDto,
+  AdminEditCajaDto,
+  CajeroEditOpeningAmountDto,
 } from './cashier-session.service';
 import {
   MembershipBillingService,
@@ -207,6 +209,40 @@ export class PaymentsController {
     const cashierId = req.user.sub;
     const tenantId = req.user.tenantId;
     return this.cashierSessionService.closeCaja(cashierId, tenantId, dto);
+  }
+
+  @Patch('caja/edit-opening-amount')
+  @Roles(Role.CAJA)
+  async editOpeningAmount(
+    @Req() req: any,
+    @Body() dto: CajeroEditOpeningAmountDto,
+  ) {
+    const cashierId = req.user.sub;
+    const tenantId = req.user.tenantId;
+    return this.cashierSessionService.cajeroEditOpeningAmount(
+      cashierId,
+      tenantId,
+      dto,
+    );
+  }
+
+  @Patch('caja/:id/admin-edit')
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  async adminEditCaja(
+    @Req() req: any,
+    @Param('id') id: string,
+    @Body() dto: AdminEditCajaDto,
+  ) {
+    const tenantId = req.user.tenantId;
+    const actorId = req.user.sub;
+    const actorName = req.user.nombre_completo || 'Admin';
+    return this.cashierSessionService.adminEditCaja(
+      tenantId,
+      id,
+      dto,
+      actorId,
+      actorName,
+    );
   }
 
   @Get('caja/sales')
