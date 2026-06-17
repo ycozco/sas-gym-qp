@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
+import '../../../data/gym_seed.dart';
 import '../../../data/gym_state.dart';
+import '../../../models/gym_models.dart';
 import '../../../theme/app_theme_tokens.dart';
 import '../../../widgets/app_shell.dart';
 import '../widgets/workout_assistant_view.dart';
@@ -43,6 +45,9 @@ class _MemberScreenState extends State<MemberScreen> {
   }
 
   Color _getAccentColor() {
+    if (!Hive.isBoxOpen('gym_cache')) {
+      return rolePalettes[GymRole.member]!.accent;
+    }
     final box = Hive.box('gym_cache');
     final savedColor = box.get('custom_theme_accent');
     if (savedColor != null && savedColor is int) {

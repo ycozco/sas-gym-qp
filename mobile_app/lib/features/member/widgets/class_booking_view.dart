@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../data/gym_state.dart';
+import '../../../models/gym_models.dart';
 import '../../../theme/app_theme_tokens.dart';
 import '../../../widgets/app_shell.dart';
 

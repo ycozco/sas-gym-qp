@@ -4,6 +4,7 @@ import 'package:image/image.dart' as img;
 import '../../../core/config/app_config.dart';
 import '../../../core/services/local_image_picker.dart';
 import '../../../data/gym_state.dart';
+import '../../../models/gym_models.dart';
 import '../../../theme/app_theme_tokens.dart';
 import '../../../widgets/app_shell.dart';
 
