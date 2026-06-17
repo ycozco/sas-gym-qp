@@ -225,6 +225,14 @@ function App() {
     return apiRequest(`/dietas${query}`, override).catch(() => apiRequest(`/diets${query}`, override));
   }, [authHeaders]);
 
+  const loadExercises = React.useCallback(async (override = authHeaders) => {
+    return apiRequest("/routines/trainer/exercises", override);
+  }, [authHeaders]);
+
+  const loadRoutineTemplates = React.useCallback(async (override = authHeaders) => {
+    return apiRequest("/routines/trainer/templates", override);
+  }, [authHeaders]);
+
   const loadPointsData = React.useCallback(async (override = authHeaders) => {
     const [summary, catalog, config] = await Promise.all([
       apiRequest("/points/summary", override).catch(() => null),
@@ -455,6 +463,10 @@ function App() {
     return apiRequest("/diets", { ...authHeaders, method: "POST", body: payload });
   };
   const deactivateDiet = (id) => apiRequest(`/diets/${id}`, { ...authHeaders, method: "DELETE" });
+
+  const createExercise = (payload) => apiRequest("/routines/trainer/exercises", { ...authHeaders, method: "POST", body: payload });
+  const createRoutineTemplate = (payload) => apiRequest("/routines/trainer/templates", { ...authHeaders, method: "POST", body: payload });
+  const assignRoutine = (payload) => apiRequest("/routines/trainer/assign", { ...authHeaders, method: "POST", body: payload });
   const savePointsConfig = async (payload) => {
     const data = await apiRequest("/points/config", {
       ...authHeaders,
@@ -525,6 +537,11 @@ function App() {
     loadDiets,
     saveDiet,
     deactivateDiet,
+    loadExercises,
+    createExercise,
+    loadRoutineTemplates,
+    createRoutineTemplate,
+    assignRoutine,
     savePointsConfig,
     saveTenantSettings,
     saveMembershipPlan,
