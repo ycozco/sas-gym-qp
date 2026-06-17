@@ -496,6 +496,29 @@ class _CashierMembershipsPageState extends State<CashierMembershipsPage> {
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  if (widget.state.activeCaja == null) ...[
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2C1315),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.redAccent.withValues(alpha: 0.3)),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.lock_rounded, color: Colors.redAccent, size: 18),
+                          SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              'Caja cerrada. Abre la caja para poder vender.',
+                              style: TextStyle(color: Colors.redAccent, fontSize: 11.5, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   DropdownButtonFormField<String>(
                     initialValue: selectedPlan.id.isNotEmpty ? selectedPlan.id : selectedPlan.name,
                     decoration: const InputDecoration(labelText: 'Plan de Membresía'),
@@ -541,11 +564,13 @@ class _CashierMembershipsPageState extends State<CashierMembershipsPage> {
                 ),
                 ElevatedButton(
                   style: roleFilledPillButtonStyle(
-                    backgroundColor: widget.palette.accent,
-                    foregroundColor: widget.palette.accentInk,
+                    backgroundColor: widget.state.activeCaja == null ? colors.textMuted : widget.palette.accent,
+                    foregroundColor: widget.state.activeCaja == null ? Colors.white60 : widget.palette.accentInk,
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   ),
-                  onPressed: () async {
+                  onPressed: widget.state.activeCaja == null
+                      ? null
+                      : () async {
                     if (widget.state.isBackendMode) {
                       try {
                         final ok = await widget.state.chargePOSBackend(

@@ -237,25 +237,54 @@ class _CashierPOSPageState extends State<CashierPOSPage> {
           Container(
             padding: const EdgeInsets.all(18),
             decoration: _cardDecoration(context),
-            child: SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: roleFilledPillButtonStyle(
-                  backgroundColor: widget.palette.accent,
-                  foregroundColor: widget.palette.accentInk,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Column(
+              children: [
+                if (widget.state.activeCaja == null) ...[
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF2C1315),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.redAccent.withValues(alpha: 0.3)),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.lock_rounded, color: Colors.redAccent, size: 20),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'La caja está cerrada. Debes abrir la caja desde el Inicio para cobrar.',
+                            style: TextStyle(color: Colors.redAccent, fontSize: 12, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: roleFilledPillButtonStyle(
+                      backgroundColor: widget.state.activeCaja == null ? colors.textMuted : widget.palette.accent,
+                      foregroundColor: widget.state.activeCaja == null ? Colors.white60 : widget.palette.accentInk,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    onPressed: widget.state.activeCaja == null
+                        ? null
+                        : () {
+                            if (widget.selectedMemberDni == null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Por favor, selecciona un Socio destinatario primero')),
+                              );
+                              return;
+                            }
+                            _openPaymentCheckoutDialog(total);
+                          },
+                    child: const Text('CONTINUAR AL PAGO', style: TextStyle(fontWeight: FontWeight.w900)),
+                  ),
                 ),
-                onPressed: () {
-                  if (widget.selectedMemberDni == null) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Por favor, selecciona un Socio destinatario primero')),
-                    );
-                    return;
-                  }
-                  _openPaymentCheckoutDialog(total);
-                },
-                child: const Text('CONTINUAR AL PAGO', style: TextStyle(fontWeight: FontWeight.w900)),
-              ),
+              ],
             ),
           ),
         const SizedBox(height: 22),
