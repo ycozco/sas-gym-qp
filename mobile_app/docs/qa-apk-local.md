@@ -35,6 +35,22 @@ flutter run --flavor dev \
 
 No usar `APP_MODE=demo`. El APK backend local debe fallar si se intenta activar demo sin `ALLOW_DEMO_MODE=true`.
 
+## Construir APK local repetible
+
+Desde `mobile_app`:
+
+```bash
+./scripts/build-local-apk.sh
+```
+
+Para cambiar la URL controlada:
+
+```bash
+API_BASE_URL=http://192.168.1.7:3000/api/v1 ./scripts/build-local-apk.sh
+```
+
+El script rechaza `localhost`, `127.0.0.1` y `10.0.2.2` porque no sirven para un telefono fisico.
+
 ## Credenciales base
 
 | Rol | Usuario | Password |
