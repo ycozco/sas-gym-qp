@@ -16,7 +16,9 @@ LoggedInUser _userForRole(GymRole role) {
 
 void main() {
   for (final role in GymRole.values) {
-    testWidgets('app boots for role ${role.name} without throwing', (tester) async {
+    testWidgets('app boots for role ${role.name} without throwing', (
+      tester,
+    ) async {
       final state = GymState(startBackground: false);
       addTearDown(state.dispose);
 
@@ -24,17 +26,16 @@ void main() {
       state.setCurrentUserForTest(_userForRole(role));
 
       await tester.pumpWidget(
-        GymStateProvider(
-          notifier: state,
-          child: const SasGymApp(),
-        ),
+        GymStateProvider(notifier: state, child: const SasGymApp()),
       );
 
       expect(find.byType(MaterialApp), findsOneWidget);
     });
   }
 
-  testWidgets('SaaS barrier renders when current gym is inactive', (tester) async {
+  testWidgets('SaaS barrier renders when current gym is inactive', (
+    tester,
+  ) async {
     final state = GymState(startBackground: false);
     addTearDown(state.dispose);
 
@@ -42,12 +43,21 @@ void main() {
     state.setCurrentUserForTest(_userForRole(GymRole.admin));
 
     await tester.pumpWidget(
-      GymStateProvider(
-        notifier: state,
-        child: const SasGymApp(),
-      ),
+      GymStateProvider(notifier: state, child: const SasGymApp()),
     );
 
     expect(find.byType(MaterialApp), findsOneWidget);
+  });
+
+  test('unauthorized session clears current user', () {
+    final state = GymState(startBackground: false);
+    addTearDown(state.dispose);
+
+    state.setCurrentUserForTest(_userForRole(GymRole.member));
+    state.handleUnauthorizedSession();
+
+    expect(state.currentUser, isNull);
+    expect(state.authLoading, isFalse);
+    expect(state.authError, 'Sesión expirada. Inicia sesión nuevamente.');
   });
 }

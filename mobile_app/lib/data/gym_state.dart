@@ -106,9 +106,7 @@ class GymState extends ChangeNotifier {
 
   void _initAuthListener() {
     ApiClient.onUnauthorized = () {
-      _currentUser = null;
-      _authError = 'Sesión expirada. Inicia sesión nuevamente.';
-      notifyListeners();
+      handleUnauthorizedSession();
     };
 
     ApiClient.onTenantSuspended = () {
@@ -125,6 +123,16 @@ class GymState extends ChangeNotifier {
         notifyListeners();
       }
     };
+  }
+
+  @visibleForTesting
+  void handleUnauthorizedSession() {
+    _closeSocket();
+    _clearLocalDemoData();
+    _currentUser = null;
+    _authLoading = false;
+    _authError = 'Sesión expirada. Inicia sesión nuevamente.';
+    notifyListeners();
   }
 
   Future<void> checkAuth() async {
