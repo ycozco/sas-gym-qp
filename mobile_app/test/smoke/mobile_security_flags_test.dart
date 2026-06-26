@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_app/data/gym_seed.dart';
 import 'package:flutter_app/data/gym_state.dart';
+import 'package:flutter_app/core/config/app_config.dart';
 import 'package:flutter_app/features/auth/screens/login_screen.dart';
+import 'package:flutter_app/features/member/widgets/class_booking_view.dart';
 import 'package:flutter_app/features/member/widgets/full_qr_view.dart';
+import 'package:flutter_app/features/member/widgets/notifications_view.dart';
 import 'package:flutter_app/models/gym_models.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -14,10 +17,7 @@ LoggedInUser _memberWithQrSecret() {
     nombreCompleto: 'Member Test',
     dni: '11111111',
     estado: 'ACTIVE',
-    memberProfile: {
-      'objetivo': 'QA',
-      'qr_secret': 'backend-issued-secret',
-    },
+    memberProfile: {'objetivo': 'QA', 'qr_secret': 'backend-issued-secret'},
   );
 }
 
@@ -29,9 +29,7 @@ LoggedInUser _memberWithoutQrSecret() {
     nombreCompleto: 'Member Test',
     dni: '11111111',
     estado: 'ACTIVE',
-    memberProfile: {
-      'objetivo': 'QA',
-    },
+    memberProfile: {'objetivo': 'QA'},
   );
 }
 
@@ -59,7 +57,53 @@ void main() {
     expect(state.auditLogs, isEmpty);
   });
 
-  testWidgets('member QR renders when backend qr_secret exists', (tester) async {
+  test('mobile backend mode requires explicit API_BASE_URL', () {
+    expect(AppConfig.resolveApiBaseUrl, throwsA(isA<StateError>()));
+  });
+
+  testWidgets('class booking does not render embedded demo schedules', (
+    tester,
+  ) async {
+    final state = GymState(startBackground: false);
+    addTearDown(state.dispose);
+
+    await tester.pumpWidget(
+      GymStateProvider(
+        notifier: state,
+        child: MaterialApp(
+          home: ClassBookingView(
+            palette: rolePalettes[GymRole.member]!,
+            onBack: () {},
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Crossfit WOD'), findsNothing);
+    expect(find.text('No hay clases disponibles'), findsOneWidget);
+  });
+
+  testWidgets(
+    'notifications view does not render embedded demo notifications',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: NotificationsView(
+            palette: rolePalettes[GymRole.member]!,
+            onBack: () {},
+          ),
+        ),
+      );
+
+      expect(find.text('Membresía activa'), findsNothing);
+      expect(find.text('Nueva Rutina Asignada'), findsNothing);
+      expect(find.text('No hay notificaciones'), findsOneWidget);
+    },
+  );
+
+  testWidgets('member QR renders when backend qr_secret exists', (
+    tester,
+  ) async {
     final state = GymState(startBackground: false);
     addTearDown(state.dispose);
     state.setCurrentGymActiveForTest(active: true);
@@ -83,7 +127,9 @@ void main() {
     expect(find.textContaining('QR no disponible'), findsNothing);
   });
 
-  testWidgets('member QR without backend secret shows unavailable state', (tester) async {
+  testWidgets('member QR without backend secret shows unavailable state', (
+    tester,
+  ) async {
     final state = GymState(startBackground: false);
     addTearDown(state.dispose);
     state.setCurrentGymActiveForTest(active: true);
@@ -106,5 +152,4 @@ void main() {
     expect(find.textContaining('QR no disponible'), findsOneWidget);
     expect(find.textContaining('Token:'), findsNothing);
   });
-
 }

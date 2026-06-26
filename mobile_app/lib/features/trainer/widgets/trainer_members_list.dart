@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../data/gym_state.dart';
 import '../../../models/gym_models.dart';
-import '../../../theme/app_theme_tokens.dart';
 import '../../../widgets/app_shell.dart';
 import 'trainer_shared_utils.dart';
 
@@ -29,8 +28,13 @@ class TrainerMembersList extends StatelessWidget {
         RoleHeroHeader(
           palette: palette,
           title: 'Cockpit Entrenador',
-          subtitle: 'Supervisa el progreso físico, planifica rutinas y gestiona tu biblioteca técnica.',
-          trailing: StatusPill(label: 'ACTIVO', color: palette.accent, solid: true),
+          subtitle:
+              'Supervisa el progreso físico, planifica rutinas y gestiona tu biblioteca técnica.',
+          trailing: StatusPill(
+            label: 'ACTIVO',
+            color: palette.accent,
+            solid: true,
+          ),
         ),
         const SizedBox(height: 18),
         Row(
@@ -49,7 +53,8 @@ class TrainerMembersList extends StatelessWidget {
               child: MetricTile(
                 icon: Icons.check_circle_outline_rounded,
                 label: 'Entrenando Hoy',
-                value: '${trainerStudents.where((s) => s.isActiveInGym).length}',
+                value:
+                    '${trainerStudents.where((s) => s.isActiveInGym).length}',
                 note: 'Presentes en sala',
                 accent: const Color(0xFF00B85C),
               ),
@@ -57,7 +62,10 @@ class TrainerMembersList extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 22),
-        SectionHeader(title: 'Alumnos Asignados', action: '${trainerStudents.length} activos'),
+        SectionHeader(
+          title: 'Alumnos Asignados',
+          action: '${trainerStudents.length} activos',
+        ),
         if (trainerStudents.isEmpty)
           Container(
             padding: const EdgeInsets.all(24),
@@ -65,7 +73,10 @@ class TrainerMembersList extends StatelessWidget {
             child: const Center(
               child: Text(
                 'No tienes alumnos asignados.',
-                style: TextStyle(color: Color(0xFF6E6E6E), fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: Color(0xFF6E6E6E),
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           )
@@ -100,10 +111,15 @@ class TrainerMembersList extends StatelessWidget {
                           backgroundColor: member.isActiveInGym
                               ? const Color(0xFF00B85C).withValues(alpha: 0.15)
                               : palette.accent.withValues(alpha: 0.12),
-                          foregroundColor: member.isActiveInGym ? const Color(0xFF00B85C) : palette.accent,
+                          foregroundColor: member.isActiveInGym
+                              ? const Color(0xFF00B85C)
+                              : palette.accent,
                           child: Text(
                             member.name.substring(0, 2).toUpperCase(),
-                            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 14,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 14),
@@ -115,7 +131,10 @@ class TrainerMembersList extends StatelessWidget {
                                 children: [
                                   Text(
                                     member.name,
-                                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+                                    style: const TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w800,
+                                    ),
                                   ),
                                   if (member.isActiveInGym) ...[
                                     const SizedBox(width: 6),
@@ -127,7 +146,7 @@ class TrainerMembersList extends StatelessWidget {
                                         shape: BoxShape.circle,
                                       ),
                                     ),
-                                  ]
+                                  ],
                                 ],
                               ),
                               const SizedBox(height: 4),
@@ -146,11 +165,15 @@ class TrainerMembersList extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             Text(
-                              member.isActiveInGym ? 'En Sala' : 'Última: ${member.lastSeen}',
+                              member.isActiveInGym
+                                  ? 'En Sala'
+                                  : 'Última: ${member.lastSeen}',
                               style: TextStyle(
                                 fontSize: 11.5,
                                 fontWeight: FontWeight.bold,
-                                color: member.isActiveInGym ? const Color(0xFF00B85C) : const Color(0xFF6D6D6D),
+                                color: member.isActiveInGym
+                                    ? const Color(0xFF00B85C)
+                                    : const Color(0xFF6D6D6D),
                               ),
                             ),
                             const SizedBox(height: 6),

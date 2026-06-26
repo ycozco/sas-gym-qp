@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../data/gym_state.dart';
-import '../../../theme/app_theme_tokens.dart';
+import '../../../models/gym_models.dart';
 import 'trainer_members_list.dart';
 
 class TrainerHomePage extends StatelessWidget {
@@ -17,10 +17,6 @@ class TrainerHomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TrainerMembersList(
-      palette: palette,
-      state: state,
-      onGo: onGo,
-    );
+    return TrainerMembersList(palette: palette, state: state, onGo: onGo);
   }
 }

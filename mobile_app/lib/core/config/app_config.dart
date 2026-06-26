@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 enum AppEnvironment { dev, staging, prod }
+
 enum AppMode { backend, demo }
 
 class AppConfig {
@@ -62,8 +63,12 @@ class AppConfig {
     if (kIsWeb) {
       return 'http://localhost:3000/api/v1';
     }
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      return 'http://10.0.2.2:3000/api/v1';
+    if (!isDemoMode) {
+      throw StateError(
+        'API_BASE_URL is required for mobile/desktop backend mode. '
+        'For a physical device use --dart-define=API_BASE_URL=http://<PC_LAN_IP>:3000/api/v1. '
+        'For Android emulator use http://10.0.2.2:3000/api/v1.',
+      );
     }
     return 'http://localhost:3000/api/v1';
   }
@@ -104,11 +109,17 @@ class AppLogger {
           'Bearer ********',
         )
         .replaceAll(
-          RegExp(r'''token["']?\s*[:=]\s*["']?[^,\s}\]]+''', caseSensitive: false),
+          RegExp(
+            r'''token["']?\s*[:=]\s*["']?[^,\s}\]]+''',
+            caseSensitive: false,
+          ),
           'token=********',
         )
         .replaceAll(
-          RegExp(r'''password["']?\s*[:=]\s*["']?[^,\s}\]]+''', caseSensitive: false),
+          RegExp(
+            r'''password["']?\s*[:=]\s*["']?[^,\s}\]]+''',
+            caseSensitive: false,
+          ),
           'password=********',
         );
   }

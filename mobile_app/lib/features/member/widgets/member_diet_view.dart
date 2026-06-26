@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/config/app_config.dart';
 import '../../../data/gym_state.dart';
 import '../../../models/gym_models.dart';
 import '../../../providers/diet_provider.dart';
-import '../../../widgets/app_shell.dart';
 
 class MemberDietView extends ConsumerStatefulWidget {
   const MemberDietView({
@@ -33,10 +31,9 @@ class _MemberDietViewState extends ConsumerState<MemberDietView> {
     final gymState = GymStateProvider.of(context);
     final isOnline = gymState.isOnline;
     final isBackendMode = gymState.isBackendMode;
-    await ref.read(activeDietProvider.notifier).loadActiveDiet(
-          isOnline: isOnline,
-          isBackendMode: isBackendMode,
-        );
+    await ref
+        .read(activeDietProvider.notifier)
+        .loadActiveDiet(isOnline: isOnline, isBackendMode: isBackendMode);
   }
 
   @override
@@ -49,7 +46,10 @@ class _MemberDietViewState extends ConsumerState<MemberDietView> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Colors.white,
+          ),
           onPressed: widget.onBack,
         ),
         title: const Text(
@@ -104,13 +104,21 @@ class _MemberDietViewState extends ConsumerState<MemberDietView> {
             color: Color(0xFF1E1E1E),
             shape: BoxShape.circle,
           ),
-          child: const Icon(Icons.restaurant_rounded, size: 36, color: Colors.white54),
+          child: const Icon(
+            Icons.restaurant_rounded,
+            size: 36,
+            color: Colors.white54,
+          ),
         ),
         const SizedBox(height: 24),
         Text(
           title,
           textAlign: TextAlign.center,
-          style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         const SizedBox(height: 8),
         Text(
@@ -129,9 +137,10 @@ class _MemberDietViewState extends ConsumerState<MemberDietView> {
     final proteinas = (diet['proteinas_g'] as num?)?.toDouble() ?? 0.0;
     final carbohidratos = (diet['carbohidratos_g'] as num?)?.toDouble() ?? 0.0;
     final grasas = (diet['grasas_g'] as num?)?.toDouble() ?? 0.0;
-    
+
     final List<dynamic> comidasList = (diet['comidas'] as List<dynamic>?) ?? [];
-    final sugerencias = diet['sugerencias']?.toString() ?? 'Sin sugerencias adicionales.';
+    final sugerencias =
+        diet['sugerencias']?.toString() ?? 'Sin sugerencias adicionales.';
 
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
@@ -160,7 +169,11 @@ class _MemberDietViewState extends ConsumerState<MemberDietView> {
                       const SizedBox(height: 4),
                       Text(
                         '$caloriasObj kcal',
-                        style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900,
+                        ),
                       ),
                     ],
                   ),
@@ -179,7 +192,11 @@ class _MemberDietViewState extends ConsumerState<MemberDietView> {
                       const SizedBox(height: 4),
                       Text(
                         pesoObj > 0 ? '$pesoObj kg' : '—',
-                        style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900,
+                        ),
                       ),
                     ],
                   ),
@@ -188,13 +205,34 @@ class _MemberDietViewState extends ConsumerState<MemberDietView> {
               const SizedBox(height: 20),
               const Divider(color: Color(0xFF2C2C2C), height: 1),
               const SizedBox(height: 20),
-              
+
               // Macronutrients distribution
               Row(
                 children: [
-                  Expanded(child: _buildMacroPip('PROTEÍNAS', '${proteinas.round()}g', Colors.redAccent, proteinas / 250)),
-                  Expanded(child: _buildMacroPip('CARBOS', '${carbohidratos.round()}g', const Color(0xFFD2FF3A), carbohidratos / 500)),
-                  Expanded(child: _buildMacroPip('GRASAS', '${grasas.round()}g', Colors.blueAccent, grasas / 150)),
+                  Expanded(
+                    child: _buildMacroPip(
+                      'PROTEÍNAS',
+                      '${proteinas.round()}g',
+                      Colors.redAccent,
+                      proteinas / 250,
+                    ),
+                  ),
+                  Expanded(
+                    child: _buildMacroPip(
+                      'CARBOS',
+                      '${carbohidratos.round()}g',
+                      const Color(0xFFD2FF3A),
+                      carbohidratos / 500,
+                    ),
+                  ),
+                  Expanded(
+                    child: _buildMacroPip(
+                      'GRASAS',
+                      '${grasas.round()}g',
+                      Colors.blueAccent,
+                      grasas / 150,
+                    ),
+                  ),
                 ],
               ),
             ],
@@ -205,7 +243,12 @@ class _MemberDietViewState extends ConsumerState<MemberDietView> {
         // Meals List
         const Text(
           'CRONOGRAMA DE COMIDAS',
-          style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 1),
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 12,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1,
+          ),
         ),
         const SizedBox(height: 12),
 
@@ -228,7 +271,10 @@ class _MemberDietViewState extends ConsumerState<MemberDietView> {
               children: [
                 // Time tag
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.black,
                     borderRadius: BorderRadius.circular(8),
@@ -254,19 +300,31 @@ class _MemberDietViewState extends ConsumerState<MemberDietView> {
                         children: [
                           Text(
                             name,
-                            style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                           if (kcal > 0)
                             Text(
                               '$kcal kcal',
-                              style: const TextStyle(color: Colors.white54, fontSize: 11, fontWeight: FontWeight.w600),
+                              style: const TextStyle(
+                                color: Colors.white54,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                         ],
                       ),
                       const SizedBox(height: 8),
                       Text(
                         detail,
-                        style: const TextStyle(color: Colors.white70, fontSize: 12.5, height: 1.4),
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12.5,
+                          height: 1.4,
+                        ),
                       ),
                     ],
                   ),
@@ -280,7 +338,12 @@ class _MemberDietViewState extends ConsumerState<MemberDietView> {
         // Suggestions Card
         const Text(
           'RECOMENDACIONES GENERALES',
-          style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 1),
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 12,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1,
+          ),
         ),
         const SizedBox(height: 12),
         Container(
@@ -292,24 +355,41 @@ class _MemberDietViewState extends ConsumerState<MemberDietView> {
           ),
           child: Text(
             sugerencias,
-            style: const TextStyle(color: Colors.white70, fontSize: 12.5, height: 1.4),
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 12.5,
+              height: 1.4,
+            ),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildMacroPip(String label, String value, Color color, double percent) {
+  Widget _buildMacroPip(
+    String label,
+    String value,
+    Color color,
+    double percent,
+  ) {
     return Column(
       children: [
         Text(
           label,
-          style: const TextStyle(color: Colors.white54, fontSize: 9, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            color: Colors.white54,
+            fontSize: 9,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         const SizedBox(height: 6),
         Text(
           value,
-          style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         const SizedBox(height: 8),
         SizedBox(
