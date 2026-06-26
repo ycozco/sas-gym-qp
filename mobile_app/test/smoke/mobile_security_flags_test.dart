@@ -57,6 +57,18 @@ void main() {
     expect(state.auditLogs, isEmpty);
   });
 
+  test('demo mode requires explicit build authorization', () {
+    expect(
+      () => AppConfig.resolveMode('demo', allowDemoMode: false),
+      throwsA(isA<StateError>()),
+    );
+    expect(AppConfig.resolveMode('demo', allowDemoMode: true), AppMode.demo);
+    expect(
+      AppConfig.resolveMode('backend', allowDemoMode: false),
+      AppMode.backend,
+    );
+  });
+
   test('mobile backend mode requires explicit API_BASE_URL', () {
     expect(AppConfig.resolveApiBaseUrl, throwsA(isA<StateError>()));
   });
