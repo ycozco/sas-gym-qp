@@ -153,33 +153,7 @@ class GymState extends ChangeNotifier {
       if (!hadPendingThemeSync) {
         await uiPreferences.applyBackendTheme(_currentUser!.themePreference);
       }
-      _connectSocket();
-      loadAnnouncements();
-      if (_currentUser?.rol == GymRole.superadmin) {
-        loadSaaSClients();
-      } else if (_currentUser?.rol == GymRole.admin) {
-        loadAdminMembers();
-        loadProducts();
-        loadCashiers();
-        loadObservations();
-        loadAuditLogs();
-      } else if (_currentUser?.rol == GymRole.cashier) {
-        loadAdminMembers();
-        loadProducts();
-      } else if (_currentUser?.rol == GymRole.trainer) {
-        loadAssignedTrainerMembers();
-        loadTrainerExercises();
-        loadTrainerTemplates();
-        loadTrainerProgress();
-      } else if (_currentUser?.rol == GymRole.member) {
-        loadMemberPayments();
-        loadSchedules();
-        loadMemberPoints();
-        loadPointsCatalog();
-        loadActiveRoutine();
-      }
-      loadTenantSettings();
-      loadMembershipPlans(includeInactive: _currentUser?.rol == GymRole.admin);
+      _loadBackendSessionData();
     } catch (e) {
       await SecureStorage.clearAll();
       _currentUser = null;
@@ -222,33 +196,7 @@ class GymState extends ChangeNotifier {
       if (!hadPendingThemeSync) {
         await uiPreferences.applyBackendTheme(_currentUser!.themePreference);
       }
-      _connectSocket();
-      loadAnnouncements();
-      if (_currentUser?.rol == GymRole.superadmin) {
-        loadSaaSClients();
-      } else if (_currentUser?.rol == GymRole.admin) {
-        loadAdminMembers();
-        loadProducts();
-        loadCashiers();
-        loadObservations();
-        loadAuditLogs();
-      } else if (_currentUser?.rol == GymRole.cashier) {
-        loadAdminMembers();
-        loadProducts();
-      } else if (_currentUser?.rol == GymRole.trainer) {
-        loadAssignedTrainerMembers();
-        loadTrainerExercises();
-        loadTrainerTemplates();
-        loadTrainerProgress();
-      } else if (_currentUser?.rol == GymRole.member) {
-        loadMemberPayments();
-        loadSchedules();
-        loadMemberPoints();
-        loadPointsCatalog();
-        loadActiveRoutine();
-      }
-      loadTenantSettings();
-      loadMembershipPlans(includeInactive: _currentUser?.rol == GymRole.admin);
+      _loadBackendSessionData();
       notifyListeners();
       return true;
     } on DioException catch (e) {
@@ -311,6 +259,47 @@ class GymState extends ChangeNotifier {
     }
   }
 
+  void _loadBackendSessionData() {
+    final role = _currentUser?.rol;
+    if (role == null) return;
+
+    _connectSocket();
+    loadAnnouncements();
+
+    switch (role) {
+      case GymRole.superadmin:
+        loadSaaSClients();
+        break;
+      case GymRole.admin:
+        loadAdminMembers();
+        loadProducts();
+        loadCashiers();
+        loadObservations();
+        loadAuditLogs();
+        break;
+      case GymRole.cashier:
+        loadAdminMembers();
+        loadProducts();
+        break;
+      case GymRole.trainer:
+        loadAssignedTrainerMembers();
+        loadTrainerExercises();
+        loadTrainerTemplates();
+        loadTrainerProgress();
+        break;
+      case GymRole.member:
+        loadMemberPayments();
+        loadSchedules();
+        loadMemberPoints();
+        loadPointsCatalog();
+        loadActiveRoutine();
+        break;
+    }
+
+    loadTenantSettings();
+    loadMembershipPlans(includeInactive: role == GymRole.admin);
+  }
+
   // Active SaaS Client (instance)
   String _selectedClientId = 'gym_santiago';
   String get selectedClientId => _selectedClientId;
@@ -322,7 +311,8 @@ class GymState extends ChangeNotifier {
   final List<MembershipPlan> _membershipPlans = [];
 
   TenantSettings? get tenantSettings => _tenantSettings;
-  List<MembershipPlan> get membershipPlans => List.unmodifiable(_membershipPlans);
+  List<MembershipPlan> get membershipPlans =>
+      List.unmodifiable(_membershipPlans);
   MembershipPlan? get defaultMembershipPlan =>
       _membershipPlans.isEmpty ? null : _membershipPlans.first;
 
@@ -398,6 +388,7 @@ class GymState extends ChangeNotifier {
     );
     return presets;
   }
+
   List<ProductItem> get products => _products;
   List<CashierAccount> get cashiers => _cashiers;
   List<AuditEntry> get auditLogs => _auditLogs;
@@ -1431,7 +1422,8 @@ class GymState extends ChangeNotifier {
     final value = (raw ?? '').toLowerCase();
     if (value.contains('grace')) return 'grace';
     if (value.contains('active')) return 'active';
-    if (value.contains('pending') || value.contains('inactive')) return 'inactive';
+    if (value.contains('pending') || value.contains('inactive'))
+      return 'inactive';
     if (value.contains('suspend')) return 'suspended';
     return 'expired';
   }
@@ -1441,7 +1433,8 @@ class GymState extends ChangeNotifier {
     final latestMembership = memberships.isNotEmpty
         ? memberships.first as Map<String, dynamic>
         : const <String, dynamic>{};
-    final memberProfile = json['member_profile'] as Map<String, dynamic>? ?? const {};
+    final memberProfile =
+        json['member_profile'] as Map<String, dynamic>? ?? const {};
     final trainer = memberProfile['trainer'] as Map<String, dynamic>?;
     final trainerUser = trainer?['user'] as Map<String, dynamic>?;
     final paymentHistory = memberships.map((membership) {
@@ -1450,7 +1443,10 @@ class GymState extends ChangeNotifier {
         id: item['id']?.toString() ?? '',
         planName: item['plan_nombre']?.toString() ?? 'Membresía',
         price: (item['precio'] as num?)?.toDouble() ?? 0,
-        date: item['fecha_inicio']?.toString() ?? item['created_at']?.toString() ?? '',
+        date:
+            item['fecha_inicio']?.toString() ??
+            item['created_at']?.toString() ??
+            '',
         method: 'Sistema',
         state: _mapMembershipState(item['estado']?.toString()),
       );
@@ -1470,7 +1466,9 @@ class GymState extends ChangeNotifier {
       goal: memberProfile['objetivo']?.toString() ?? 'Objetivo pendiente',
       sessions: 0,
       lastSeen: latestMembership['fecha_vencimiento']?.toString() ?? '—',
-      state: _mapMembershipState(latestMembership['estado']?.toString() ?? json['estado']?.toString()),
+      state: _mapMembershipState(
+        latestMembership['estado']?.toString() ?? json['estado']?.toString(),
+      ),
       assignedTrainer: trainerUser?['nombre_completo']?.toString() ?? '',
       paymentHistory: paymentHistory,
       physicalMeasurements: {
@@ -1488,7 +1486,8 @@ class GymState extends ChangeNotifier {
     final categoria = json['categoria'];
     String categoryName = 'General';
     if (categoria is Map<String, dynamic>) {
-      categoryName = categoria['descripcion']?.toString() ??
+      categoryName =
+          categoria['descripcion']?.toString() ??
           categoria['nombre']?.toString() ??
           'General';
     } else if (categoria != null) {
@@ -1507,7 +1506,9 @@ class GymState extends ChangeNotifier {
 
   CashierAccount _cashierFromBackend(Map<String, dynamic> json) {
     final cajas = (json['cajas_registradas'] as List<dynamic>? ?? []);
-    final lastCaja = cajas.isNotEmpty ? cajas.first as Map<String, dynamic> : const <String, dynamic>{};
+    final lastCaja = cajas.isNotEmpty
+        ? cajas.first as Map<String, dynamic>
+        : const <String, dynamic>{};
     return CashierAccount(
       name: json['nombre_completo']?.toString() ?? 'Cajero',
       shift: lastCaja['estado']?.toString() ?? 'Sin turno',
@@ -1522,7 +1523,10 @@ class GymState extends ChangeNotifier {
       id: json['id']?.toString() ?? '',
       planName: membership['plan_nombre']?.toString() ?? 'Membresía',
       price: (json['monto'] as num?)?.toDouble() ?? 0,
-      date: json['fecha_pago']?.toString() ?? json['created_at']?.toString() ?? '',
+      date:
+          json['fecha_pago']?.toString() ??
+          json['created_at']?.toString() ??
+          '',
       method: json['metodo_pago']?.toString() ?? 'Sistema',
       state: (json['estado']?.toString() ?? 'pending').toLowerCase(),
       receiptUrl: json['comprobante_url']?.toString(),
@@ -1552,11 +1556,14 @@ class GymState extends ChangeNotifier {
 
   Future<void> loadProducts() async {
     if (!isBackendMode ||
-        !(_currentUser?.rol == GymRole.admin || _currentUser?.rol == GymRole.cashier)) {
+        !(_currentUser?.rol == GymRole.admin ||
+            _currentUser?.rol == GymRole.cashier)) {
       return;
     }
     try {
-      final includeInactive = _currentUser?.rol == GymRole.admin ? 'true' : 'false';
+      final includeInactive = _currentUser?.rol == GymRole.admin
+          ? 'true'
+          : 'false';
       final response = await ApiClient().dio.get(
         '/products',
         queryParameters: {'includeInactive': includeInactive},
@@ -1689,14 +1696,15 @@ class GymState extends ChangeNotifier {
     }
   }
 
-  Future<Map<String, dynamic>?> bookSchedule(String scheduleId, {DateTime? fecha}) async {
+  Future<Map<String, dynamic>?> bookSchedule(
+    String scheduleId, {
+    DateTime? fecha,
+  }) async {
     if (!isBackendMode || _currentUser?.rol != GymRole.member) return null;
     try {
       final response = await ApiClient().dio.post(
         '/schedules/$scheduleId/book',
-        data: {
-          if (fecha != null) 'fecha': fecha.toIso8601String(),
-        },
+        data: {if (fecha != null) 'fecha': fecha.toIso8601String()},
       );
       await loadSchedules();
       return Map<String, dynamic>.from(response.data as Map);
@@ -1706,14 +1714,15 @@ class GymState extends ChangeNotifier {
     }
   }
 
-  Future<Map<String, dynamic>?> cancelSchedule(String scheduleId, {DateTime? fecha}) async {
+  Future<Map<String, dynamic>?> cancelSchedule(
+    String scheduleId, {
+    DateTime? fecha,
+  }) async {
     if (!isBackendMode || _currentUser?.rol != GymRole.member) return null;
     try {
       final response = await ApiClient().dio.post(
         '/schedules/$scheduleId/cancel',
-        data: {
-          if (fecha != null) 'fecha': fecha.toIso8601String(),
-        },
+        data: {if (fecha != null) 'fecha': fecha.toIso8601String()},
       );
       await loadSchedules();
       return Map<String, dynamic>.from(response.data as Map);

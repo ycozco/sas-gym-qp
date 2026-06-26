@@ -43,6 +43,9 @@ class _MemberScreenState extends State<MemberScreen> {
   }
 
   Color _getAccentColor() {
+    if (!Hive.isBoxOpen('gym_cache')) {
+      return rolePalettes[GymRole.member]!.accent;
+    }
     final box = Hive.box('gym_cache');
     final savedColor = box.get('custom_theme_accent');
     if (savedColor != null && savedColor is int) {
