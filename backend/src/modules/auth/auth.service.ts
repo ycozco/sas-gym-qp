@@ -88,6 +88,7 @@ export class AuthService {
     };
     const refreshToken = await this.createRefreshSession(user.id, meta);
     const accessToken = await this.jwtService.signAsync(payload);
+    await this.recordLoginAudit(user, meta);
 
     return {
       token: accessToken,
@@ -292,6 +293,27 @@ export class AuthService {
     });
 
     return refreshToken;
+  }
+
+  private async recordLoginAudit(user: any, meta: AuthRequestMeta) {
+    try {
+      await this.prisma.auditLog.create({
+        data: {
+          tenant_id: user.tenant_id,
+          actor_id: user.id,
+          actor_name: user.email,
+          rol: user.rol,
+          accion: 'LOGIN',
+          entidad: 'AUTH',
+          detalles: {
+            ip: meta.ip ?? null,
+            userAgent: meta.userAgent ?? null,
+          },
+        },
+      });
+    } catch (error) {
+      console.error('Error al registrar login en auditoría:', error);
+    }
   }
 
   private hashRefreshToken(refreshToken: string) {

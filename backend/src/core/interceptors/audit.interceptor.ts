@@ -14,7 +14,7 @@ export class AuditInterceptor implements NestInterceptor {
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const request = context.switchToHttp().getRequest();
-    const { method, url, body } = request;
+    const { method, url } = request;
 
     return next.handle().pipe(
       tap(async () => {
@@ -61,7 +61,7 @@ export class AuditInterceptor implements NestInterceptor {
                 return sanitized;
               };
 
-              const sanitizedBody = sanitizeDeep(body);
+              const sanitizedBody = sanitizeDeep(request.body ?? {});
 
               await this.prisma.auditLog.create({
                 data: {
@@ -71,7 +71,7 @@ export class AuditInterceptor implements NestInterceptor {
                   rol: user.rol || 'MEMBER',
                   accion: method,
                   entidad: entidad.toUpperCase(),
-                  detalles: sanitizedBody,
+                  detalles: sanitizedBody ?? {},
                 },
               });
             } catch (e) {
