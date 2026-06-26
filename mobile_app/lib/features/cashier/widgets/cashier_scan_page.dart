@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:otp/otp.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 
-import '../../../../core/config/app_config.dart';
 import '../../../../data/gym_state.dart';
 import '../../../../models/gym_models.dart';
 import '../../../../theme/app_theme_tokens.dart';
 import '../../../../widgets/app_shell.dart';
 
-class CashierScanPage extends StatelessWidget {
+class CashierScanPage extends StatefulWidget {
   const CashierScanPage({
     super.key,
     required this.palette,
@@ -26,21 +25,39 @@ class CashierScanPage extends StatelessWidget {
   final Function(String memberDni, {String? planName, double? price}) onDayPass;
 
   @override
+  State<CashierScanPage> createState() => _CashierScanPageState();
+}
+
+class _CashierScanPageState extends State<CashierScanPage> {
+  final MobileScannerController _scannerController = MobileScannerController(
+    detectionSpeed: DetectionSpeed.noDuplicates,
+    formats: const [BarcodeFormat.qrCode],
+  );
+  bool _processingScan = false;
+
+  @override
+  void dispose() {
+    _scannerController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final colors = context.sasColors;
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
       children: [
         RoleHeroHeader(
-          palette: palette,
+          palette: widget.palette,
           title: 'Escáner de sala',
-          subtitle: 'Simula accesos y valida reglas de entrada al instante.',
+          subtitle:
+              'Escanea el QR del socio y valida reglas de entrada al instante.',
         ),
         const SizedBox(height: 18),
         Container(
-          height: 240,
+          height: 260,
           decoration: BoxDecoration(
-            color: const Color(0xFF1E1E1E),
+            color: const Color(0xFF111111),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: const Color(0xFF2C2C2C), width: 2),
           ),
@@ -48,14 +65,26 @@ class CashierScanPage extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
             child: Stack(
               children: [
-                const LaserSweepLine(),
+                MobileScanner(
+                  controller: _scannerController,
+                  onDetect: (capture) {
+                    final value = capture.barcodes
+                        .map((barcode) => barcode.rawValue)
+                        .whereType<String>()
+                        .firstOrNull;
+                    if (value != null) _triggerScan(value);
+                  },
+                ),
                 Center(
                   child: Container(
-                    width: 140,
-                    height: 140,
+                    width: 148,
+                    height: 148,
                     decoration: BoxDecoration(
-                      border: Border.all(color: palette.accent, width: 2),
-                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: widget.palette.accent,
+                        width: 2,
+                      ),
+                      borderRadius: BorderRadius.circular(18),
                     ),
                   ),
                 ),
@@ -70,17 +99,25 @@ class CashierScanPage extends StatelessWidget {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.6),
+                        color: Colors.black.withValues(alpha: 0.66),
                         borderRadius: BorderRadius.circular(999),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.videocam_rounded, color: Colors.red, size: 14),
-                          SizedBox(width: 6),
+                          Icon(
+                            _processingScan
+                                ? Icons.sync_rounded
+                                : Icons.qr_code_scanner_rounded,
+                            color: Colors.white,
+                            size: 14,
+                          ),
+                          const SizedBox(width: 6),
                           Text(
-                            'CAM_SIMULATOR_ON',
-                            style: TextStyle(
+                            _processingScan
+                                ? 'VALIDANDO ACCESO'
+                                : 'CAMARA ACTIVA',
+                            style: const TextStyle(
                               color: Colors.white,
                               fontSize: 9.5,
                               fontWeight: FontWeight.bold,
@@ -103,25 +140,15 @@ class CashierScanPage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Simulación de escaneo QR',
+                'Lectura QR o DNI',
                 style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
               ),
               const SizedBox(height: 8),
               Text(
-                'Selecciona un socio real según su estado actual o digita un DNI para probar las reglas de acceso.',
+                'Apunta la cámara al QR del socio. Si hay contingencia, pega el contenido QR manualmente.',
                 style: TextStyle(color: colors.textSecondary, fontSize: 12.5),
               ),
-              const SizedBox(height: 16),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: state.scannerPresets
-                    .map((preset) => _scanSimButton(preset.label, preset.dni))
-                    .toList(),
-              ),
-              const SizedBox(height: 20),
-              Divider(height: 1, color: colors.border),
-              const SizedBox(height: 20),
+              const SizedBox(height: 18),
               Row(
                 children: [
                   Expanded(
@@ -134,13 +161,13 @@ class CashierScanPage extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 14),
                       child: TextField(
                         keyboardType: TextInputType.number,
-                        onChanged: onScanChanged,
+                        onChanged: widget.onScanChanged,
                         style: TextStyle(
                           fontSize: 14,
                           color: colors.textPrimary,
                         ),
                         decoration: InputDecoration(
-                          hintText: 'Digitar DNI del socio...',
+                          hintText: 'Contenido QR: DNI|TOKEN',
                           hintStyle: TextStyle(color: colors.textMuted),
                           border: InputBorder.none,
                           isDense: true,
@@ -151,20 +178,20 @@ class CashierScanPage extends StatelessWidget {
                   const SizedBox(width: 10),
                   ElevatedButton(
                     style: roleFilledPillButtonStyle(
-                      backgroundColor: palette.accent,
-                      foregroundColor: palette.accentInk,
+                      backgroundColor: widget.palette.accent,
+                      foregroundColor: widget.palette.accentInk,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 18,
                         vertical: 14,
                       ),
                     ),
                     onPressed: () {
-                      if (scanInput.isNotEmpty) {
-                        _triggerScan(scanInput);
+                      if (widget.scanInput.isNotEmpty) {
+                        _triggerScan(widget.scanInput);
                       }
                     },
                     child: const Text(
-                      'Escanear DNI',
+                      'Validar QR',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ),
@@ -179,15 +206,15 @@ class CashierScanPage extends StatelessWidget {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                palette.accent.withValues(alpha: 0.12),
-                palette.accent.withValues(alpha: 0.04),
+                widget.palette.accent.withValues(alpha: 0.12),
+                widget.palette.accent.withValues(alpha: 0.04),
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: palette.accent.withValues(alpha: 0.3),
+              color: widget.palette.accent.withValues(alpha: 0.3),
               width: 1.5,
             ),
           ),
@@ -199,12 +226,12 @@ class CashierScanPage extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: palette.accent.withValues(alpha: 0.15),
+                      color: widget.palette.accent.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Icon(
                       Icons.local_activity_rounded,
-                      color: palette.accent,
+                      color: widget.palette.accent,
                       size: 20,
                     ),
                   ),
@@ -236,13 +263,13 @@ class CashierScanPage extends StatelessWidget {
                       vertical: 5,
                     ),
                     decoration: BoxDecoration(
-                      color: palette.accent,
+                      color: widget.palette.accent,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
                       'S/ 25',
                       style: TextStyle(
-                        color: palette.accentInk,
+                        color: widget.palette.accentInk,
                         fontWeight: FontWeight.w900,
                         fontSize: 13,
                       ),
@@ -261,7 +288,7 @@ class CashierScanPage extends StatelessWidget {
                       icon: Icons.person_off_rounded,
                       label: 'Pase anónimo',
                       subtitle: 'Sin registro',
-                      onTap: () => onDayPass(
+                      onTap: () => widget.onDayPass(
                         'ANONIMO',
                         planName: 'Pase por un día',
                         price: 25.0,
@@ -310,7 +337,7 @@ class CashierScanPage extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, color: palette.accent, size: 26),
+              Icon(icon, color: widget.palette.accent, size: 26),
               const SizedBox(height: 6),
               Text(
                 label,
@@ -322,10 +349,7 @@ class CashierScanPage extends StatelessWidget {
               ),
               Text(
                 subtitle,
-                style: TextStyle(
-                  color: colors.textSecondary,
-                  fontSize: 10.5,
-                ),
+                style: TextStyle(color: colors.textSecondary, fontSize: 10.5),
               ),
             ],
           ),
@@ -347,7 +371,7 @@ class CashierScanPage extends StatelessWidget {
           ),
           title: Row(
             children: [
-              Icon(Icons.badge_rounded, color: palette.accent, size: 26),
+              Icon(Icons.badge_rounded, color: widget.palette.accent, size: 26),
               const SizedBox(width: 10),
               Text(
                 'Pase con DNI',
@@ -396,8 +420,8 @@ class CashierScanPage extends StatelessWidget {
             ),
             ElevatedButton(
               style: roleFilledPillButtonStyle(
-                backgroundColor: palette.accent,
-                foregroundColor: palette.accentInk,
+                backgroundColor: widget.palette.accent,
+                foregroundColor: widget.palette.accentInk,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 20,
                   vertical: 12,
@@ -407,7 +431,7 @@ class CashierScanPage extends StatelessWidget {
                 final dni = controller.text.trim();
                 if (dni.isEmpty) return;
                 Navigator.pop(ctx);
-                onDayPass(dni, planName: 'Pase por un día', price: 25.0);
+                widget.onDayPass(dni, planName: 'Pase por un día', price: 25.0);
               },
               child: const Text(
                 'Emitir pase',
@@ -420,157 +444,48 @@ class CashierScanPage extends StatelessWidget {
     );
   }
 
-  Widget _scanSimButton(String label, String dni) {
-    return ElevatedButton(
-      style: roleOutlinedPillButtonStyle(
-        foregroundColor: palette.accent,
-        backgroundColor: palette.accent.withValues(alpha: 0.08),
-        side: BorderSide(color: palette.accent.withValues(alpha: 0.18)),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      ),
-      onPressed: () => _triggerScan(dni),
-      child: Text(
-        label,
-        style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
-      ),
-    );
-  }
+  Future<void> _triggerScan(String input) async {
+    final rawInput = input.trim();
+    if (rawInput.isEmpty || _processingScan) return;
 
-  void _triggerScan(String input) async {
-    String rawInput = input.trim();
-    if (rawInput.isEmpty) return;
+    setState(() => _processingScan = true);
+    await _scannerController.stop();
 
-    if (state.isBackendMode && !rawInput.contains('|')) {
-      final res = await state.simulateAttendanceAccessBackend(dni: rawInput);
-      final verdict = res['verdict'];
-      final member = res['member'] as MemberRecord?;
+    try {
+      final hasQrPayload = rawInput.contains('|');
+      final parts = hasQrPayload ? rawInput.split('|') : <String>[];
+      final dni = hasQrPayload ? parts.first : rawInput;
+      final otpToken = hasQrPayload && parts.length > 1 ? parts[1] : '';
 
-      String resultStr = 'denied';
-      if (verdict == 'GREEN') resultStr = 'granted';
-      if (verdict == 'AMBER') resultStr = 'grace';
-      if (verdict == 'RED' && member == null) {
-        final reason = res['reason']?.toString() ?? '';
-        if (reason.contains('no registrado') ||
-            reason.contains('DNI inválido')) {
-          resultStr = 'not_found';
-        }
+      if (!hasQrPayload || otpToken.isEmpty) {
+        widget.onTriggerVerdict('denied', null, dni);
+        return;
       }
 
-      onTriggerVerdict(resultStr, member, rawInput);
-      return;
-    }
-
-    String dni = rawInput;
-    String otpToken = '';
-    final hasQrPayload = rawInput.contains('|');
-
-    if (hasQrPayload) {
-      final parts = rawInput.split('|');
-      dni = parts[0];
-      otpToken = parts[1];
-    } else if (state.isBackendMode) {
-      onTriggerVerdict('denied', null, dni);
-      return;
-    } else {
-      final secret = AppConfig.demoTotpSecretForDni(dni);
-      final time = DateTime.now().millisecondsSinceEpoch;
-      if (secret != null) {
-        try {
-          otpToken = OTP.generateTOTPCodeString(
-            secret,
-            time,
-            interval: 30,
-            length: 6,
-            algorithm: Algorithm.SHA1,
-          );
-        } catch (e) {
-          AppLogger.debug('Error generating simulator TOTP', e);
-        }
-      }
-    }
-
-    if (state.isBackendMode) {
-      final res = await state.verifyAttendanceBackend(
+      final response = await widget.state.verifyAttendanceBackend(
         dni: dni,
         otpToken: otpToken,
       );
-      final verdict = res['verdict'];
-      final member = res['member'] as MemberRecord?;
+
+      final verdict = response['verdict'];
+      final member = response['member'] as MemberRecord?;
 
       String resultStr = 'denied';
       if (verdict == 'GREEN') resultStr = 'granted';
       if (verdict == 'AMBER') resultStr = 'grace';
       if (verdict == 'RED' && member == null) {
-        final reason = res['reason']?.toString() ?? '';
+        final reason = response['reason']?.toString().toLowerCase() ?? '';
         if (reason.contains('no registrado') ||
-            reason.contains('DNI inválido')) {
+            reason.contains('dni inválido')) {
           resultStr = 'not_found';
         }
       }
 
-      onTriggerVerdict(resultStr, member, dni);
-    } else {
-      final result = state.recordAttendance(dni);
-      final memberIndex = state.allMembersIncludingSoftDeleted
-          .indexWhere((m) => m.dni == dni);
-      final MemberRecord? member = memberIndex != -1
-          ? state.allMembersIncludingSoftDeleted[memberIndex]
-          : null;
-      onTriggerVerdict(result, member, dni);
+      widget.onTriggerVerdict(resultStr, member, dni);
+    } finally {
+      if (mounted) {
+        setState(() => _processingScan = false);
+      }
     }
-  }
-}
-
-class LaserSweepLine extends StatefulWidget {
-  const LaserSweepLine({super.key});
-
-  @override
-  State<LaserSweepLine> createState() => _LaserSweepLineState();
-}
-
-class _LaserSweepLineState extends State<LaserSweepLine>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _animController;
-
-  @override
-  void initState() {
-    super.initState();
-    _animController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    )..repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _animController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _animController,
-      builder: (context, child) {
-        return Positioned(
-          top: _animController.value * 230 + 5,
-          left: 10,
-          right: 10,
-          child: Container(
-            height: 2.5,
-            decoration: BoxDecoration(
-              color: Colors.redAccent,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.red.withValues(alpha: 0.8),
-                  blurRadius: 8,
-                  spreadRadius: 1,
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
   }
 }

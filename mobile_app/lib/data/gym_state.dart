@@ -279,6 +279,7 @@ class GymState extends ChangeNotifier {
       case GymRole.cashier:
         loadAdminMembers();
         loadProducts();
+        loadCajaSalesBackend();
         break;
       case GymRole.trainer:
         loadAssignedTrainerMembers();
@@ -325,6 +326,7 @@ class GymState extends ChangeNotifier {
   final List<SaaSClient> _saClients = [];
   final List<MemberRecord> _assignedTrainerMembers = [];
   final List<PaymentRecord> _memberPayments = [];
+  final List<Map<String, dynamic>> _cashierSales = [];
   final Map<String, String> _memberUserIdsByDni = {};
   final List<Map<String, dynamic>> _schedules = [];
   Map<String, dynamic>? _memberPointsSummary;
@@ -397,6 +399,8 @@ class GymState extends ChangeNotifier {
   List<MemberRecord> get assignedTrainerMembers =>
       List.unmodifiable(_assignedTrainerMembers);
   List<PaymentRecord> get memberPayments => List.unmodifiable(_memberPayments);
+  List<Map<String, dynamic>> get cashierSales =>
+      List.unmodifiable(_cashierSales);
   List<Map<String, dynamic>> get schedules => List.unmodifiable(_schedules);
   Map<String, dynamic>? get memberPointsSummary => _memberPointsSummary;
   Map<String, dynamic>? get pointsCatalog => _pointsCatalog;
@@ -439,6 +443,7 @@ class GymState extends ChangeNotifier {
     _saClients.clear();
     _assignedTrainerMembers.clear();
     _memberPayments.clear();
+    _cashierSales.clear();
     _memberUserIdsByDni.clear();
     _schedules.clear();
     _memberPointsSummary = null;
@@ -929,11 +934,96 @@ class GymState extends ChangeNotifier {
         'Cobró S/ $total a DNI $memberDni via $paymentMethod',
         const Color(0xFF00B85C),
       );
+      await loadProducts();
+      await loadCajaSalesBackend();
       notifyListeners();
       return true;
     } catch (e) {
       AppLogger.debug('Error processing POS charge backend', e);
       rethrow;
+    }
+  }
+
+  Future<void> loadCajaSalesBackend() async {
+    if (!isBackendMode ||
+        !(_currentUser?.rol == GymRole.cashier ||
+            _currentUser?.rol == GymRole.admin)) {
+      return;
+    }
+    try {
+      final response = await ApiClient().dio.get('/payments/caja/sales');
+      final data = response.data as Map<String, dynamic>;
+      final productSales = data['productSales'] as List<dynamic>? ?? const [];
+      final membershipPayments =
+          data['membershipPayments'] as List<dynamic>? ?? const [];
+
+      _cashierSales
+        ..clear()
+        ..addAll([
+          ...productSales.map((item) {
+            final sale = Map<String, dynamic>.from(item as Map);
+            return {
+              'id': sale['id']?.toString() ?? '',
+              'type': 'product',
+              'title': 'Venta POS',
+              'detail': _formatProductSaleDetail(sale),
+              'amount': (sale['total'] as num?)?.toDouble() ?? 0,
+              'time': _formatBackendTime(sale['fecha_venta']),
+              'raw': sale,
+            };
+          }),
+          ...membershipPayments.map((item) {
+            final payment = Map<String, dynamic>.from(item as Map);
+            final membership = payment['membership'] is Map
+                ? Map<String, dynamic>.from(payment['membership'] as Map)
+                : const <String, dynamic>{};
+            final user = membership['user'] is Map
+                ? Map<String, dynamic>.from(membership['user'] as Map)
+                : const <String, dynamic>{};
+            final amount = (payment['monto'] as num?)?.toDouble() ?? 0;
+            return {
+              'id': payment['id']?.toString() ?? '',
+              'type': 'membership',
+              'title': 'Venta membresía',
+              'detail':
+                  '${membership['plan_nombre'] ?? 'Membresía'} - ${user['nombre_completo'] ?? 'Socio'}',
+              'amount': amount,
+              'time': _formatBackendTime(payment['timestamp']),
+              'raw': payment,
+            };
+          }),
+        ]);
+      notifyListeners();
+    } catch (e) {
+      AppLogger.debug('Error loading caja sales', e);
+    }
+  }
+
+  String _formatProductSaleDetail(Map<String, dynamic> sale) {
+    final details = sale['details'] as List<dynamic>? ?? const [];
+    final items = details
+        .map((detail) {
+          final item = Map<String, dynamic>.from(detail as Map);
+          final product = item['producto'] is Map
+              ? Map<String, dynamic>.from(item['producto'] as Map)
+              : const <String, dynamic>{};
+          return '${item['cantidad'] ?? 1}x ${product['nombre'] ?? 'Producto'}';
+        })
+        .join(', ');
+    final cliente = sale['cliente'] is Map
+        ? Map<String, dynamic>.from(sale['cliente'] as Map)
+        : const <String, dynamic>{};
+    final name = cliente['nombre_completo'] ?? 'Cliente';
+    return items.isEmpty ? name.toString() : '$items - $name';
+  }
+
+  String _formatBackendTime(dynamic value) {
+    if (value == null) return 'Ahora';
+    try {
+      final date = DateTime.parse(value.toString()).toLocal();
+      return '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+    } catch (_) {
+      return value.toString();
     }
   }
 
@@ -1416,8 +1506,9 @@ class GymState extends ChangeNotifier {
     final value = (raw ?? '').toLowerCase();
     if (value.contains('grace')) return 'grace';
     if (value.contains('active')) return 'active';
-    if (value.contains('pending') || value.contains('inactive'))
+    if (value.contains('pending') || value.contains('inactive')) {
       return 'inactive';
+    }
     if (value.contains('suspend')) return 'suspended';
     return 'expired';
   }
@@ -1489,6 +1580,7 @@ class GymState extends ChangeNotifier {
     }
 
     return ProductItem(
+      id: json['id']?.toString(),
       name: json['nombre']?.toString() ?? 'Producto',
       category: categoryName,
       price: (json['precio_venta'] as num?)?.toDouble() ?? 0,

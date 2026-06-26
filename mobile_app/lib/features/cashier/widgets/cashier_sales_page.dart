@@ -17,18 +17,12 @@ class CashierSalesPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.sasColors;
-    final cashierSalesLogs = state.auditLogs
-        .where((log) => log.actor.contains('Caja') && (log.action.contains('Venta') || log.action.contains('Cobró')))
-        .toList();
+    final cashierSales = state.cashierSales;
 
-    double totalTurnRevenue = cashierSalesLogs.fold(0, (sum, log) {
-      final reg = RegExp(r'S/\s*([0-9.]+)');
-      final match = reg.firstMatch(log.detail);
-      if (match != null) {
-        return sum + (double.tryParse(match.group(1)!) ?? 0.0);
-      }
-      return sum;
-    });
+    final totalTurnRevenue = cashierSales.fold<double>(
+      0,
+      (sum, sale) => sum + ((sale['amount'] as num?)?.toDouble() ?? 0),
+    );
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
@@ -36,7 +30,8 @@ class CashierSalesPage extends StatelessWidget {
         RoleHeroHeader(
           palette: palette,
           title: 'Ventas de Caja',
-          subtitle: 'Historial de ventas y movimientos registrados en este turno.',
+          subtitle:
+              'Historial de ventas y movimientos registrados en este turno.',
         ),
         const SizedBox(height: 18),
         Container(
@@ -48,19 +43,34 @@ class CashierSalesPage extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Expanded(child: _posStatBox(context, 'Ventas Totales', '${cashierSalesLogs.length}', 'registradas')),
+              Expanded(
+                child: _posStatBox(
+                  context,
+                  'Ventas Totales',
+                  '${cashierSales.length}',
+                  'registradas',
+                ),
+              ),
               const SizedBox(width: 12),
-              Expanded(child: _posStatBox(context, 'Recaudacion', 'S/ ${totalTurnRevenue.toStringAsFixed(2)}', 'en caja')),
+              Expanded(
+                child: _posStatBox(
+                  context,
+                  'Recaudacion',
+                  'S/ ${totalTurnRevenue.toStringAsFixed(2)}',
+                  'en caja',
+                ),
+              ),
             ],
           ),
         ),
         const SizedBox(height: 24),
 
-        const SectionHeader(
+        SectionHeader(
           title: 'Historial del Turno',
-          action: 'Solicitar anulación',
+          action: 'Actualizar',
+          onTap: () => state.loadCajaSalesBackend(),
         ),
-        if (cashierSalesLogs.isEmpty)
+        if (cashierSales.isEmpty)
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
@@ -71,13 +81,17 @@ class CashierSalesPage extends StatelessWidget {
             child: Center(
               child: Text(
                 'No has realizado ventas en este turno.',
-                style: TextStyle(color: colors.textSecondary, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: colors.textSecondary,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           )
         else
           Column(
-            children: cashierSalesLogs.map((log) {
+            children: cashierSales.map((sale) {
+              final amount = (sale['amount'] as num?)?.toDouble() ?? 0;
               return Container(
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.all(14),
@@ -94,22 +108,53 @@ class CashierSalesPage extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(log.action, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5, color: colors.textPrimary)),
+                          Text(
+                            sale['title']?.toString() ?? 'Venta',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 14.5,
+                              color: colors.textPrimary,
+                            ),
+                          ),
                           const SizedBox(height: 2),
-                          Text(log.detail, style: TextStyle(color: colors.textSecondary, fontSize: 12)),
+                          Text(
+                            sale['detail']?.toString() ?? '',
+                            style: TextStyle(
+                              color: colors.textSecondary,
+                              fontSize: 12,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'S/ ${amount.toStringAsFixed(2)}',
+                            style: TextStyle(
+                              color: colors.accent,
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
                         ],
                       ),
                     ),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text(log.time, style: TextStyle(fontSize: 11, color: colors.textMuted, fontWeight: FontWeight.bold)),
+                        Text(
+                          sale['time']?.toString() ?? '',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: colors.textMuted,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                         const SizedBox(height: 6),
                         GestureDetector(
                           onTap: () {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text('Solicitud de anulación enviada al Administrador para: ${log.action}'),
+                                content: Text(
+                                  'Solicitud de anulación enviada al Administrador para: ${sale['title'] ?? 'venta'}',
+                                ),
                                 backgroundColor: palette.accent,
                               ),
                             );
@@ -135,7 +180,12 @@ class CashierSalesPage extends StatelessWidget {
     );
   }
 
-  Widget _posStatBox(BuildContext context, String title, String val, String note) {
+  Widget _posStatBox(
+    BuildContext context,
+    String title,
+    String val,
+    String note,
+  ) {
     final colors = context.sasColors;
     return Container(
       padding: const EdgeInsets.all(14),
@@ -147,9 +197,23 @@ class CashierSalesPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: TextStyle(fontSize: 11, color: colors.textSecondary, fontWeight: FontWeight.bold)),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 11,
+              color: colors.textSecondary,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           const SizedBox(height: 6),
-          Text(val, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: colors.textPrimary)),
+          Text(
+            val,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              color: colors.textPrimary,
+            ),
+          ),
           const SizedBox(height: 2),
           Text(note, style: TextStyle(fontSize: 10, color: colors.textMuted)),
         ],
@@ -157,5 +221,3 @@ class CashierSalesPage extends StatelessWidget {
     );
   }
 }
-
-

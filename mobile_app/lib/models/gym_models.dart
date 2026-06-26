@@ -10,20 +10,20 @@ enum GymRole { member, trainer, cashier, admin, superadmin }
 
 extension GymRoleX on GymRole {
   String get label => switch (this) {
-        GymRole.member => 'Usuario',
-        GymRole.trainer => 'Entrenador',
-        GymRole.cashier => 'Caja',
-        GymRole.admin => 'Admin',
-        GymRole.superadmin => 'SuperAdmin',
-      };
+    GymRole.member => 'Usuario',
+    GymRole.trainer => 'Entrenador',
+    GymRole.cashier => 'Caja',
+    GymRole.admin => 'Admin',
+    GymRole.superadmin => 'SuperAdmin',
+  };
 
   String get subtitle => switch (this) {
-        GymRole.member => 'Experiencia del socio',
-        GymRole.trainer => 'Planificación y progreso',
-        GymRole.cashier => 'Operación limitada',
-        GymRole.admin => 'Gestión total y auditoría',
-        GymRole.superadmin => 'Métricas de la red y control',
-      };
+    GymRole.member => 'Experiencia del socio',
+    GymRole.trainer => 'Planificación y progreso',
+    GymRole.cashier => 'Operación limitada',
+    GymRole.admin => 'Gestión total y auditoría',
+    GymRole.superadmin => 'Métricas de la red y control',
+  };
 }
 
 class RolePalette {
@@ -82,7 +82,8 @@ class MembershipPlan {
       id: json['id']?.toString() ?? '',
       name: json['nombre']?.toString() ?? '',
       description: json['descripcion']?.toString(),
-      durationDays: (json['duracion_dias'] ?? json['duracionDias'] ?? 30) as int,
+      durationDays:
+          (json['duracion_dias'] ?? json['duracionDias'] ?? 30) as int,
       price: (json['precio'] as num?)?.toDouble() ?? 0,
       color: json['color']?.toString(),
       order: (json['orden'] ?? 0) as int,
@@ -307,7 +308,8 @@ class MemberRecord {
   final String state; // active, expired, grace, baja_logica
   final String assignedTrainer;
   final List<PaymentRecord> paymentHistory;
-  final Map<String, double> physicalMeasurements; // weight, height, chest, waist, hips
+  final Map<String, double>
+  physicalMeasurements; // weight, height, chest, waist, hips
   final List<String> progressImages; // Simulated images
   final bool todayCheckIn;
   final bool isActiveInGym;
@@ -372,6 +374,7 @@ class MemberRecord {
 }
 
 class ProductItem {
+  final String? id;
   final String name;
   final String category;
   final double price;
@@ -380,6 +383,7 @@ class ProductItem {
   final bool readOnlyLogs;
 
   ProductItem({
+    this.id,
     required this.name,
     required this.category,
     required this.price,
@@ -389,6 +393,7 @@ class ProductItem {
   });
 
   ProductItem copyWith({
+    String? id,
     String? name,
     String? category,
     double? price,
@@ -397,6 +402,7 @@ class ProductItem {
     bool? readOnlyLogs,
   }) {
     return ProductItem(
+      id: id ?? this.id,
       name: name ?? this.name,
       category: category ?? this.category,
       price: price ?? this.price,
@@ -577,11 +583,13 @@ class LoggedInUser {
       trainerProfile: json['trainer_profile'] as Map<String, dynamic>?,
       memberProfile: json['member_profile'] as Map<String, dynamic>?,
       memberships: json['memberships'] as List<dynamic>?,
-      themePreference: (json['theme_preference'] ?? json['themePreference'] ?? 'system').toString().toLowerCase(),
+      themePreference:
+          (json['theme_preference'] ?? json['themePreference'] ?? 'system')
+              .toString()
+              .toLowerCase(),
     );
   }
 }
-
 
 GymRole parseRole(String roleStr) {
   return switch (roleStr.toUpperCase()) {
@@ -649,8 +657,10 @@ class CashierSession {
       montoCierrePOS: json['monto_cierre_pos'] != null
           ? (json['monto_cierre_pos'] as num).toDouble()
           : null,
-      totalVentasEfectivo: (json['total_ventas_efectivo'] as num? ?? 0).toDouble(),
-      totalVentasTransferencia: (json['total_ventas_transferencia'] as num? ?? 0).toDouble(),
+      totalVentasEfectivo: (json['total_ventas_efectivo'] as num? ?? 0)
+          .toDouble(),
+      totalVentasTransferencia:
+          (json['total_ventas_transferencia'] as num? ?? 0).toDouble(),
       totalVentasYape: (json['total_ventas_yape'] as num? ?? 0).toDouble(),
       totalVentasPOS: (json['total_ventas_pos'] as num? ?? 0).toDouble(),
       totalIngresos: (json['total_ingresos'] as num? ?? 0).toDouble(),
