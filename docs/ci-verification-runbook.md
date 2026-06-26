@@ -36,9 +36,9 @@ Valida el panel web estático sin levantar backend:
 
 ### `integration.yml`
 
-Levanta el stack con `docker compose up --build -d` y verifica:
+Levanta el stack con `docker compose --env-file .env -f infra/docker/compose.local.yml up -d --build` y verifica:
 
-- health de `api`, `web`, `frontend-web`
+- health de `api`, `admin-web`, `app-web`
 - login por roles
 - `/auth/me`, `/tenants/me`, `/auth/refresh`, `/auth/logout`
 - carga web base en `http://localhost:8282/web/index.html`
@@ -65,9 +65,9 @@ flutter build web --release
 ```powershell
 cd d:\proyectos\sas_gym
 node scripts\web-smoke-check.mjs
-docker compose up --build -d
+docker compose --env-file .env -f infra/docker/compose.local.yml up -d --build
 node scripts\integration-smoke.mjs
-docker compose down -v
+docker compose --env-file .env -f infra/docker/compose.local.yml down -v
 ```
 
 ## Aceptación mínima por PR

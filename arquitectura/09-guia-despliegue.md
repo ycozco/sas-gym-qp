@@ -11,6 +11,16 @@ Para despliegue local completo:
 - Docker Desktop o Docker Engine con Compose.
 - Puertos libres: `3000`, `8383`, `8282`, `5432`.
 
+Verificar Docker:
+
+```powershell
+docker --version
+docker compose version
+docker ps
+```
+
+Si `docker ps` falla, Docker no esta activo o el usuario no tiene permisos.
+
 Para ejecucion manual:
 
 - Node.js compatible con el backend NestJS.
@@ -18,37 +28,101 @@ Para ejecucion manual:
 - Flutter compatible con Dart `^3.12.0`.
 - PostgreSQL 15 o superior.
 
+## Como identificar que Compose se esta levantando
+
+Docker Compose usa el archivo indicado con `-f`.
+
+```bash
+docker compose --env-file .env -f infra/docker/compose.local.yml up -d --build
+```
+
+Ese comando levanta el Compose local:
+
+```text
+infra/docker/compose.local.yml
+```
+
+Composes vigentes:
+
+| Archivo | Uso |
+|---|---|
+| `infra/docker/compose.local.yml` | Desarrollo local |
+| `infra/docker/compose.prod.yml` | Produccion/preproduccion |
+| `infra/docker/compose.tools.yml` | Herramientas opcionales |
+
+Indicadores por nombre de contenedor:
+
+| Contenedor | Ambiente |
+|---|---|
+| `sasgym_api_local` | Local |
+| `sasgym_postgres_local` | Local |
+| `sasgym_redis_local` | Local |
+| `sasgym_api` | Produccion/preproduccion |
+| `sasgym_postgres` | Produccion/preproduccion |
+| `sasgym_redis` | Produccion/preproduccion |
+
+Antes de levantar, se puede revisar la configuracion final con:
+
+```bash
+docker compose --env-file .env -f infra/docker/compose.local.yml config
+```
+
+## Despliegue local de API con Docker Compose
+
+Desde la raiz del proyecto:
+
+```bash
+cp .env.local.example .env
+docker compose --env-file .env -f infra/docker/compose.local.yml up -d --build postgres redis api
+```
+
+La API local queda disponible en:
+
+```text
+http://localhost:3000/api/v1
+```
+
+Validar:
+
+```bash
+docker compose --env-file .env -f infra/docker/compose.local.yml ps
+curl http://localhost:3000/api/v1
+```
+
+El colaborador no necesita ejecutar `npm ci` en su maquina para levantar la API. Docker construye la imagen e instala dependencias dentro del contenedor.
+
 ## Despliegue local completo con Docker Compose
 
 Desde la raiz del proyecto:
 
-```powershell
-cd D:\proyectos\sas_gym
-docker compose up --build
+```bash
+cp .env.local.example .env
+docker compose --env-file .env -f infra/docker/compose.local.yml up -d --build
 ```
 
 Servicios definidos:
 
 | Servicio | Contenedor | Funcion | Puerto |
 |---|---|---|---|
-| `db` | `gymsmart-postgres` | PostgreSQL | `127.0.0.1:5432` |
-| `api` | `gymsmart-api` | NestJS API | `3000` |
-| `frontend-web` | `sas_gym_flutter_web` | Flutter web servido por Nginx | `8383` |
-| `web` | `sas_gym_frontend` | Hub estatico, mockups y docs | `8282` |
-| `test-client` | `gymsmart-test-client` | Cliente curl aislado | sin puerto publico |
+| `postgres` | `sasgym_postgres_local` | PostgreSQL | `5432` |
+| `redis` | `sasgym_redis_local` | Redis | `6379` |
+| `api` | `sasgym_api_local` | NestJS API | `3000` |
+| `ws` | `sasgym_ws_local` | WebSocket | `3001` |
+| `app-web` | `sasgym_app_web_local` | Flutter web servido por Nginx | `8383` |
+| `admin-web` | `sasgym_admin_web_local` | Hub estatico, mockups y docs | `8282` |
 
 Validar estado:
 
-```powershell
-docker compose ps
+```bash
+docker compose --env-file .env -f infra/docker/compose.local.yml ps
 ```
 
 Revisar logs:
 
-```powershell
-docker compose logs api
-docker compose logs frontend-web
-docker compose logs web
+```bash
+docker compose --env-file .env -f infra/docker/compose.local.yml logs api
+docker compose --env-file .env -f infra/docker/compose.local.yml logs app-web
+docker compose --env-file .env -f infra/docker/compose.local.yml logs admin-web
 ```
 
 URLs esperadas:
@@ -59,13 +133,15 @@ URLs esperadas:
 
 ## Advertencia sobre datos de desarrollo
 
-El servicio `api` del Compose raiz ejecuta:
+El servicio `api` del Compose local ejecuta:
 
 ```sh
-npx prisma db push --force-reset && npx prisma generate && npx prisma db seed && npm run start:dev
+npm run db:setup:local && npm run seed:local && npm run start:dev
 ```
 
-Esto recrea el esquema y datos de desarrollo. No usar `--force-reset` en produccion.
+`db:setup:local` genera Prisma Client y sincroniza el schema con `prisma db push`. Si la base local queda incompatible y `ALLOW_TEST_DATA_RESET=true`, puede ejecutar `prisma db push --force-reset`.
+
+Esto es solo para desarrollo local porque puede borrar datos de prueba. No usar `--force-reset` en produccion.
 
 ## Despliegue manual del backend
 
@@ -186,34 +262,34 @@ volumes:
 
 ### Solo backend y base de datos
 
-```powershell
-docker compose up --build db api
+```bash
+docker compose --env-file .env -f infra/docker/compose.local.yml up -d --build postgres redis api
 ```
 
 ### Solo Flutter web
 
-```powershell
-docker compose up --build frontend-web
+```bash
+docker compose --env-file .env -f infra/docker/compose.local.yml up -d --build app-web
 ```
 
 ### Solo hub/mockups
 
-```powershell
-docker compose up web
+```bash
+docker compose --env-file .env -f infra/docker/compose.local.yml up -d admin-web
 ```
 
 ## Validacion posterior al despliegue
 
 1. Confirmar contenedores:
 
-```powershell
-docker compose ps
+```bash
+docker compose --env-file .env -f infra/docker/compose.local.yml ps
 ```
 
 2. Confirmar API:
 
-```powershell
-curl http://localhost:3000
+```bash
+curl http://localhost:3000/api/v1
 ```
 
 3. Abrir Flutter web:
@@ -230,8 +306,8 @@ http://localhost:8282
 
 5. Revisar logs de API:
 
-```powershell
-docker compose logs api
+```bash
+docker compose --env-file .env -f infra/docker/compose.local.yml logs api
 ```
 
 6. Verificar que PostgreSQL no este expuesto a la red publica:

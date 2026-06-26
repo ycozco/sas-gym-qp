@@ -31,6 +31,12 @@ AGENTS.md       Guia operativa para Codex
 
 ```bash
 cp .env.local.example .env
+docker compose --env-file .env -f infra/docker/compose.local.yml up -d --build postgres redis api
+```
+
+Para levantar tambien web/admin:
+
+```bash
 docker compose --env-file .env -f infra/docker/compose.local.yml up -d --build
 ```
 

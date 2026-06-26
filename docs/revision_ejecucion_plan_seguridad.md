@@ -14,7 +14,7 @@ Fecha: 2026-06-03
   - `npm run migrate:deploy`
   - `npm run seed:local`
   - `npm run db:setup:local`
-- `docker-compose.yml` y `backend/docker-compose.yml` ahora ejecutan `npm run db:setup:local && npm run start:dev`.
+- `infra/docker/compose.local.yml` ejecuta `npm run db:setup:local && npm run start:dev`.
 - El seed queda como accion manual para datos locales, no como parte del arranque.
 
 ### Seguridad backend
@@ -34,7 +34,7 @@ Fecha: 2026-06-03
 
 - Se agrego `.env.example` en la raiz.
 - Se agrego `backend/.env.example`.
-- `docker-compose.yml` usa `env_file: ./backend/.env` para no repetir secretos en el compose.
+- Los Compose vigentes usan variables desde `.env` / plantillas de entorno para no repetir secretos en el YAML.
 
 ### Dependencias
 
@@ -50,8 +50,8 @@ Fecha: 2026-06-03
 ## Verificacion ejecutada
 
 ```powershell
-docker compose config
-docker compose build api
+docker compose --env-file .env.local.example -f infra/docker/compose.local.yml config
+docker compose --env-file .env.local.example -f infra/docker/compose.local.yml build api
 cd backend
 npm audit --audit-level=moderate
 npm outdated
@@ -66,8 +66,8 @@ flutter test
 
 Resultados:
 
-- `docker compose config`: OK.
-- `docker compose build api`: OK.
+- `docker compose --env-file .env.local.example -f infra/docker/compose.local.yml config`: OK.
+- `docker compose --env-file .env.local.example -f infra/docker/compose.local.yml build api`: OK.
 - `npm audit --audit-level=moderate`: 0 vulnerabilidades.
 - `npm run build`: OK.
 - `npm run test`: OK, 2 suites / 6 tests.

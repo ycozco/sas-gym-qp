@@ -22,7 +22,7 @@ Por defecto, Node.js no detecta de forma nativa los límites de memoria impuesto
 
 ### C. Configurar Límites de Recursos en Docker Compose (`deploy.resources`)
 *   **Solución**: Declarar límites estrictos (`limits`) y recursos de inicio garantizados (`reservations`) en el manifiesto de composición para prevenir fugas de memoria globales que afecten a la máquina host.
-*   **Ejemplo en `docker-compose.yml`**:
+*   **Ejemplo en `infra/docker/compose.prod.yml`**:
     ```yaml
     services:
       api:
@@ -56,7 +56,7 @@ Para permitir a los desarrolladores realizar cambios directamente en el código 
 
 ### A. Docker Compose Watch (La Vía Moderna)
 Docker Compose Watch es la característica oficial de Docker para sincronizar código de forma eficiente sin sobrecargar el subsistema de entrada/salida de disco, lo cual es crítico al usar Docker en Windows mediante WSL2.
-*   **Configuración en `docker-compose.dev.yml`**:
+*   **Configuración en `infra/docker/compose.local.yml`**:
     ```yaml
     services:
       api:
@@ -125,4 +125,4 @@ Durante la ejecución de `docker build`, Docker envía todo el contexto del dire
 3.  [x] **Implementar Dockerfile.prod con Multi-Stage Build** ([Dockerfile.prod](file:///d:/proyectos/sas_gym/backend/Dockerfile.prod)) aislando la etapa de construcción de la de ejecución y usando `--omit=dev` para omitir librerías de desarrollo.
 4.  [ ] **Limitar memoria** en la orquestación configurando la variable `NODE_OPTIONS=--max-old-space-size=768` y asignando límites en Docker Compose.
 5.  [ ] **Aislar node_modules** agregando `/app/node_modules` en los volúmenes del compose de desarrollo.
-6.  [ ] **Implementar Docker Compose Watch** como la opción por defecto en `docker-compose.dev.yml`.
+6.  [ ] **Implementar Docker Compose Watch** como la opción por defecto en `infra/docker/compose.local.yml`.
