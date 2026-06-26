@@ -50,6 +50,12 @@ docker compose --env-file ..\.env.production.example -f ..\infra\docker\compose.
 
 The Android baseline release version is `0.1.0+1`.
 
+Local backend APK runbook:
+
+- See `docs/qa-apk-local.md` for the controlled local QA matrix.
+- Use `APP_MODE=backend` and a LAN API URL such as `http://192.168.1.7:3000/api/v1`.
+- Do not use `APP_MODE=demo` for local backend APK validation.
+
 Production APK build:
 
 ```powershell
@@ -69,7 +75,7 @@ C:\Users\yoset\AppData\Local\Android\Sdk\platform-tools\adb.exe install -r D:\pr
 - `lib/app.dart`: role shell and topbar tabs.
 - `lib/features/`: feature entrypoints grouped by auth and role.
 - `lib/screens/`: current screen implementations used by the feature exports.
-- `lib/data/`: mock data for workouts, products, logs and cashiers.
+- `lib/data/`: app state, backend mapping and isolated demo seed data.
 - `lib/widgets/`: reusable UI helpers.
 - `lib/core/`: API and local storage services.
 
