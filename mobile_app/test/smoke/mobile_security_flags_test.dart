@@ -48,6 +48,20 @@ void main() {
     expect(find.text('Modo Demo / Cuentas Semilla'), findsNothing);
   });
 
+  testWidgets('login shows non-production api diagnostic', (tester) async {
+    final state = GymState(startBackground: false);
+    addTearDown(state.dispose);
+
+    await tester.pumpWidget(
+      GymStateProvider(
+        notifier: state,
+        child: const MaterialApp(home: LoginScreen()),
+      ),
+    );
+
+    expect(find.textContaining('API '), findsOneWidget);
+  });
+
   test('backend mode does not preload demo seed data', () {
     final state = GymState(startBackground: false);
     addTearDown(state.dispose);

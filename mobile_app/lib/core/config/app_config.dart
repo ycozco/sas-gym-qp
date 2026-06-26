@@ -86,6 +86,14 @@ class AppConfig {
     return 'http://localhost:3000/api/v1';
   }
 
+  static String diagnosticApiBaseUrlLabel() {
+    try {
+      return resolveApiBaseUrl();
+    } catch (_) {
+      return 'API_BASE_URL no configurada';
+    }
+  }
+
   static String? demoTotpSecretForDni(String dni) {
     if (isProduction) return null;
     if (!enableQrSimulator) return null;

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/config/app_config.dart';
 import '../../../data/gym_state.dart';
 import '../../../theme/app_theme_tokens.dart';
 import '../../../widgets/app_shell.dart';
@@ -371,6 +372,14 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
               ),
+              if (!AppConfig.isProduction) ...[
+                const SizedBox(height: 16),
+                Text(
+                  'API ${AppConfig.diagnosticApiBaseUrlLabel()}',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: colors.textMuted, fontSize: 11),
+                ),
+              ],
               const SizedBox(height: 40),
             ],
           ),
