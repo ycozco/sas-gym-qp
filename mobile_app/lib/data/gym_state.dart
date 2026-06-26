@@ -5,6 +5,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'dart:async';
 import '../models/gym_models.dart';
 import '../core/network/api_client.dart';
+import '../core/network/api_error_message.dart';
 import '../core/config/app_config.dart';
 import '../core/storage/secure_storage.dart';
 import '../core/services/websocket_service.dart';
@@ -200,17 +201,7 @@ class GymState extends ChangeNotifier {
       notifyListeners();
       return true;
     } on DioException catch (e) {
-      String message = 'Error de conexión con el servidor.';
-      if (e.response != null && e.response!.data != null) {
-        final data = e.response!.data;
-        if (data is Map && data.containsKey('message')) {
-          final errMessage = data['message'];
-          message = errMessage is List
-              ? errMessage.join('\n')
-              : errMessage.toString();
-        }
-      }
-      _authError = message;
+      _authError = ApiErrorMessage.fromDio(e);
       _currentUser = null;
       _authLoading = false;
       notifyListeners();
@@ -532,15 +523,10 @@ class GymState extends ChangeNotifier {
 
       return {'verdict': verdict, 'reason': reason, 'member': tempRecord};
     } on DioException catch (e) {
-      String reason = 'Error de conexión o token inválido.';
-      if (e.response != null && e.response!.data != null) {
-        final data = e.response!.data;
-        if (data is Map && data.containsKey('reason')) {
-          reason = data['reason'].toString();
-        } else if (data is Map && data.containsKey('message')) {
-          reason = data['message'].toString();
-        }
-      }
+      final reason = ApiErrorMessage.fromDio(
+        e,
+        fallback: 'Error de conexión o token inválido.',
+      );
       _addLog(
         'Escáner',
         'Error API',
