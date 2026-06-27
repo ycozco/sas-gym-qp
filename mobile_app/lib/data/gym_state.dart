@@ -3116,4 +3116,12 @@ class GymStateProvider extends InheritedNotifier<GymState> {
     assert(provider != null, 'No GymStateProvider found in context');
     return provider!.notifier!;
   }
+
+  static GymState read(BuildContext context) {
+    final element = context
+        .getElementForInheritedWidgetOfExactType<GymStateProvider>();
+    final provider = element?.widget as GymStateProvider?;
+    assert(provider != null, 'No GymStateProvider found in context');
+    return provider!.notifier!;
+  }
 }

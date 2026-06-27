@@ -54,7 +54,8 @@ class _MemberProfilePageState extends State<MemberProfilePage>
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final state = GymStateProvider.of(context);
+      if (!mounted) return;
+      final state = GymStateProvider.read(context);
       state.loadMemberPoints();
     });
   }
