@@ -21,6 +21,28 @@ class MemberProfilePage extends StatefulWidget {
   State<MemberProfilePage> createState() => _MemberProfilePageState();
 }
 
+class _MemberProfileEditRequest {
+  const _MemberProfileEditRequest({
+    required this.nombreCompleto,
+    required this.celular,
+    required this.nickname,
+    required this.objetivo,
+    required this.lesiones,
+    required this.medidasJson,
+    this.pesoKg,
+    this.alturaCm,
+  });
+
+  final String nombreCompleto;
+  final String celular;
+  final String nickname;
+  final String objetivo;
+  final String lesiones;
+  final double? pesoKg;
+  final double? alturaCm;
+  final Map<String, double> medidasJson;
+}
+
 class _MemberProfilePageState extends State<MemberProfilePage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
@@ -633,7 +655,7 @@ class _MemberProfilePageState extends State<MemberProfilePage>
       ),
     );
 
-    final saveResult = await showModalBottomSheet<bool>(
+    final saveRequest = await showModalBottomSheet<_MemberProfileEditRequest>(
       context: context,
       isScrollControlled: true,
       backgroundColor: const Color(0xFF121212),
@@ -653,18 +675,19 @@ class _MemberProfilePageState extends State<MemberProfilePage>
               if (waist != null) medidasJson['cintura'] = waist;
               if (chest != null) medidasJson['pecho'] = chest;
               if (hip != null) medidasJson['cadera'] = hip;
-              final success = await state.updateMemberProfile(
-                nombreCompleto: nameCtrl.text.trim(),
-                celular: phoneCtrl.text.trim(),
-                nickname: nicknameCtrl.text.trim(),
-                objetivo: objectiveCtrl.text.trim(),
-                lesiones: injuriesCtrl.text.trim(),
-                pesoKg: _parseDouble(weightCtrl.text),
-                alturaCm: _parseDouble(heightCtrl.text),
-                medidasJson: medidasJson,
-              );
               if (sheetContext.mounted) {
-                Navigator.of(sheetContext).pop(success);
+                Navigator.of(sheetContext).pop(
+                  _MemberProfileEditRequest(
+                    nombreCompleto: nameCtrl.text.trim(),
+                    celular: phoneCtrl.text.trim(),
+                    nickname: nicknameCtrl.text.trim(),
+                    objetivo: objectiveCtrl.text.trim(),
+                    lesiones: injuriesCtrl.text.trim(),
+                    pesoKg: _parseDouble(weightCtrl.text),
+                    alturaCm: _parseDouble(heightCtrl.text),
+                    medidasJson: medidasJson,
+                  ),
+                );
               }
             }
 
@@ -747,17 +770,26 @@ class _MemberProfilePageState extends State<MemberProfilePage>
       ctrl.dispose();
     }
 
-    if (!mounted || saveResult == null) return;
+    if (!mounted || saveRequest == null) return;
+    final success = await state.updateMemberProfile(
+      nombreCompleto: saveRequest.nombreCompleto,
+      celular: saveRequest.celular,
+      nickname: saveRequest.nickname,
+      objetivo: saveRequest.objetivo,
+      lesiones: saveRequest.lesiones,
+      pesoKg: saveRequest.pesoKg,
+      alturaCm: saveRequest.alturaCm,
+      medidasJson: saveRequest.medidasJson,
+    );
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          saveResult
+          success
               ? 'Perfil actualizado correctamente.'
               : 'No se pudo actualizar el perfil.',
         ),
-        backgroundColor: saveResult
-            ? const Color(0xFF00B85C)
-            : Colors.redAccent,
+        backgroundColor: success ? const Color(0xFF00B85C) : Colors.redAccent,
       ),
     );
   }
