@@ -33,7 +33,12 @@ describe('DietsController', () => {
     carbohidratos_g: 250,
     grasas_g: 70,
     comidas: [
-      { hora: '08:00', nombre: 'Desayuno', alimentos: 'Avena y huevos', calorias: 500 },
+      {
+        hora: '08:00',
+        nombre: 'Desayuno',
+        alimentos: 'Avena y huevos',
+        calorias: 500,
+      },
     ],
     sugerencias: 'Beber agua',
     activo: true,
@@ -86,7 +91,11 @@ describe('DietsController', () => {
 
       const result = await controller.create({ user: mockUser }, dto);
 
-      expect(service.create).toHaveBeenCalledWith('tenant-uuid', 'trainer-uuid', dto);
+      expect(service.create).toHaveBeenCalledWith(
+        'tenant-uuid',
+        'trainer-uuid',
+        dto,
+      );
       expect(result).toEqual(mockDietPlan);
     });
   });
@@ -106,7 +115,10 @@ describe('DietsController', () => {
 
       const result = await controller.list({ user: mockUser }, 'member-uuid');
 
-      expect(service.findAll).toHaveBeenCalledWith('tenant-uuid', 'member-uuid');
+      expect(service.findAll).toHaveBeenCalledWith(
+        'tenant-uuid',
+        'member-uuid',
+      );
       expect(result).toEqual([mockDietPlan]);
     });
   });
@@ -117,7 +129,10 @@ describe('DietsController', () => {
 
       const result = await controller.getMyDiet({ user: mockMemberUser });
 
-      expect(service.findActiveForMember).toHaveBeenCalledWith('member-uuid', 'tenant-uuid');
+      expect(service.findActiveForMember).toHaveBeenCalledWith(
+        'member-uuid',
+        'tenant-uuid',
+      );
       expect(result).toEqual(mockDietPlan);
     });
   });
@@ -125,22 +140,42 @@ describe('DietsController', () => {
   describe('update', () => {
     it('debe actualizar la dieta especificada', async () => {
       const dto: UpdateDietPlanDto = { caloriasObjetivo: 2800 };
-      service.update.mockResolvedValue({ ...mockDietPlan, calorias_objetivo: 2800 } as any);
+      service.update.mockResolvedValue({
+        ...mockDietPlan,
+        calorias_objetivo: 2800,
+      } as any);
 
-      const result = await controller.update({ user: mockUser }, 'diet-uuid', dto);
+      const result = await controller.update(
+        { user: mockUser },
+        'diet-uuid',
+        dto,
+      );
 
-      expect(service.update).toHaveBeenCalledWith('tenant-uuid', 'diet-uuid', dto);
+      expect(service.update).toHaveBeenCalledWith(
+        'tenant-uuid',
+        'diet-uuid',
+        dto,
+      );
       expect(result.calorias_objetivo).toBe(2800);
     });
   });
 
   describe('deactivate', () => {
     it('debe inhabilitar/desactivar la dieta', async () => {
-      service.deactivate.mockResolvedValue({ ...mockDietPlan, activo: false } as any);
+      service.deactivate.mockResolvedValue({
+        ...mockDietPlan,
+        activo: false,
+      } as any);
 
-      const result = await controller.deactivate({ user: mockUser }, 'diet-uuid');
+      const result = await controller.deactivate(
+        { user: mockUser },
+        'diet-uuid',
+      );
 
-      expect(service.deactivate).toHaveBeenCalledWith('tenant-uuid', 'diet-uuid');
+      expect(service.deactivate).toHaveBeenCalledWith(
+        'tenant-uuid',
+        'diet-uuid',
+      );
       expect(result.activo).toBe(false);
     });
   });

@@ -72,9 +72,7 @@ async function bootstrap() {
             },
           }
         : false, // Desactivado en dev para facilitar depuración
-      hsts: isProd
-        ? { maxAge: 31536000, includeSubDomains: true }
-        : false,
+      hsts: isProd ? { maxAge: 31536000, includeSubDomains: true } : false,
       crossOriginEmbedderPolicy: false, // Compatible con Flutter WebView
     }),
   );

@@ -1,4 +1,10 @@
-import { IsString, IsNotEmpty, IsUUID, IsBase64, Length } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsUUID,
+  IsBase64,
+  Length,
+} from 'class-validator';
 
 export class BiometricHandshakeDto {
   @IsString()

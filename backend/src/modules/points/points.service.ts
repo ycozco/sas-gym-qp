@@ -123,8 +123,10 @@ export class PointsService {
   ) {
     const data: Record<string, unknown> = {};
     if (dto.activo !== undefined) data.activo = dto.activo;
-    if (dto.puntosPorSol !== undefined) data.puntos_por_sol = Number(dto.puntosPorSol);
-    if (dto.minCanje !== undefined) data.minimo_para_canje = Number(dto.minCanje);
+    if (dto.puntosPorSol !== undefined)
+      data.puntos_por_sol = Number(dto.puntosPorSol);
+    if (dto.minCanje !== undefined)
+      data.minimo_para_canje = Number(dto.minCanje);
     if (dto.vencimientoDias !== undefined) {
       data.puntos_expiran = dto.vencimientoDias !== null;
       if (dto.vencimientoDias !== null) {
@@ -192,7 +194,8 @@ export class PointsService {
     const user = await this.prisma.user.findFirst({
       where: { id: dto.userId, tenant_id: tenantId },
     });
-    if (!user) throw new NotFoundException('Usuario no encontrado en este gimnasio.');
+    if (!user)
+      throw new NotFoundException('Usuario no encontrado en este gimnasio.');
 
     const balance = await this.prisma.pointsBalance.upsert({
       where: { usuario_id: dto.userId },

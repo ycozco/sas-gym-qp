@@ -6,13 +6,19 @@ import { CreateDietPlanDto, UpdateDietPlanDto } from './dto/diet.dto';
 export class DietsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(tenantId: string, trainerId: string | null, dto: CreateDietPlanDto) {
+  async create(
+    tenantId: string,
+    trainerId: string | null,
+    dto: CreateDietPlanDto,
+  ) {
     // Verificar que el member existe y pertenece al mismo tenant
     const member = await this.prisma.user.findFirst({
       where: { id: dto.memberId, tenant_id: tenantId },
     });
     if (!member) {
-      throw new NotFoundException('El miembro especificado no existe o no pertenece a tu gimnasio.');
+      throw new NotFoundException(
+        'El miembro especificado no existe o no pertenece a tu gimnasio.',
+      );
     }
 
     // Desactivar dietas anteriores activas para este miembro
@@ -85,7 +91,9 @@ export class DietsService {
       where: { id, tenant_id: tenantId },
     });
     if (!diet) {
-      throw new NotFoundException('La dieta especificada no existe en tu gimnasio.');
+      throw new NotFoundException(
+        'La dieta especificada no existe en tu gimnasio.',
+      );
     }
 
     return this.prisma.dietPlan.update({
@@ -107,7 +115,9 @@ export class DietsService {
       where: { id, tenant_id: tenantId },
     });
     if (!diet) {
-      throw new NotFoundException('La dieta especificada no existe en tu gimnasio.');
+      throw new NotFoundException(
+        'La dieta especificada no existe en tu gimnasio.',
+      );
     }
 
     return this.prisma.dietPlan.update({

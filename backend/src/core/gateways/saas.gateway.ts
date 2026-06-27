@@ -81,13 +81,17 @@ export class SaasGateway implements OnGatewayConnection, OnGatewayDisconnect {
     });
 
     if (!fingerprint) {
-      client.emit('biometric-rejected', { reason: 'Huella digital no registrada.' });
+      client.emit('biometric-rejected', {
+        reason: 'Huella digital no registrada.',
+      });
       return { success: false, reason: 'Huella digital no registrada.' };
     }
 
     // Verificar integridad del hash
     if (fingerprint.hash_verificacion !== dto.hashVerificacion) {
-      client.emit('biometric-rejected', { reason: 'Error de integridad en los datos biométricos.' });
+      client.emit('biometric-rejected', {
+        reason: 'Error de integridad en los datos biométricos.',
+      });
       return { success: false, reason: 'Firma de huella inválida.' };
     }
 
@@ -97,7 +101,8 @@ export class SaasGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const activeMembership = user.memberships[0];
     const isApproved =
       activeMembership &&
-      (activeMembership.estado === 'ACTIVE' || activeMembership.estado === 'GRACE');
+      (activeMembership.estado === 'ACTIVE' ||
+        activeMembership.estado === 'GRACE');
 
     if (!isApproved) {
       // Registrar intento fallido
@@ -118,7 +123,8 @@ export class SaasGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     // Registrar asistencia biométrica
-    const ip = client.handshake.address || client.conn.remoteAddress || 'unknown';
+    const ip =
+      client.handshake.address || client.conn.remoteAddress || 'unknown';
     await this.prisma.$transaction(async (tx) => {
       await tx.fingerprintAttendance.create({
         data: {
@@ -154,9 +160,10 @@ export class SaasGateway implements OnGatewayConnection, OnGatewayDisconnect {
         rol: user.rol,
       },
       verdict: activeMembership.estado === 'GRACE' ? 'AMBER' : 'GREEN',
-      reason: activeMembership.estado === 'GRACE'
-        ? 'Ingreso autorizado en día de gracia.'
-        : 'Ingreso autorizado.',
+      reason:
+        activeMembership.estado === 'GRACE'
+          ? 'Ingreso autorizado en día de gracia.'
+          : 'Ingreso autorizado.',
     });
 
     return { success: true, message: 'Acceso autorizado y puerta abierta.' };

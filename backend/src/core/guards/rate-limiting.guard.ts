@@ -15,7 +15,7 @@ export class RateLimitingGuard implements CanActivate {
   // Umbral: 5 intentos fallidos consecutivos
   private readonly MAX_ATTEMPTS = 5;
   // Ventana de tiempo de intentos: 15 minutos
-  private readonly WINDOW_SECONDS = 900; 
+  private readonly WINDOW_SECONDS = 900;
   // Bloqueo: 15 minutos
   private readonly BLOCK_SECONDS = 900;
 
@@ -41,7 +41,9 @@ export class RateLimitingGuard implements CanActivate {
     const emailBlockKey = `rate:block:email:${email}`;
 
     const isIpBlocked = await this.redisService.exists(ipBlockKey);
-    const isEmailBlocked = email ? await this.redisService.exists(emailBlockKey) : 0;
+    const isEmailBlocked = email
+      ? await this.redisService.exists(emailBlockKey)
+      : 0;
 
     if (isIpBlocked || isEmailBlocked) {
       this.logger.warn(
@@ -65,16 +67,24 @@ export class RateLimitingGuard implements CanActivate {
         if (email) {
           await this.redisService.del(emailFailKey);
         }
-        this.logger.log(`Login exitoso para ${email} desde IP ${ip}. Contadores reseteados.`);
+        this.logger.log(
+          `Login exitoso para ${email} desde IP ${ip}. Contadores reseteados.`,
+        );
       } else if (statusCode === 401 || statusCode === 403) {
         // Login fallido: Incrementar contadores
         const ipFailKey = `rate:fail:ip:${ip}`;
-        const ipAttempts = await this.redisService.incrWithTtl(ipFailKey, this.WINDOW_SECONDS);
+        const ipAttempts = await this.redisService.incrWithTtl(
+          ipFailKey,
+          this.WINDOW_SECONDS,
+        );
 
         let emailAttempts = 0;
         if (email) {
           const emailFailKey = `rate:fail:email:${email}`;
-          emailAttempts = await this.redisService.incrWithTtl(emailFailKey, this.WINDOW_SECONDS);
+          emailAttempts = await this.redisService.incrWithTtl(
+            emailFailKey,
+            this.WINDOW_SECONDS,
+          );
         }
 
         this.logger.warn(
@@ -84,12 +94,16 @@ export class RateLimitingGuard implements CanActivate {
         // Si sobrepasan el máximo de intentos, aplicar bloqueo
         if (ipAttempts >= this.MAX_ATTEMPTS) {
           await this.redisService.set(ipBlockKey, '1', this.BLOCK_SECONDS);
-          this.logger.error(`IP ${ip} bloqueada por 15 minutos debido a ${ipAttempts} fallos consecutivos.`);
+          this.logger.error(
+            `IP ${ip} bloqueada por 15 minutos debido a ${ipAttempts} fallos consecutivos.`,
+          );
         }
 
         if (email && emailAttempts >= this.MAX_ATTEMPTS) {
           await this.redisService.set(emailBlockKey, '1', this.BLOCK_SECONDS);
-          this.logger.error(`Usuario ${email} bloqueado por 15 minutos debido a ${emailAttempts} fallos consecutivos.`);
+          this.logger.error(
+            `Usuario ${email} bloqueado por 15 minutos debido a ${emailAttempts} fallos consecutivos.`,
+          );
         }
       }
     });

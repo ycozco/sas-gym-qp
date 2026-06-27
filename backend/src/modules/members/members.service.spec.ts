@@ -47,10 +47,21 @@ describe('MembersService — freeze/unfreeze', () => {
     const txMock = {
       membershipFreeze: {
         create: jest.fn().mockResolvedValue(mockFreeze),
-        update: jest.fn().mockResolvedValue({ ...mockFreeze, fecha_descongelacion: new Date() }),
+        update: jest
+          .fn()
+          .mockResolvedValue({
+            ...mockFreeze,
+            fecha_descongelacion: new Date(),
+          }),
       },
       membership: {
-        update: jest.fn().mockResolvedValue({ ...mockMembership, congelada: true, freezes: [mockFreeze] }),
+        update: jest
+          .fn()
+          .mockResolvedValue({
+            ...mockMembership,
+            congelada: true,
+            freezes: [mockFreeze],
+          }),
       },
     };
 
@@ -79,7 +90,9 @@ describe('MembersService — freeze/unfreeze', () => {
   // ─── freezeMembership ──────────────────────────────────────────────
   describe('freezeMembership', () => {
     it('should freeze an active membership successfully', async () => {
-      (prisma.membership.findFirst as jest.Mock).mockResolvedValue(mockMembership);
+      (prisma.membership.findFirst as jest.Mock).mockResolvedValue(
+        mockMembership,
+      );
 
       const result = await service.freezeMembership('mem-001', 'tenant-001', {
         razon: 'Viaje al exterior',

@@ -1,11 +1,17 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { S3StorageService } from './s3-storage.service';
-import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+} from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 // Mockear el presigner
 jest.mock('@aws-sdk/s3-request-presigner', () => ({
-  getSignedUrl: jest.fn().mockResolvedValue('https://mocked-signed-url.com/file'),
+  getSignedUrl: jest
+    .fn()
+    .mockResolvedValue('https://mocked-signed-url.com/file'),
 }));
 
 // Mockear el cliente S3
@@ -47,7 +53,9 @@ describe('S3StorageService', () => {
 
     expect(result).toBe(key);
     expect(mockS3ClientInstance.send).toHaveBeenCalledTimes(1);
-    expect(mockS3ClientInstance.send.mock.calls[0][0]).toBeInstanceOf(PutObjectCommand);
+    expect(mockS3ClientInstance.send.mock.calls[0][0]).toBeInstanceOf(
+      PutObjectCommand,
+    );
     expect(mockS3ClientInstance.send.mock.calls[0][0].input).toEqual({
       Bucket: 'sasgym-uploads',
       Key: key,
@@ -62,7 +70,7 @@ describe('S3StorageService', () => {
 
     expect(result).toBe('https://mocked-signed-url.com/file');
     expect(getSignedUrl).toHaveBeenCalledTimes(1);
-    
+
     // El primer argumento es el cliente S3 mockeado
     expect(getSignedUrl).toHaveBeenCalledWith(
       mockS3ClientInstance,

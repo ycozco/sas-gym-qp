@@ -36,7 +36,11 @@ export class MembersController {
   @Post('workout-log')
   @Roles(Role.MEMBER)
   async saveWorkoutLog(@Req() req: any, @Body() dto: any) {
-    return this.membersService.saveWorkoutLog(req.user.sub, req.user.tenantId, dto);
+    return this.membersService.saveWorkoutLog(
+      req.user.sub,
+      req.user.tenantId,
+      dto,
+    );
   }
 
   // ─── LISTADO DE MIEMBROS PAGINADO POR CURSOR ──────────────────────
@@ -85,10 +89,7 @@ export class MembersController {
   /** Descongelar membresía (extiende fecha automáticamente) */
   @Delete('memberships/:membershipId/freeze')
   @Roles(Role.ADMIN)
-  async unfreeze(
-    @Req() req: any,
-    @Param('membershipId') membershipId: string,
-  ) {
+  async unfreeze(@Req() req: any, @Param('membershipId') membershipId: string) {
     return this.membersService.unfreezeMembership(
       membershipId,
       req.user.tenantId,
@@ -102,9 +103,6 @@ export class MembersController {
     @Req() req: any,
     @Param('membershipId') membershipId: string,
   ) {
-    return this.membersService.freezeHistory(
-      membershipId,
-      req.user.tenantId,
-    );
+    return this.membersService.freezeHistory(membershipId, req.user.tenantId);
   }
 }

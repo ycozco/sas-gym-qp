@@ -23,13 +23,16 @@ export class IdempotencyInterceptor implements NestInterceptor {
     const req = http.getRequest();
     const res = http.getResponse();
 
-    const idempotencyKey = req.headers['idempotency-key'] || req.headers['Idempotency-Key'];
+    const idempotencyKey =
+      req.headers['idempotency-key'] || req.headers['Idempotency-Key'];
 
     if (req.method !== 'POST' || !idempotencyKey) {
       return next.handle();
     }
 
-    return from(this.handleIdempotency(idempotencyKey as string, context, next));
+    return from(
+      this.handleIdempotency(idempotencyKey as string, context, next),
+    );
   }
 
   private async handleIdempotency(
@@ -43,14 +46,22 @@ export class IdempotencyInterceptor implements NestInterceptor {
     // Intentar adquirir de forma atómica el estado "IN_PROGRESS"
     // NX: Solo si no existe
     // EX: Expiración en segundos
-    const acquired = await (redis as any).set(redisKey, 'IN_PROGRESS', 'NX', 'EX', this.TTL_SECONDS);
+    const acquired = await (redis as any).set(
+      redisKey,
+      'IN_PROGRESS',
+      'NX',
+      'EX',
+      this.TTL_SECONDS,
+    );
 
     if (acquired === 'OK') {
       // Primera vez que se recibe esta clave: Procesar la petición
-      this.logger.log(`Clave de idempotencia adquirida: ${key}. Procesando petición.`);
+      this.logger.log(
+        `Clave de idempotencia adquirida: ${key}. Procesando petición.`,
+      );
       try {
         const result = await lastValueFrom(next.handle());
-        
+
         // Guardar resultado exitoso en Redis
         const httpResponse = context.switchToHttp().getResponse();
         const cachedData = {
@@ -58,12 +69,18 @@ export class IdempotencyInterceptor implements NestInterceptor {
           body: result,
         };
 
-        await this.redisService.set(redisKey, JSON.stringify(cachedData), this.TTL_SECONDS);
+        await this.redisService.set(
+          redisKey,
+          JSON.stringify(cachedData),
+          this.TTL_SECONDS,
+        );
         return result;
       } catch (err) {
         // Si la petición falla, liberamos la clave para permitir reintentos
         await this.redisService.del(redisKey);
-        this.logger.warn(`Petición fallida para clave ${key}. Clave liberada para reintentos.`);
+        this.logger.warn(
+          `Petición fallida para clave ${key}. Clave liberada para reintentos.`,
+        );
         throw err;
       }
     } else {
@@ -72,7 +89,9 @@ export class IdempotencyInterceptor implements NestInterceptor {
 
       if (stored === 'IN_PROGRESS') {
         // Petición idéntica concurrente en curso
-        this.logger.warn(`Intento concurrente detectado para clave ${key}. Retornando HTTP 409.`);
+        this.logger.warn(
+          `Intento concurrente detectado para clave ${key}. Retornando HTTP 409.`,
+        );
         throw new HttpException(
           'Hay otra transacción idéntica en proceso. Por favor, espere.',
           HttpStatus.CONFLICT,
@@ -81,7 +100,9 @@ export class IdempotencyInterceptor implements NestInterceptor {
 
       if (stored) {
         // Petición resuelta anteriormente. Retornar el resultado en caché.
-        this.logger.log(`Clave de idempotencia resuelta anteriormente: ${key}. Retornando caché.`);
+        this.logger.log(
+          `Clave de idempotencia resuelta anteriormente: ${key}. Retornando caché.`,
+        );
         const cached = JSON.parse(stored);
         const res = context.switchToHttp().getResponse();
         res.status(cached.status);

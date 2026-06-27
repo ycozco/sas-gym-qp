@@ -99,10 +99,7 @@ export class AuthController {
   }
 
   @Patch('me/profile')
-  async updateProfile(
-    @Req() req: any,
-    @Body() profileDto: UpdateProfileDto,
-  ) {
+  async updateProfile(@Req() req: any, @Body() profileDto: UpdateProfileDto) {
     const userId = req.user.sub;
     return this.authService.updateProfile(userId, profileDto);
   }
