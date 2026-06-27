@@ -52,10 +52,7 @@ Future<void> _pumpDark(
       child: Scaffold(
         body: state == null
             ? child
-            : GymStateProvider(
-                notifier: state,
-                child: child,
-              ),
+            : GymStateProvider(notifier: state, child: child),
       ),
     ),
   );
@@ -72,7 +69,9 @@ void main() {
     state.addMember(_memberForState('20000003', 'Brisa En Gracia', 'grace'));
     state.addMember(_memberForState('20000004', 'Diego Vencido', 'expired'));
     state.addMember(_memberForState('20000001', 'Bruno Inactivo', 'inactive'));
-    state.addMember(_memberForState('20000002', 'Carla Suspendida', 'suspended'));
+    state.addMember(
+      _memberForState('20000002', 'Carla Suspendida', 'suspended'),
+    );
 
     final labels = state.scannerPresets.map((preset) => preset.label).toList();
 
@@ -84,14 +83,14 @@ void main() {
     expect(labels.last, 'DNI inválido');
   });
 
-  testWidgets('admin scanner renders dynamic presets with proper accents', (
-    tester,
-  ) async {
+  testWidgets('admin scanner renders real QR validation UI', (tester) async {
     final state = GymState(startBackground: false);
     addTearDown(state.dispose);
 
     state.addMember(_memberForState('20000001', 'Bruno Inactivo', 'inactive'));
-    state.addMember(_memberForState('20000002', 'Carla Suspendida', 'suspended'));
+    state.addMember(
+      _memberForState('20000002', 'Carla Suspendida', 'suspended'),
+    );
 
     await _pumpDark(
       tester,
@@ -105,10 +104,10 @@ void main() {
       ),
     );
 
-    expect(find.text('Simulación de accesos'), findsOneWidget);
-    expect(find.text('DNI inválido'), findsOneWidget);
-    expect(find.textContaining('(Inactivo)'), findsOneWidget);
-    expect(find.textContaining('(Suspendido)'), findsOneWidget);
+    expect(find.text('Lectura QR'), findsOneWidget);
+    expect(find.text('Validar QR'), findsOneWidget);
+    expect(find.text('Simulación de accesos'), findsNothing);
+    expect(find.text('DNI inválido'), findsNothing);
   });
 
   test('dark theme routes cards and inputs to themed surfaces', () {
@@ -131,10 +130,7 @@ void main() {
       state.setCurrentUserForTest(_userForRole(role));
 
       await tester.pumpWidget(
-        GymStateProvider(
-          notifier: state,
-          child: const SasGymApp(),
-        ),
+        GymStateProvider(notifier: state, child: const SasGymApp()),
       );
       await tester.pumpAndSettle();
 

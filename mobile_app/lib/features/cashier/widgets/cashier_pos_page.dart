@@ -646,7 +646,7 @@ class _CashierPOSPageState extends State<CashierPOSPage> {
                               style: roleFilledPillButtonStyle(
                                 backgroundColor: !isCombined
                                     ? widget.palette.accent
-                                    : const Color(0xFFF0EFEA),
+                                    : dialogColors.surfaceAlt,
                                 foregroundColor: !isCombined
                                     ? widget.palette.accentInk
                                     : dialogColors.textPrimary,
@@ -672,7 +672,7 @@ class _CashierPOSPageState extends State<CashierPOSPage> {
                               style: roleFilledPillButtonStyle(
                                 backgroundColor: isCombined
                                     ? widget.palette.accent
-                                    : const Color(0xFFF0EFEA),
+                                    : dialogColors.surfaceAlt,
                                 foregroundColor: isCombined
                                     ? widget.palette.accentInk
                                     : dialogColors.textPrimary,
@@ -729,8 +729,11 @@ class _CashierPOSPageState extends State<CashierPOSPage> {
                                     selected: sel,
                                     selectedColor: widget.palette.accent,
                                     backgroundColor: dialogColors.surfaceAlt,
+                                    disabledColor: dialogColors.surfaceAlt,
                                     side: BorderSide(
-                                      color: dialogColors.border,
+                                      color: sel
+                                          ? widget.palette.accent
+                                          : dialogColors.border,
                                     ),
                                     shape: const StadiumBorder(),
                                     onSelected: (val) {

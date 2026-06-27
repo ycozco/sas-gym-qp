@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:otp/otp.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 
-import '../../../../core/config/app_config.dart';
 import '../../../../data/gym_state.dart';
 import '../../../../models/gym_models.dart';
 import '../../../../theme/app_theme_tokens.dart';
 import '../../../../widgets/app_shell.dart';
-import 'admin_dashboard_page.dart';
 
-class AdminScannerPage extends StatelessWidget {
+class AdminScannerPage extends StatefulWidget {
   const AdminScannerPage({
     super.key,
     required this.palette,
@@ -27,37 +25,67 @@ class AdminScannerPage extends StatelessWidget {
   final Function(String, MemberRecord?, String) onTriggerVerdict;
 
   @override
+  State<AdminScannerPage> createState() => _AdminScannerPageState();
+}
+
+class _AdminScannerPageState extends State<AdminScannerPage> {
+  final MobileScannerController _scannerController = MobileScannerController(
+    detectionSpeed: DetectionSpeed.noDuplicates,
+    formats: const [BarcodeFormat.qrCode],
+  );
+  bool _processingScan = false;
+  String? _scanMessage;
+
+  @override
+  void dispose() {
+    _scannerController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final colors = context.sasColors;
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
       children: [
         RoleHeroHeader(
-          palette: palette,
+          palette: widget.palette,
           title: 'Escáner Admin',
           subtitle:
-              'Simula accesos y valida de forma reactiva el estatus del socio.',
+              'Escanea el QR real del socio y valida el acceso en la API.',
         ),
         const SizedBox(height: 18),
         Container(
-          height: 220,
+          height: 260,
           decoration: BoxDecoration(
-            color: const Color(0xFF16161A),
+            color: const Color(0xFF111111),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFF2E2E38), width: 1.5),
+            border: Border.all(color: const Color(0xFF2C2C2C), width: 2),
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(20),
             child: Stack(
               children: [
-                const AdminLaserSweepLine(),
+                MobileScanner(
+                  controller: _scannerController,
+                  onDetect: (capture) {
+                    final value = capture.barcodes
+                        .map((barcode) => barcode.rawValue)
+                        .whereType<String>()
+                        .firstOrNull;
+                    if (value != null) _triggerScan(value);
+                  },
+                ),
                 Center(
                   child: Container(
-                    width: 140,
-                    height: 140,
+                    width: 148,
+                    height: 148,
                     decoration: BoxDecoration(
-                      border: Border.all(color: palette.accent, width: 2),
-                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: widget.palette.accent,
+                        width: 2,
+                      ),
+                      borderRadius: BorderRadius.circular(18),
                     ),
                   ),
                 ),
@@ -68,27 +96,31 @@ class AdminScannerPage extends StatelessWidget {
                   child: Center(
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
+                        horizontal: 12,
+                        vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.black54,
+                        color: Colors.black.withValues(alpha: 0.66),
                         borderRadius: BorderRadius.circular(999),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            Icons.videocam_rounded,
-                            color: Colors.redAccent,
+                            _processingScan
+                                ? Icons.sync_rounded
+                                : Icons.qr_code_scanner_rounded,
+                            color: Colors.white,
                             size: 14,
                           ),
-                          SizedBox(width: 6),
+                          const SizedBox(width: 6),
                           Text(
-                            'CAM_SIM_ONLINE',
-                            style: TextStyle(
+                            _processingScan
+                                ? 'VALIDANDO ACCESO'
+                                : 'CAMARA ACTIVA',
+                            style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 10,
+                              fontSize: 9.5,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -104,53 +136,50 @@ class AdminScannerPage extends StatelessWidget {
         const SizedBox(height: 20),
         Container(
           padding: const EdgeInsets.all(20),
-          decoration: adminCardDecoration(context),
+          decoration: themedCardDecoration(context),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Simulación de accesos',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                'Lectura QR',
+                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
               ),
               const SizedBox(height: 8),
               Text(
-                'Selecciona un socio real según su estado actual para validar las reglas de admisión.',
-                style: TextStyle(
-                  color: colors.textSecondary,
-                  fontSize: 12.5,
-                  height: 1.4,
+                'Apunta la cámara al QR del socio. En contingencia, pega el contenido QR completo.',
+                style: TextStyle(color: colors.textSecondary, fontSize: 12.5),
+              ),
+              if (_scanMessage != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  _scanMessage!,
+                  style: const TextStyle(
+                    color: Colors.redAccent,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: state.scannerPresets
-                    .map((preset) => _scanSimButton(preset.label, preset.dni))
-                    .toList(),
-              ),
-              const SizedBox(height: 20),
-              Divider(height: 1, color: colors.border),
-              const SizedBox(height: 20),
+              ],
+              const SizedBox(height: 18),
               Row(
                 children: [
                   Expanded(
                     child: Container(
                       decoration: BoxDecoration(
                         color: colors.surfaceAlt,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(16),
                         border: Border.all(color: colors.border),
                       ),
                       padding: const EdgeInsets.symmetric(horizontal: 14),
                       child: TextField(
-                        keyboardType: TextInputType.number,
-                        onChanged: onScanInputChanged,
+                        keyboardType: TextInputType.text,
+                        onChanged: widget.onScanInputChanged,
                         style: TextStyle(
                           fontSize: 14,
                           color: colors.textPrimary,
                         ),
                         decoration: InputDecoration(
-                          hintText: 'Digitar DNI del socio...',
+                          hintText: 'Contenido QR: DNI|TOKEN',
                           hintStyle: TextStyle(color: colors.textMuted),
                           border: InputBorder.none,
                           isDense: true,
@@ -161,20 +190,20 @@ class AdminScannerPage extends StatelessWidget {
                   const SizedBox(width: 10),
                   ElevatedButton(
                     style: roleFilledPillButtonStyle(
-                      backgroundColor: palette.accent,
-                      foregroundColor: palette.accentInk,
+                      backgroundColor: widget.palette.accent,
+                      foregroundColor: widget.palette.accentInk,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 18,
                         vertical: 14,
                       ),
                     ),
                     onPressed: () {
-                      if (scanInput.isNotEmpty) {
-                        _triggerScan(scanInput);
+                      if (widget.scanInput.isNotEmpty) {
+                        _triggerScan(widget.scanInput);
                       }
                     },
                     child: const Text(
-                      'Escanear',
+                      'Validar QR',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ),
@@ -187,157 +216,52 @@ class AdminScannerPage extends StatelessWidget {
     );
   }
 
-  Widget _scanSimButton(String label, String dni) {
-    return ElevatedButton(
-      style: roleOutlinedPillButtonStyle(
-        foregroundColor: palette.accent,
-        backgroundColor: palette.accent.withValues(alpha: 0.08),
-        side: BorderSide(color: palette.accent.withValues(alpha: 0.18)),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      ),
-      onPressed: () => _triggerScan(dni),
-      child: Text(
-        label,
-        style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
-      ),
-    );
-  }
+  Future<void> _triggerScan(String input) async {
+    final rawInput = input.trim();
+    if (rawInput.isEmpty || _processingScan) return;
 
-  void _triggerScan(String input) async {
-    String rawInput = input.trim();
-    if (rawInput.isEmpty) return;
-
-    if (state.isBackendMode && !rawInput.contains('|')) {
-      final res = await state.simulateAttendanceAccessBackend(dni: rawInput);
-      final verdict = res['verdict'];
-      final member = res['member'] as MemberRecord?;
-
-      String resultStr = 'denied';
-      if (verdict == 'GREEN') resultStr = 'granted';
-      if (verdict == 'AMBER') resultStr = 'grace';
-      if (verdict == 'RED' && member == null) {
-        final reason = res['reason']?.toString() ?? '';
-        if (reason.contains('no registrado') ||
-            reason.contains('DNI inválido')) {
-          resultStr = 'not_found';
-        }
-      }
-
-      onTriggerVerdict(resultStr, member, rawInput);
+    final parts = rawInput.split('|');
+    final dni = parts.isNotEmpty ? parts.first.trim() : '';
+    final otpToken = parts.length > 1 ? parts[1].trim() : '';
+    if (dni.isEmpty || otpToken.isEmpty) {
+      setState(() {
+        _scanMessage = 'QR inválido. El formato esperado es DNI|TOKEN.';
+      });
       return;
     }
 
-    String dni = rawInput;
-    String otpToken = '';
-    final hasQrPayload = rawInput.contains('|');
+    setState(() {
+      _processingScan = true;
+      _scanMessage = null;
+    });
+    await _scannerController.stop();
 
-    if (hasQrPayload) {
-      final parts = rawInput.split('|');
-      dni = parts[0];
-      otpToken = parts[1];
-    } else if (state.isBackendMode) {
-      onTriggerVerdict('denied', null, dni);
-      return;
-    } else {
-      final secret = AppConfig.demoTotpSecretForDni(dni);
-      final time = DateTime.now().millisecondsSinceEpoch;
-      if (secret != null) {
-        try {
-          otpToken = OTP.generateTOTPCodeString(
-            secret,
-            time,
-            interval: 30,
-            length: 6,
-            algorithm: Algorithm.SHA1,
-          );
-        } catch (e) {
-          AppLogger.debug('Error generating simulator TOTP', e);
-        }
-      }
-    }
-
-    if (state.isBackendMode) {
-      final res = await state.verifyAttendanceBackend(
+    try {
+      final response = await widget.state.verifyAttendanceBackend(
         dni: dni,
         otpToken: otpToken,
       );
-      final verdict = res['verdict'];
-      final member = res['member'] as MemberRecord?;
+      final verdict = response['verdict'];
+      final member = response['member'] as MemberRecord?;
 
       String resultStr = 'denied';
       if (verdict == 'GREEN') resultStr = 'granted';
       if (verdict == 'AMBER') resultStr = 'grace';
       if (verdict == 'RED' && member == null) {
-        final reason = res['reason']?.toString() ?? '';
+        final reason = response['reason']?.toString() ?? '';
         if (reason.contains('no registrado') ||
             reason.contains('DNI inválido')) {
           resultStr = 'not_found';
         }
       }
 
-      onTriggerVerdict(resultStr, member, dni);
-    } else {
-      final result = state.recordAttendance(dni);
-      final memberIndex = state.allMembersIncludingSoftDeleted
-          .indexWhere((m) => m.dni == dni);
-      final MemberRecord? member = memberIndex != -1
-          ? state.allMembersIncludingSoftDeleted[memberIndex]
-          : null;
-      onTriggerVerdict(result, member, dni);
+      if (!mounted) return;
+      widget.onTriggerVerdict(resultStr, member, dni);
+    } finally {
+      if (mounted) {
+        setState(() => _processingScan = false);
+        await _scannerController.start();
+      }
     }
-  }
-}
-
-class AdminLaserSweepLine extends StatefulWidget {
-  const AdminLaserSweepLine({super.key});
-
-  @override
-  State<AdminLaserSweepLine> createState() => _AdminLaserSweepLineState();
-}
-
-class _AdminLaserSweepLineState extends State<AdminLaserSweepLine>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _animController;
-
-  @override
-  void initState() {
-    super.initState();
-    _animController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    )..repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _animController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _animController,
-      builder: (context, child) {
-        return Positioned(
-          top: _animController.value * 210 + 5,
-          left: 10,
-          right: 10,
-          child: Container(
-            height: 2.5,
-            decoration: BoxDecoration(
-              color: Colors.limeAccent,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.lime.withValues(alpha: 0.8),
-                  blurRadius: 8,
-                  spreadRadius: 1,
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
   }
 }

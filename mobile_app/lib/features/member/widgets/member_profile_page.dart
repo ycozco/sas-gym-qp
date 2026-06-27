@@ -70,7 +70,7 @@ class _MemberProfilePageState extends State<MemberProfilePage>
             children: [
               _buildPrivateTab(state, mateo),
               _buildSocialTab(state),
-              _buildPhysicalTab(mateo),
+              _buildPhysicalTab(state, mateo),
               _buildPointsTab(state),
             ],
           ),
@@ -592,6 +592,7 @@ class _MemberProfilePageState extends State<MemberProfilePage>
     GymState state,
     MemberRecord member,
   ) async {
+    final rootContext = context;
     final profile = state.currentUser?.memberProfile;
     final medidasJson = profile?['medidas_json'] as Map<String, dynamic>?;
     final nameCtrl = TextEditingController(
@@ -662,7 +663,7 @@ class _MemberProfilePageState extends State<MemberProfilePage>
               );
               if (!mounted || !sheetContext.mounted) return;
               Navigator.of(sheetContext).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
+              ScaffoldMessenger.of(rootContext).showSnackBar(
                 SnackBar(
                   content: Text(
                     success
@@ -1164,7 +1165,7 @@ class _MemberProfilePageState extends State<MemberProfilePage>
     );
   }
 
-  Widget _buildPhysicalTab(MemberRecord member) {
+  Widget _buildPhysicalTab(GymState state, MemberRecord member) {
     final accent = widget.palette.accent;
 
     final double weight = member.physicalMeasurements['peso'] ?? 0;
@@ -1207,6 +1208,25 @@ class _MemberProfilePageState extends State<MemberProfilePage>
             fontWeight: FontWeight.w900,
             fontSize: 12,
             letterSpacing: 0.5,
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(
+              foregroundColor: accent,
+              side: BorderSide(color: accent.withOpacity(0.45)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            onPressed: () => _showEditProfileSheet(state, member),
+            icon: const Icon(Icons.straighten_rounded, size: 18),
+            label: const Text(
+              'Modificar medidas corporales',
+              style: TextStyle(fontWeight: FontWeight.w800),
+            ),
           ),
         ),
         const SizedBox(height: 12),
