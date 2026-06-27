@@ -212,29 +212,67 @@ export class AuthService {
     userId: string,
     preferencesDto: UpdatePreferencesDto,
   ) {
-    const updated = await this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        theme_preference: this.themePreferenceFromWire(
-          preferencesDto.themeMode,
-        ),
+    const userData: any = {};
+    if (preferencesDto.themeMode !== undefined) {
+      userData.theme_preference = this.themePreferenceFromWire(
+        preferencesDto.themeMode,
+      );
+    }
+
+    if (
+      preferencesDto.themeMode === undefined &&
+      preferencesDto.trainingVisible === undefined
+    ) {
+      throw new BadRequestException(
+        'No se enviaron preferencias para actualizar.',
+      );
+    }
+
+    const select = {
+      id: true,
+      theme_preference: true,
+      member_profile: {
+        select: {
+          modo_activo: true,
+        },
       },
-      select: {
-        id: true,
-        theme_preference: true,
-      },
-    });
+    };
+
+    const updated =
+      Object.keys(userData).length > 0
+        ? await this.prisma.user.update({
+            where: { id: userId },
+            data: userData,
+            select,
+          })
+        : await this.prisma.user.findUniqueOrThrow({
+            where: { id: userId },
+            select,
+          });
+
+    if (preferencesDto.trainingVisible !== undefined) {
+      await this.prisma.memberProfile.updateMany({
+        where: { user_id: userId },
+        data: { modo_activo: preferencesDto.trainingVisible },
+      });
+      if (updated.member_profile) {
+        updated.member_profile.modo_activo = preferencesDto.trainingVisible;
+      }
+    }
 
     return {
       id: updated.id,
       themePreference: this.themePreferenceToWire(updated.theme_preference),
       theme_preference: this.themePreferenceToWire(updated.theme_preference),
+      trainingVisible:
+        preferencesDto.trainingVisible ?? updated.member_profile?.modo_activo,
     };
   }
 
   async updateProfile(userId: string, dto: UpdateProfileDto) {
     const userUpdates: any = {};
-    if (dto.nombreCompleto !== undefined) userUpdates.nombre_completo = dto.nombreCompleto.trim();
+    if (dto.nombreCompleto !== undefined)
+      userUpdates.nombre_completo = dto.nombreCompleto.trim();
     if (dto.celular !== undefined) userUpdates.celular = dto.celular.trim();
 
     const user = await this.prisma.user.update({
@@ -250,7 +288,8 @@ export class AuthService {
       if (dto.alturaCm !== undefined) profileUpdates.altura_cm = dto.alturaCm;
       if (dto.objetivo !== undefined) profileUpdates.objetivo = dto.objetivo;
       if (dto.lesiones !== undefined) profileUpdates.lesiones = dto.lesiones;
-      if (dto.medidasJson !== undefined) profileUpdates.medidas_json = dto.medidasJson;
+      if (dto.medidasJson !== undefined)
+        profileUpdates.medidas_json = dto.medidasJson;
 
       if (Object.keys(profileUpdates).length > 0) {
         await this.prisma.memberProfile.update({

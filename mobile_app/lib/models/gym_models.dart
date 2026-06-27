@@ -589,6 +589,36 @@ class LoggedInUser {
               .toLowerCase(),
     );
   }
+
+  LoggedInUser copyWith({
+    String? id,
+    String? email,
+    GymRole? rol,
+    String? nombreCompleto,
+    String? dni,
+    String? celular,
+    String? fotoUrl,
+    String? estado,
+    Map<String, dynamic>? trainerProfile,
+    Map<String, dynamic>? memberProfile,
+    List<dynamic>? memberships,
+    String? themePreference,
+  }) {
+    return LoggedInUser(
+      id: id ?? this.id,
+      email: email ?? this.email,
+      rol: rol ?? this.rol,
+      nombreCompleto: nombreCompleto ?? this.nombreCompleto,
+      dni: dni ?? this.dni,
+      celular: celular ?? this.celular,
+      fotoUrl: fotoUrl ?? this.fotoUrl,
+      estado: estado ?? this.estado,
+      trainerProfile: trainerProfile ?? this.trainerProfile,
+      memberProfile: memberProfile ?? this.memberProfile,
+      memberships: memberships ?? this.memberships,
+      themePreference: themePreference ?? this.themePreference,
+    );
+  }
 }
 
 GymRole parseRole(String roleStr) {

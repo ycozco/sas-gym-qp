@@ -67,6 +67,70 @@ class GymState extends ChangeNotifier {
     }
   }
 
+  bool get memberTrainingVisible {
+    final profile = _currentUser?.memberProfile;
+    final raw = profile?['modo_activo'] ?? profile?['modoActivo'];
+    return raw == true;
+  }
+
+  Future<bool> updateMemberTrainingVisibility(bool visible) async {
+    if (_currentUser == null) return false;
+
+    final previousProfile = Map<String, dynamic>.from(
+      _currentUser!.memberProfile ?? const <String, dynamic>{},
+    );
+    final nextProfile = Map<String, dynamic>.from(previousProfile)
+      ..['modo_activo'] = visible;
+
+    _currentUser = _currentUser!.copyWith(memberProfile: nextProfile);
+    _setLocalMemberTrainingVisibility(visible);
+    notifyListeners();
+
+    if (!isBackendMode) return true;
+
+    try {
+      await ApiClient().dio.patch(
+        '/auth/me/preferences',
+        data: {'trainingVisible': visible},
+      );
+      final profileResponse = await ApiClient().dio.get('/auth/me');
+      _currentUser = LoggedInUser.fromJson(
+        profileResponse.data as Map<String, dynamic>,
+      );
+      _setLocalMemberTrainingVisibility(visible);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _currentUser = _currentUser!.copyWith(memberProfile: previousProfile);
+      _setLocalMemberTrainingVisibility(previousProfile['modo_activo'] == true);
+      notifyListeners();
+      AppLogger.debug('Error updating training visibility', e);
+      return false;
+    }
+  }
+
+  void _setLocalMemberTrainingVisibility(bool visible) {
+    final dni = _currentUser?.dni;
+    if (dni == null || dni.isEmpty) return;
+    final index = _members.indexWhere((m) => m.dni == dni);
+    if (index != -1) {
+      _members[index] = _members[index].copyWith(
+        isActiveInGym: visible,
+        todayCheckIn: visible,
+      );
+    }
+    final assignedIndex = _assignedTrainerMembers.indexWhere(
+      (m) => m.dni == dni,
+    );
+    if (assignedIndex != -1) {
+      _assignedTrainerMembers[assignedIndex] =
+          _assignedTrainerMembers[assignedIndex].copyWith(
+            isActiveInGym: visible,
+            todayCheckIn: visible,
+          );
+    }
+  }
+
   @visibleForTesting
   void setCurrentUserForTest(LoggedInUser? user) {
     _currentUser = user;
@@ -1563,6 +1627,8 @@ class GymState extends ChangeNotifier {
           'altura': (memberProfile['altura_cm'] as num).toDouble(),
       },
       progressImages: const [],
+      todayCheckIn: memberProfile['modo_activo'] == true,
+      isActiveInGym: memberProfile['modo_activo'] == true,
       daysLeft: (latestMembership['dias_restantes'] as num?)?.toInt(),
     );
   }

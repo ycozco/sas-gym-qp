@@ -80,13 +80,18 @@ class _MemberProfilePageState extends State<MemberProfilePage>
   }
 
   Widget _buildPointsTab(GymState state) {
-    final balance = state.memberPointsSummary?['balance'] as Map<String, dynamic>?;
+    final balance =
+        state.memberPointsSummary?['balance'] as Map<String, dynamic>?;
     final points = (balance?['puntos_disponibles'] as num?)?.toInt() ?? 0;
-    final earnedPoints = (balance?['puntos_totales_ganados'] as num?)?.toInt() ?? 0;
-    final redeemedPoints = (balance?['puntos_totales_canjeados'] as num?)?.toInt() ?? 0;
+    final earnedPoints =
+        (balance?['puntos_totales_ganados'] as num?)?.toInt() ?? 0;
+    final redeemedPoints =
+        (balance?['puntos_totales_canjeados'] as num?)?.toInt() ?? 0;
 
-    final List<dynamic> exchanges = (state.memberPointsSummary?['exchanges'] as List<dynamic>?) ?? [];
-    final List<dynamic> movements = (state.memberPointsSummary?['movements'] as List<dynamic>?) ?? [];
+    final List<dynamic> exchanges =
+        (state.memberPointsSummary?['exchanges'] as List<dynamic>?) ?? [];
+    final List<dynamic> movements =
+        (state.memberPointsSummary?['movements'] as List<dynamic>?) ?? [];
 
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -97,16 +102,28 @@ class _MemberProfilePageState extends State<MemberProfilePage>
           decoration: _cardDecoration(context),
           child: Column(
             children: [
-              const Icon(Icons.stars_rounded, color: Color(0xFFD2FF3A), size: 48),
+              const Icon(
+                Icons.stars_rounded,
+                color: Color(0xFFD2FF3A),
+                size: 48,
+              ),
               const SizedBox(height: 12),
               const Text(
                 'Tus Puntos SAS',
-                style: TextStyle(fontSize: 14, color: Color(0xFF757575), fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF757575),
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 6),
               Text(
                 '$points',
-                style: const TextStyle(fontSize: 42, fontWeight: FontWeight.w900, letterSpacing: -1),
+                style: const TextStyle(
+                  fontSize: 42,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -1,
+                ),
               ),
               const SizedBox(height: 16),
               Row(
@@ -114,17 +131,45 @@ class _MemberProfilePageState extends State<MemberProfilePage>
                 children: [
                   Column(
                     children: [
-                      const Text('Ganados', style: TextStyle(fontSize: 11, color: Color(0xFF757575))),
+                      const Text(
+                        'Ganados',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF757575),
+                        ),
+                      ),
                       const SizedBox(height: 4),
-                      Text('$earnedPoints', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      Text(
+                        '$earnedPoints',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ],
                   ),
-                  Container(width: 1, height: 24, color: const Color(0xFFECEAE4)),
+                  Container(
+                    width: 1,
+                    height: 24,
+                    color: const Color(0xFFECEAE4),
+                  ),
                   Column(
                     children: [
-                      const Text('Canjeados', style: TextStyle(fontSize: 11, color: Color(0xFF757575))),
+                      const Text(
+                        'Canjeados',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF757575),
+                        ),
+                      ),
                       const SizedBox(height: 4),
-                      Text('$redeemedPoints', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      Text(
+                        '$redeemedPoints',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -137,7 +182,11 @@ class _MemberProfilePageState extends State<MemberProfilePage>
         // Historial de Canjes (Exchanges)
         const Text(
           'HISTORIAL DE CANJES',
-          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12, letterSpacing: 0.5),
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            fontSize: 12,
+            letterSpacing: 0.5,
+          ),
         ),
         const SizedBox(height: 10),
         if (exchanges.isEmpty)
@@ -160,11 +209,11 @@ class _MemberProfilePageState extends State<MemberProfilePage>
             final cost = (exc['costo_puntos'] as num?)?.toInt() ?? 0;
             final product = exc['producto'] as Map<String, dynamic>?;
             final membership = exc['membresia_puntos'] as Map<String, dynamic>?;
-            final name = product != null 
-                ? (product['nombre']?.toString() ?? 'Producto') 
-                : (membership != null 
-                    ? (membership['nombre']?.toString() ?? 'Membresía') 
-                    : 'Canje');
+            final name = product != null
+                ? (product['nombre']?.toString() ?? 'Producto')
+                : (membership != null
+                      ? (membership['nombre']?.toString() ?? 'Membresía')
+                      : 'Canje');
             final estado = exc['estado']?.toString() ?? 'COMPLETED';
 
             Color statusColor = const Color(0xFF00B85C);
@@ -192,7 +241,9 @@ class _MemberProfilePageState extends State<MemberProfilePage>
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
-                        product != null ? Icons.shopping_bag_rounded : Icons.card_membership_rounded,
+                        product != null
+                            ? Icons.shopping_bag_rounded
+                            : Icons.card_membership_rounded,
                         color: statusColor,
                         size: 20,
                       ),
@@ -204,19 +255,29 @@ class _MemberProfilePageState extends State<MemberProfilePage>
                         children: [
                           Text(
                             name,
-                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 13.5,
+                            ),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             '$date · $statusText',
-                            style: const TextStyle(fontSize: 11, color: Colors.grey),
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey,
+                            ),
                           ),
                         ],
                       ),
                     ),
                     Text(
                       '-$cost pts',
-                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: Colors.redAccent),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 14,
+                        color: Colors.redAccent,
+                      ),
                     ),
                   ],
                 ),
@@ -229,7 +290,11 @@ class _MemberProfilePageState extends State<MemberProfilePage>
         // Historial de Movimientos (Movements)
         const Text(
           'MOVIMIENTOS DE PUNTOS',
-          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12, letterSpacing: 0.5),
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            fontSize: 12,
+            letterSpacing: 0.5,
+          ),
         ),
         const SizedBox(height: 10),
         if (movements.isEmpty)
@@ -265,12 +330,20 @@ class _MemberProfilePageState extends State<MemberProfilePage>
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: (isEarn ? const Color(0xFF00B85C) : Colors.redAccent).withOpacity(0.12),
+                        color:
+                            (isEarn
+                                    ? const Color(0xFF00B85C)
+                                    : Colors.redAccent)
+                                .withOpacity(0.12),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
-                        isEarn ? Icons.add_circle_outline_rounded : Icons.remove_circle_outline_rounded,
-                        color: isEarn ? const Color(0xFF00B85C) : Colors.redAccent,
+                        isEarn
+                            ? Icons.add_circle_outline_rounded
+                            : Icons.remove_circle_outline_rounded,
+                        color: isEarn
+                            ? const Color(0xFF00B85C)
+                            : Colors.redAccent,
                         size: 20,
                       ),
                     ),
@@ -281,12 +354,18 @@ class _MemberProfilePageState extends State<MemberProfilePage>
                         children: [
                           Text(
                             concept,
-                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 13.5,
+                            ),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             date,
-                            style: const TextStyle(fontSize: 11, color: Colors.grey),
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey,
+                            ),
                           ),
                         ],
                       ),
@@ -296,7 +375,9 @@ class _MemberProfilePageState extends State<MemberProfilePage>
                       style: TextStyle(
                         fontWeight: FontWeight.w900,
                         fontSize: 14,
-                        color: isEarn ? const Color(0xFF00B85C) : Colors.redAccent,
+                        color: isEarn
+                            ? const Color(0xFF00B85C)
+                            : Colors.redAccent,
                       ),
                     ),
                   ],
@@ -315,7 +396,11 @@ class _MemberProfilePageState extends State<MemberProfilePage>
       children: [
         const Text(
           'DATOS DE IDENTIDAD',
-          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12, letterSpacing: 0.5),
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            fontSize: 12,
+            letterSpacing: 0.5,
+          ),
         ),
         const SizedBox(height: 10),
         Container(
@@ -323,19 +408,38 @@ class _MemberProfilePageState extends State<MemberProfilePage>
           decoration: _cardDecoration(context),
           child: Column(
             children: [
-              _profileCardRow(Icons.badge_rounded, 'DNI / Identificación', member.dni, accent),
+              _profileCardRow(
+                Icons.badge_rounded,
+                'DNI / Identificación',
+                member.dni,
+                accent,
+              ),
               const Divider(color: Color(0xFF2C2C2C), height: 24),
-              _profileCardRow(Icons.phone_iphone_rounded, 'Celular', member.phone, accent),
+              _profileCardRow(
+                Icons.phone_iphone_rounded,
+                'Celular',
+                member.phone,
+                accent,
+              ),
               const Divider(color: Color(0xFF2C2C2C), height: 24),
-              _profileCardRow(Icons.alternate_email_rounded, 'Correo electrónico', member.email, accent),
+              _profileCardRow(
+                Icons.alternate_email_rounded,
+                'Correo electrónico',
+                member.email,
+                accent,
+              ),
             ],
           ),
         ),
         const SizedBox(height: 22),
-        
+
         const Text(
           'AFILIACIÓN Y ENTRENAMIENTO',
-          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12, letterSpacing: 0.5),
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            fontSize: 12,
+            letterSpacing: 0.5,
+          ),
         ),
         const SizedBox(height: 10),
         Container(
@@ -343,9 +447,14 @@ class _MemberProfilePageState extends State<MemberProfilePage>
           decoration: _cardDecoration(context),
           child: Column(
             children: [
-              _profileCardRow(Icons.calendar_month_rounded, 'Miembro desde', member.startDate, accent),
+              _profileCardRow(
+                Icons.calendar_month_rounded,
+                'Miembro desde',
+                member.startDate,
+                accent,
+              ),
               const Divider(color: Color(0xFF2C2C2C), height: 24),
-              
+
               // Custom Coach layout
               Row(
                 children: [
@@ -356,7 +465,11 @@ class _MemberProfilePageState extends State<MemberProfilePage>
                       color: accent.withOpacity(0.12),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(Icons.fitness_center_rounded, color: accent, size: 18),
+                    child: Icon(
+                      Icons.fitness_center_rounded,
+                      color: accent,
+                      size: 18,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -365,18 +478,29 @@ class _MemberProfilePageState extends State<MemberProfilePage>
                       children: [
                         const Text(
                           'Entrenador Asignado',
-                          style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.w500),
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           member.assignedTrainer,
-                          style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800, color: Colors.white),
+                          style: const TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                          ),
                         ),
                       ],
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.black45,
                       borderRadius: BorderRadius.circular(8),
@@ -384,7 +508,11 @@ class _MemberProfilePageState extends State<MemberProfilePage>
                     ),
                     child: const Text(
                       'Ver Perfil',
-                      style: TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],
@@ -396,7 +524,11 @@ class _MemberProfilePageState extends State<MemberProfilePage>
 
         const Text(
           'TEMA Y PERSONALIZACIÓN',
-          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12, letterSpacing: 0.5),
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            fontSize: 12,
+            letterSpacing: 0.5,
+          ),
         ),
         const SizedBox(height: 10),
         Container(
@@ -433,7 +565,12 @@ class _MemberProfilePageState extends State<MemberProfilePage>
     );
   }
 
-  Widget _profileCardRow(IconData icon, String label, String value, Color accent) {
+  Widget _profileCardRow(
+    IconData icon,
+    String label,
+    String value,
+    Color accent,
+  ) {
     return Row(
       children: [
         Container(
@@ -452,12 +589,20 @@ class _MemberProfilePageState extends State<MemberProfilePage>
             children: [
               Text(
                 label,
-                style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.w500),
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: Colors.grey,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
               const SizedBox(height: 2),
               Text(
                 value,
-                style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800, color: Colors.white),
+                style: const TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                ),
               ),
             ],
           ),
@@ -502,9 +647,14 @@ class _MemberProfilePageState extends State<MemberProfilePage>
   }
 
   Widget _buildSocialTab(GymState state) {
+    final member = getLoggedMember(state);
+    final visible = state.memberTrainingVisible || member.isActiveInGym;
     final activeInGym = state.allMembersIncludingSoftDeleted
         .where((m) => m.isActiveInGym)
         .toList();
+    if (visible && !activeInGym.any((item) => item.dni == member.dni)) {
+      activeInGym.insert(0, member.copyWith(isActiveInGym: true));
+    }
     final accent = widget.palette.accent;
 
     return ListView(
@@ -549,9 +699,29 @@ class _MemberProfilePageState extends State<MemberProfilePage>
                   ],
                 ),
               ),
+              const SizedBox(width: 8),
               Switch(
-                value: true,
-                onChanged: (val) {},
+                value: visible,
+                onChanged: (val) async {
+                  final success = await state.updateMemberTrainingVisibility(
+                    val,
+                  );
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        success
+                            ? (val
+                                  ? 'Estado social activo.'
+                                  : 'Estado social inactivo.')
+                            : 'No se pudo actualizar el estado social.',
+                      ),
+                      backgroundColor: success
+                          ? const Color(0xFF00B85C)
+                          : Colors.red,
+                    ),
+                  );
+                },
                 activeColor: accent,
               ),
             ],
@@ -561,7 +731,11 @@ class _MemberProfilePageState extends State<MemberProfilePage>
 
         const Text(
           'MIEMBROS ENTRENANDO AHORA',
-          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12, letterSpacing: 0.5),
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            fontSize: 12,
+            letterSpacing: 0.5,
+          ),
         ),
         const SizedBox(height: 12),
         if (activeInGym.isEmpty)
@@ -570,7 +744,11 @@ class _MemberProfilePageState extends State<MemberProfilePage>
             decoration: _cardDecoration(context),
             child: const Column(
               children: [
-                Icon(Icons.people_outline_rounded, color: Colors.white30, size: 36),
+                Icon(
+                  Icons.people_outline_rounded,
+                  color: Colors.white30,
+                  size: 36,
+                ),
                 SizedBox(height: 12),
                 Text(
                   'Nadie entrenando en este momento.',
@@ -593,7 +771,10 @@ class _MemberProfilePageState extends State<MemberProfilePage>
             itemBuilder: (context, index) {
               final user = activeInGym[index];
               return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF1E1E1E),
                   borderRadius: BorderRadius.circular(14),
@@ -605,7 +786,7 @@ class _MemberProfilePageState extends State<MemberProfilePage>
                       radius: 20,
                       backgroundColor: accent.withOpacity(0.15),
                       child: Text(
-                        user.name.substring(0, 2).toUpperCase(),
+                        _initials(user.name),
                         style: TextStyle(
                           fontWeight: FontWeight.w900,
                           fontSize: 12,
@@ -643,7 +824,12 @@ class _MemberProfilePageState extends State<MemberProfilePage>
                               const SizedBox(width: 4),
                               const Text(
                                 'Entrenando',
-                                style: TextStyle(fontSize: 9, color: Colors.grey),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  color: Colors.grey,
+                                ),
                               ),
                             ],
                           ),
@@ -661,15 +847,19 @@ class _MemberProfilePageState extends State<MemberProfilePage>
 
   Widget _buildPhysicalTab(MemberRecord member) {
     final accent = widget.palette.accent;
-    
-    final double weight = member.physicalMeasurements['peso'] ?? 70.0;
-    final double height = member.physicalMeasurements['altura'] ?? 170.0;
+
+    final double weight = member.physicalMeasurements['peso'] ?? 0;
+    final double height = member.physicalMeasurements['altura'] ?? 0;
     final double heightCm = height < 3 ? height * 100 : height;
-    final String hText = height > 3 ? '${(height / 100).toStringAsFixed(2)} m' : '$height m';
+    final String hText = height <= 0
+        ? 'Sin registro'
+        : (height > 3 ? '${(height / 100).toStringAsFixed(2)} m' : '$height m');
 
     // Mifflin-St Jeor BMR estimation (assuming 25yo male standard as baseline)
-    final double bmr = (10 * weight) + (6.25 * heightCm) - (5 * 25) + 5;
-    
+    final double bmr = weight > 0 && heightCm > 0
+        ? (10 * weight) + (6.25 * heightCm) - (5 * 25) + 5
+        : 0;
+
     double multiplier = 1.55;
     if (_selectedActivity == 'Sedentario') multiplier = 1.2;
     if (_selectedActivity == 'Ligero') multiplier = 1.375;
@@ -677,7 +867,7 @@ class _MemberProfilePageState extends State<MemberProfilePage>
     if (_selectedActivity == 'Activo') multiplier = 1.725;
 
     final double tdee = bmr * multiplier;
-    
+
     double goalModifier = 0;
     if (_selectedGoal == 'Definición') goalModifier = -500;
     if (_selectedGoal == 'Volumen') goalModifier = 500;
@@ -694,7 +884,11 @@ class _MemberProfilePageState extends State<MemberProfilePage>
       children: [
         const Text(
           'MEDIDAS CORPORALES',
-          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12, letterSpacing: 0.5),
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            fontSize: 12,
+            letterSpacing: 0.5,
+          ),
         ),
         const SizedBox(height: 12),
         GridView.count(
@@ -705,17 +899,51 @@ class _MemberProfilePageState extends State<MemberProfilePage>
           crossAxisSpacing: 12,
           childAspectRatio: 1.35,
           children: [
-            _buildMetricCard('Peso Corporal', '$weight kg', Icons.scale_rounded, accent, 'Objetivo: 72 kg'),
-            _buildMetricCard('Altura', hText, Icons.height_rounded, const Color(0xFF00E5FF), 'Fijo'),
-            _buildMetricCard('Cintura', '${member.physicalMeasurements['cintura'] ?? 0} cm', Icons.line_weight_rounded, const Color(0xFF8E59FF), 'Estable'),
-            _buildMetricCard('Pecho', '${member.physicalMeasurements['pecho'] ?? 0} cm', Icons.accessibility_new_rounded, const Color(0xFFFF5722), 'Estable'),
-            _buildMetricCard('Cadera', '${member.physicalMeasurements['cadera'] ?? 0} cm', Icons.wc_rounded, const Color(0xFFFF2D55), 'En progreso'),
+            _buildMetricCard(
+              'Peso Corporal',
+              weight > 0 ? '$weight kg' : 'Sin registro',
+              Icons.scale_rounded,
+              accent,
+              'Actualiza tu perfil',
+            ),
+            _buildMetricCard(
+              'Altura',
+              hText,
+              Icons.height_rounded,
+              const Color(0xFF00E5FF),
+              'Fijo',
+            ),
+            _buildMetricCard(
+              'Cintura',
+              _measurementText(member, 'cintura'),
+              Icons.line_weight_rounded,
+              const Color(0xFF8E59FF),
+              'Sin registro',
+            ),
+            _buildMetricCard(
+              'Pecho',
+              _measurementText(member, 'pecho'),
+              Icons.accessibility_new_rounded,
+              const Color(0xFFFF5722),
+              'Sin registro',
+            ),
+            _buildMetricCard(
+              'Cadera',
+              _measurementText(member, 'cadera'),
+              Icons.wc_rounded,
+              const Color(0xFFFF2D55),
+              'Sin registro',
+            ),
           ],
         ),
         const SizedBox(height: 24),
         const Text(
           'ESTIMACIÓN DE REQUERIMIENTO DIARIO',
-          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12, letterSpacing: 0.5),
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            fontSize: 12,
+            letterSpacing: 0.5,
+          ),
         ),
         const SizedBox(height: 12),
         Container(
@@ -726,11 +954,19 @@ class _MemberProfilePageState extends State<MemberProfilePage>
             children: [
               Row(
                 children: [
-                  const Icon(Icons.calculate_rounded, color: Colors.white70, size: 20),
+                  const Icon(
+                    Icons.calculate_rounded,
+                    color: Colors.white70,
+                    size: 20,
+                  ),
                   const SizedBox(width: 8),
                   const Text(
                     'Macros y TDEE Sugerido',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: Colors.white,
+                    ),
                   ),
                 ],
               ),
@@ -746,7 +982,14 @@ class _MemberProfilePageState extends State<MemberProfilePage>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('ACTIVIDAD', style: TextStyle(fontSize: 9, color: Colors.grey, fontWeight: FontWeight.bold)),
+                        const Text(
+                          'ACTIVIDAD',
+                          style: TextStyle(
+                            fontSize: 9,
+                            color: Colors.grey,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                         const SizedBox(height: 6),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -760,12 +1003,29 @@ class _MemberProfilePageState extends State<MemberProfilePage>
                               value: _selectedActivity,
                               dropdownColor: const Color(0xFF1E1E1E),
                               isExpanded: true,
-                              style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-                              items: ['Sedentario', 'Ligero', 'Moderado', 'Activo'].map((val) {
-                                return DropdownMenuItem<String>(value: val, child: Text(val));
-                              }).toList(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              items:
+                                  [
+                                    'Sedentario',
+                                    'Ligero',
+                                    'Moderado',
+                                    'Activo',
+                                  ].map((val) {
+                                    return DropdownMenuItem<String>(
+                                      value: val,
+                                      child: Text(val),
+                                    );
+                                  }).toList(),
                               onChanged: (val) {
-                                if (val != null) setState(() { _selectedActivity = val; });
+                                if (val != null) {
+                                  setState(() {
+                                    _selectedActivity = val;
+                                  });
+                                }
                               },
                             ),
                           ),
@@ -778,7 +1038,14 @@ class _MemberProfilePageState extends State<MemberProfilePage>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('OBJETIVO DEPORTIVO', style: TextStyle(fontSize: 9, color: Colors.grey, fontWeight: FontWeight.bold)),
+                        const Text(
+                          'OBJETIVO DEPORTIVO',
+                          style: TextStyle(
+                            fontSize: 9,
+                            color: Colors.grey,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                         const SizedBox(height: 6),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -792,12 +1059,25 @@ class _MemberProfilePageState extends State<MemberProfilePage>
                               value: _selectedGoal,
                               dropdownColor: const Color(0xFF1E1E1E),
                               isExpanded: true,
-                              style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-                              items: ['Definición', 'Mantenimiento', 'Volumen'].map((val) {
-                                return DropdownMenuItem<String>(value: val, child: Text(val));
-                              }).toList(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              items: ['Definición', 'Mantenimiento', 'Volumen']
+                                  .map((val) {
+                                    return DropdownMenuItem<String>(
+                                      value: val,
+                                      child: Text(val),
+                                    );
+                                  })
+                                  .toList(),
                               onChanged: (val) {
-                                if (val != null) setState(() { _selectedGoal = val; });
+                                if (val != null) {
+                                  setState(() {
+                                    _selectedGoal = val;
+                                  });
+                                }
                               },
                             ),
                           ),
@@ -811,11 +1091,23 @@ class _MemberProfilePageState extends State<MemberProfilePage>
               Center(
                 child: Column(
                   children: [
-                    const Text('Energía Diaria Requerida', style: TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.w600)),
+                    const Text(
+                      'Energía Diaria Requerida',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Colors.grey,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                     const SizedBox(height: 4),
                     Text(
                       '${targetCalories.round()} kcal',
-                      style: TextStyle(fontSize: 32, fontWeight: FontWeight.w900, color: accent, letterSpacing: -0.5),
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w900,
+                        color: accent,
+                        letterSpacing: -0.5,
+                      ),
                     ),
                   ],
                 ),
@@ -824,8 +1116,16 @@ class _MemberProfilePageState extends State<MemberProfilePage>
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _macroDetail('Proteína', '${protein.round()}g', Colors.redAccent),
-                  _macroDetail('Carbohidratos', '${carbs.round()}g', const Color(0xFFD2FF3A)),
+                  _macroDetail(
+                    'Proteína',
+                    '${protein.round()}g',
+                    Colors.redAccent,
+                  ),
+                  _macroDetail(
+                    'Carbohidratos',
+                    '${carbs.round()}g',
+                    const Color(0xFFD2FF3A),
+                  ),
                   _macroDetail('Grasas', '${fat.round()}g', Colors.blueAccent),
                 ],
               ),
@@ -834,21 +1134,45 @@ class _MemberProfilePageState extends State<MemberProfilePage>
         ),
         const SizedBox(height: 24),
         const Text(
-          'EVOLUCIÓN VISUAL (ANTES / DESPUÉS)',
-          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12, letterSpacing: 0.5),
+          'EVOLUCIÓN VISUAL',
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            fontSize: 12,
+            letterSpacing: 0.5,
+          ),
         ),
         const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _buildProgressPhotoCard('ENERO', '78 kg', 'Antes', Colors.grey[850]!),
+        if (member.progressImages.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: _cardDecoration(context),
+            child: const Row(
+              children: [
+                Icon(Icons.photo_library_outlined, color: Colors.white38),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Aún no hay fotos de progreso registradas.',
+                    style: TextStyle(color: Colors.grey, fontSize: 12.5),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: _buildProgressPhotoCard('MAYO', '74 kg', 'Después', accent.withOpacity(0.2)),
-            ),
-          ],
-        ),
+          )
+        else
+          Row(
+            children: member.progressImages.take(2).map((image) {
+              return Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: _buildProgressPhotoCard(
+                    image,
+                    accent.withOpacity(0.2),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
       ],
     );
   }
@@ -856,14 +1180,34 @@ class _MemberProfilePageState extends State<MemberProfilePage>
   Widget _macroDetail(String label, String value, Color color) {
     return Column(
       children: [
-        Text(label, style: const TextStyle(fontSize: 10, color: Colors.white60, fontWeight: FontWeight.w500)),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 10,
+            color: Colors.white60,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
         const SizedBox(height: 4),
-        Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: color)),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w900,
+            color: color,
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildMetricCard(String label, String value, IconData icon, Color color, String trend) {
+  Widget _buildMetricCard(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+    String trend,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -878,10 +1222,19 @@ class _MemberProfilePageState extends State<MemberProfilePage>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                label,
-                style: const TextStyle(color: Colors.white54, fontSize: 11, fontWeight: FontWeight.bold),
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white54,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
+              const SizedBox(width: 6),
               Icon(icon, color: color, size: 18),
             ],
           ),
@@ -890,12 +1243,24 @@ class _MemberProfilePageState extends State<MemberProfilePage>
             children: [
               Text(
                 value,
-                style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                ),
               ),
               const SizedBox(height: 4),
               Text(
                 trend,
-                style: TextStyle(color: color, fontSize: 9.5, fontWeight: FontWeight.w700),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 9.5,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ],
           ),
@@ -904,7 +1269,7 @@ class _MemberProfilePageState extends State<MemberProfilePage>
     );
   }
 
-  Widget _buildProgressPhotoCard(String month, String weight, String label, Color bgColor) {
+  Widget _buildProgressPhotoCard(String label, Color bgColor) {
     return Container(
       height: 180,
       decoration: BoxDecoration(
@@ -922,7 +1287,11 @@ class _MemberProfilePageState extends State<MemberProfilePage>
                 color: bgColor.withOpacity(0.08),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(Icons.photo_outlined, size: 38, color: widget.palette.accent.withOpacity(0.3)),
+              child: Icon(
+                Icons.photo_outlined,
+                size: 38,
+                color: widget.palette.accent.withOpacity(0.3),
+              ),
             ),
           ),
           Positioned(
@@ -936,24 +1305,39 @@ class _MemberProfilePageState extends State<MemberProfilePage>
               ),
               child: Text(
                 label,
-                style: const TextStyle(color: Colors.white70, fontSize: 9, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: 16,
-            child: Text(
-              '$month ($weight)',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  String _measurementText(MemberRecord member, String key) {
+    final value = member.physicalMeasurements[key];
+    if (value == null || value <= 0) return 'Sin registro';
+    return '$value cm';
+  }
+
+  String _initials(String name) {
+    final parts = name
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((part) => part.isNotEmpty)
+        .toList();
+    if (parts.isEmpty) return 'S';
+    if (parts.length == 1) {
+      return parts.first.characters.take(2).toString().toUpperCase();
+    }
+    return '${parts.first.characters.first}${parts.last.characters.first}'
+        .toUpperCase();
   }
 
   BoxDecoration _cardDecoration(BuildContext context) {

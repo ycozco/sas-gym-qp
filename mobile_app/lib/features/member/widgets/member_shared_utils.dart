@@ -14,9 +14,11 @@ MemberRecord getLoggedMember(GymState state) {
           phone: user.celular ?? '',
           email: user.email,
           startDate: 'Hoy',
-          goal: user.memberProfile?['objetivo'] ?? 'Hipertrofia',
+          goal:
+              user.memberProfile?['objetivo']?.toString() ??
+              'Sin objetivo registrado',
           sessions: 0,
-          lastSeen: 'Hoy',
+          lastSeen: 'Sin registro',
           state: (user.memberships != null && user.memberships!.isNotEmpty)
               ? user.memberships!.first['estado']?.toString().toLowerCase() ??
                     'expired'
@@ -24,18 +26,34 @@ MemberRecord getLoggedMember(GymState state) {
 
           assignedTrainer:
               user.memberProfile?['trainer_name']?.toString() ??
-              'Carlos Mendoza',
+              'Sin entrenador asignado',
           paymentHistory: backendPayments,
           physicalMeasurements: {
-            'peso':
-                (user.memberProfile?['peso_kg'] as num?)?.toDouble() ?? 70.0,
-            'altura':
-                (user.memberProfile?['altura_cm'] as num?)?.toDouble() ?? 170.0,
+            if (user.memberProfile?['peso_kg'] != null)
+              'peso': (user.memberProfile?['peso_kg'] as num).toDouble(),
+            if (user.memberProfile?['altura_cm'] != null)
+              'altura': (user.memberProfile?['altura_cm'] as num).toDouble(),
           },
           progressImages: [],
+          todayCheckIn: user.memberProfile?['modo_activo'] == true,
+          isActiveInGym: user.memberProfile?['modo_activo'] == true,
         );
       }
-      return state.allMembersIncludingSoftDeleted.first;
+      return MemberRecord(
+        dni: '',
+        name: 'Socio',
+        phone: '',
+        email: '',
+        startDate: '',
+        goal: 'Sin objetivo registrado',
+        sessions: 0,
+        lastSeen: 'Sin registro',
+        state: 'expired',
+        assignedTrainer: 'Sin entrenador asignado',
+        paymentHistory: const [],
+        physicalMeasurements: const {},
+        progressImages: const [],
+      );
     },
   );
 }
