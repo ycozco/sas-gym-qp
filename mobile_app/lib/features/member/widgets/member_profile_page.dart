@@ -594,7 +594,10 @@ class _MemberProfilePageState extends State<MemberProfilePage>
   ) async {
     final rootContext = context;
     final profile = state.currentUser?.memberProfile;
-    final medidasJson = profile?['medidas_json'] as Map<String, dynamic>?;
+    final rawMedidas = profile?['medidas_json'];
+    final medidasJson = rawMedidas is Map
+        ? Map<String, dynamic>.from(rawMedidas)
+        : null;
     final nameCtrl = TextEditingController(
       text: state.currentUser?.nombreCompleto ?? member.name,
     );
@@ -643,7 +646,16 @@ class _MemberProfilePageState extends State<MemberProfilePage>
         return StatefulBuilder(
           builder: (context, setSheetState) {
             Future<void> save() async {
+              final navigator = Navigator.of(sheetContext);
+              final messenger = ScaffoldMessenger.maybeOf(rootContext);
               setSheetState(() => saving = true);
+              final waist = _parseDouble(waistCtrl.text);
+              final chest = _parseDouble(chestCtrl.text);
+              final hip = _parseDouble(hipCtrl.text);
+              final medidasJson = <String, double>{};
+              if (waist != null) medidasJson['cintura'] = waist;
+              if (chest != null) medidasJson['pecho'] = chest;
+              if (hip != null) medidasJson['cadera'] = hip;
               final success = await state.updateMemberProfile(
                 nombreCompleto: nameCtrl.text.trim(),
                 celular: phoneCtrl.text.trim(),
@@ -652,18 +664,13 @@ class _MemberProfilePageState extends State<MemberProfilePage>
                 lesiones: injuriesCtrl.text.trim(),
                 pesoKg: _parseDouble(weightCtrl.text),
                 alturaCm: _parseDouble(heightCtrl.text),
-                medidasJson: {
-                  if (_parseDouble(waistCtrl.text) != null)
-                    'cintura': _parseDouble(waistCtrl.text)!,
-                  if (_parseDouble(chestCtrl.text) != null)
-                    'pecho': _parseDouble(chestCtrl.text)!,
-                  if (_parseDouble(hipCtrl.text) != null)
-                    'cadera': _parseDouble(hipCtrl.text)!,
-                },
+                medidasJson: medidasJson,
               );
-              if (!mounted || !sheetContext.mounted) return;
-              Navigator.of(sheetContext).pop();
-              ScaffoldMessenger.of(rootContext).showSnackBar(
+              if (!mounted) return;
+              if (sheetContext.mounted) {
+                navigator.pop();
+              }
+              messenger?.showSnackBar(
                 SnackBar(
                   content: Text(
                     success
