@@ -580,9 +580,9 @@ class LoggedInUser {
       celular: json['celular'] as String?,
       fotoUrl: json['foto_url'] as String?,
       estado: json['estado'] as String,
-      trainerProfile: json['trainer_profile'] as Map<String, dynamic>?,
-      memberProfile: json['member_profile'] as Map<String, dynamic>?,
-      memberships: json['memberships'] as List<dynamic>?,
+      trainerProfile: _jsonMap(json['trainer_profile']),
+      memberProfile: _jsonMap(json['member_profile']),
+      memberships: _jsonList(json['memberships']),
       themePreference:
           (json['theme_preference'] ?? json['themePreference'] ?? 'system')
               .toString()
@@ -618,6 +618,16 @@ class LoggedInUser {
       memberships: memberships ?? this.memberships,
       themePreference: themePreference ?? this.themePreference,
     );
+  }
+
+  static Map<String, dynamic>? _jsonMap(dynamic value) {
+    if (value is Map) return Map<String, dynamic>.from(value);
+    return null;
+  }
+
+  static List<dynamic>? _jsonList(dynamic value) {
+    if (value is List) return List<dynamic>.from(value);
+    return null;
   }
 }
 

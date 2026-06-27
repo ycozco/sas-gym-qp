@@ -1618,15 +1618,14 @@ class GymState extends ChangeNotifier {
   MemberRecord _memberRecordFromBackend(Map<String, dynamic> json) {
     final memberships = (json['memberships'] as List<dynamic>? ?? []);
     final latestMembership = memberships.isNotEmpty
-        ? memberships.first as Map<String, dynamic>
+        ? _jsonMap(memberships.first)
         : const <String, dynamic>{};
-    final memberProfile =
-        json['member_profile'] as Map<String, dynamic>? ?? const {};
-    final trainer = memberProfile['trainer'] as Map<String, dynamic>?;
-    final trainerUser = trainer?['user'] as Map<String, dynamic>?;
-    final medidasJson = memberProfile['medidas_json'] as Map<String, dynamic>?;
+    final memberProfile = _jsonMap(json['member_profile']);
+    final trainer = _jsonMap(memberProfile['trainer']);
+    final trainerUser = _jsonMap(trainer['user']);
+    final medidasJson = _jsonMap(memberProfile['medidas_json']);
     final paymentHistory = memberships.map((membership) {
-      final item = membership as Map<String, dynamic>;
+      final item = _jsonMap(membership);
       return PaymentRecord(
         id: item['id']?.toString() ?? '',
         planName: item['plan_nombre']?.toString() ?? 'Membresía',
@@ -1657,19 +1656,19 @@ class GymState extends ChangeNotifier {
       state: _mapMembershipState(
         latestMembership['estado']?.toString() ?? json['estado']?.toString(),
       ),
-      assignedTrainer: trainerUser?['nombre_completo']?.toString() ?? '',
+      assignedTrainer: trainerUser['nombre_completo']?.toString() ?? '',
       paymentHistory: paymentHistory,
       physicalMeasurements: {
         if (memberProfile['peso_kg'] != null)
           'peso': (memberProfile['peso_kg'] as num).toDouble(),
         if (memberProfile['altura_cm'] != null)
           'altura': (memberProfile['altura_cm'] as num).toDouble(),
-        if (medidasJson?['cintura'] != null)
-          'cintura': (medidasJson!['cintura'] as num).toDouble(),
-        if (medidasJson?['pecho'] != null)
-          'pecho': (medidasJson!['pecho'] as num).toDouble(),
-        if (medidasJson?['cadera'] != null)
-          'cadera': (medidasJson!['cadera'] as num).toDouble(),
+        if (medidasJson['cintura'] is num)
+          'cintura': (medidasJson['cintura'] as num).toDouble(),
+        if (medidasJson['pecho'] is num)
+          'pecho': (medidasJson['pecho'] as num).toDouble(),
+        if (medidasJson['cadera'] is num)
+          'cadera': (medidasJson['cadera'] as num).toDouble(),
       },
       progressImages:
           (memberProfile['fotos_comparativas'] as List<dynamic>?)
@@ -1680,6 +1679,11 @@ class GymState extends ChangeNotifier {
       isActiveInGym: memberProfile['modo_activo'] == true,
       daysLeft: (latestMembership['dias_restantes'] as num?)?.toInt(),
     );
+  }
+
+  Map<String, dynamic> _jsonMap(dynamic value) {
+    if (value is Map) return Map<String, dynamic>.from(value);
+    return const <String, dynamic>{};
   }
 
   ProductItem _productFromBackend(Map<String, dynamic> json) {

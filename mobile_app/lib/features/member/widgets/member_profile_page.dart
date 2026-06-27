@@ -592,7 +592,6 @@ class _MemberProfilePageState extends State<MemberProfilePage>
     GymState state,
     MemberRecord member,
   ) async {
-    final rootContext = context;
     final profile = state.currentUser?.memberProfile;
     final rawMedidas = profile?['medidas_json'];
     final medidasJson = rawMedidas is Map
@@ -634,7 +633,7 @@ class _MemberProfilePageState extends State<MemberProfilePage>
       ),
     );
 
-    await showModalBottomSheet<void>(
+    final saveResult = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       backgroundColor: const Color(0xFF121212),
@@ -646,8 +645,6 @@ class _MemberProfilePageState extends State<MemberProfilePage>
         return StatefulBuilder(
           builder: (context, setSheetState) {
             Future<void> save() async {
-              final navigator = Navigator.of(sheetContext);
-              final messenger = ScaffoldMessenger.maybeOf(rootContext);
               setSheetState(() => saving = true);
               final waist = _parseDouble(waistCtrl.text);
               final chest = _parseDouble(chestCtrl.text);
@@ -666,22 +663,9 @@ class _MemberProfilePageState extends State<MemberProfilePage>
                 alturaCm: _parseDouble(heightCtrl.text),
                 medidasJson: medidasJson,
               );
-              if (!mounted) return;
               if (sheetContext.mounted) {
-                navigator.pop();
+                Navigator.of(sheetContext).pop(success);
               }
-              messenger?.showSnackBar(
-                SnackBar(
-                  content: Text(
-                    success
-                        ? 'Perfil actualizado correctamente.'
-                        : 'No se pudo actualizar el perfil.',
-                  ),
-                  backgroundColor: success
-                      ? const Color(0xFF00B85C)
-                      : Colors.redAccent,
-                ),
-              );
             }
 
             return Padding(
@@ -762,6 +746,20 @@ class _MemberProfilePageState extends State<MemberProfilePage>
     ]) {
       ctrl.dispose();
     }
+
+    if (!mounted || saveResult == null) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          saveResult
+              ? 'Perfil actualizado correctamente.'
+              : 'No se pudo actualizar el perfil.',
+        ),
+        backgroundColor: saveResult
+            ? const Color(0xFF00B85C)
+            : Colors.redAccent,
+      ),
+    );
   }
 
   Widget _editField(TextEditingController controller, String label) {
