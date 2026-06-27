@@ -663,86 +663,94 @@ class _MemberProfilePageState extends State<MemberProfilePage>
         borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
       ),
       builder: (sheetContext) {
-        void save() {
-          final waist = _parseDouble(waistCtrl.text);
-          final chest = _parseDouble(chestCtrl.text);
-          final hip = _parseDouble(hipCtrl.text);
-          final medidasJson = <String, double>{};
-          if (waist != null) medidasJson['cintura'] = waist;
-          if (chest != null) medidasJson['pecho'] = chest;
-          if (hip != null) medidasJson['cadera'] = hip;
-          Navigator.of(sheetContext).pop(
-            _MemberProfileEditRequest(
-              nombreCompleto: nameCtrl.text.trim(),
-              celular: phoneCtrl.text.trim(),
-              nickname: nicknameCtrl.text.trim(),
-              objetivo: objectiveCtrl.text.trim(),
-              lesiones: injuriesCtrl.text.trim(),
-              pesoKg: _parseDouble(weightCtrl.text),
-              alturaCm: _parseDouble(heightCtrl.text),
-              medidasJson: medidasJson,
-            ),
-          );
-        }
+        bool saving = false;
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            Future<void> save() async {
+              setSheetState(() => saving = true);
+              final waist = _parseDouble(waistCtrl.text);
+              final chest = _parseDouble(chestCtrl.text);
+              final hip = _parseDouble(hipCtrl.text);
+              final medidasJson = <String, double>{};
+              if (waist != null) medidasJson['cintura'] = waist;
+              if (chest != null) medidasJson['pecho'] = chest;
+              if (hip != null) medidasJson['cadera'] = hip;
+              if (sheetContext.mounted) {
+                Navigator.of(sheetContext).pop(
+                  _MemberProfileEditRequest(
+                    nombreCompleto: nameCtrl.text.trim(),
+                    celular: phoneCtrl.text.trim(),
+                    nickname: nicknameCtrl.text.trim(),
+                    objetivo: objectiveCtrl.text.trim(),
+                    lesiones: injuriesCtrl.text.trim(),
+                    pesoKg: _parseDouble(weightCtrl.text),
+                    alturaCm: _parseDouble(heightCtrl.text),
+                    medidasJson: medidasJson,
+                  ),
+                );
+              }
+            }
 
-        return Padding(
-          padding: EdgeInsets.only(
-            left: 20,
-            right: 20,
-            top: 18,
-            bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 20,
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Editar perfil',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                _editField(nameCtrl, 'Nombre completo'),
-                _editField(phoneCtrl, 'Celular'),
-                _editField(nicknameCtrl, 'Nickname'),
-                _editField(objectiveCtrl, 'Objetivo'),
-                _editField(injuriesCtrl, 'Lesiones o restricciones'),
-                Row(
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 20,
+                right: 20,
+                top: 18,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(child: _editField(weightCtrl, 'Peso kg')),
-                    const SizedBox(width: 10),
-                    Expanded(child: _editField(heightCtrl, 'Altura cm')),
-                  ],
-                ),
-                Row(
-                  children: [
-                    Expanded(child: _editField(waistCtrl, 'Cintura cm')),
-                    const SizedBox(width: 10),
-                    Expanded(child: _editField(chestCtrl, 'Pecho cm')),
-                    const SizedBox(width: 10),
-                    Expanded(child: _editField(hipCtrl, 'Cadera cm')),
-                  ],
-                ),
-                const SizedBox(height: 18),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    style: roleFilledPillButtonStyle(
-                      backgroundColor: widget.palette.accent,
-                      foregroundColor: widget.palette.accentInk,
-                      minimumHeight: 48,
+                    const Text(
+                      'Editar perfil',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
-                    onPressed: save,
-                    child: const Text('Guardar'),
-                  ),
+                    const SizedBox(height: 16),
+                    _editField(nameCtrl, 'Nombre completo'),
+                    _editField(phoneCtrl, 'Celular'),
+                    _editField(nicknameCtrl, 'Nickname'),
+                    _editField(objectiveCtrl, 'Objetivo'),
+                    _editField(injuriesCtrl, 'Lesiones o restricciones'),
+                    Row(
+                      children: [
+                        Expanded(child: _editField(weightCtrl, 'Peso kg')),
+                        const SizedBox(width: 10),
+                        Expanded(child: _editField(heightCtrl, 'Altura cm')),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        Expanded(child: _editField(waistCtrl, 'Cintura cm')),
+                        const SizedBox(width: 10),
+                        Expanded(child: _editField(chestCtrl, 'Pecho cm')),
+                        const SizedBox(width: 10),
+                        Expanded(child: _editField(hipCtrl, 'Cadera cm')),
+                      ],
+                    ),
+                    const SizedBox(height: 18),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        style: roleFilledPillButtonStyle(
+                          backgroundColor: widget.palette.accent,
+                          foregroundColor: widget.palette.accentInk,
+                          minimumHeight: 48,
+                        ),
+                        onPressed: saving ? null : save,
+                        child: Text(saving ? 'Guardando...' : 'Guardar'),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
     );
@@ -763,9 +771,6 @@ class _MemberProfilePageState extends State<MemberProfilePage>
     }
 
     if (!mounted || saveRequest == null) return;
-    await Future<void>.delayed(Duration.zero);
-    await WidgetsBinding.instance.endOfFrame;
-    if (!mounted) return;
     final success = await state.updateMemberProfile(
       nombreCompleto: saveRequest.nombreCompleto,
       celular: saveRequest.celular,
