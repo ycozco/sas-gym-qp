@@ -33,10 +33,16 @@ PostgreSQL usa el volumen `sasgym_pgdata_local`.
 Importante: el comando de la API local ejecuta:
 
 ```sh
-npm run db:setup:local && npm run seed:local && npm run start:dev
+npm run db:setup:local && npm run start:dev
 ```
 
-Esto esta orientado a desarrollo. Puede reiniciar datos locales si `ALLOW_TEST_DATA_RESET=true`.
+El seed local es manual y resetea la BD local:
+
+```bash
+docker compose --env-file .env -f infra/docker/compose.local.yml exec api npm run seed:local
+```
+
+Usarlo solo para inicializar o reiniciar datos demo. El arranque normal no debe resembrar ventas ni cambiar fechas.
 
 ## Contenedor Flutter
 

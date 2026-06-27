@@ -4,7 +4,7 @@
 
 Levantar SAS Gym en una PC local sin Nginx Proxy Manager y sin depender de infraestructura externa.
 
-El caso esperado es que un colaborador clone el proyecto, copie el archivo de entorno y ejecute Docker Compose. La API debe preparar PostgreSQL, Redis, Prisma y datos iniciales sin instalar Node.js ni correr `npm ci` en la maquina host.
+El caso esperado es que un colaborador clone el proyecto, copie el archivo de entorno y ejecute Docker Compose. La API debe preparar PostgreSQL, Redis y Prisma sin instalar Node.js ni correr `npm ci` en la maquina host. Los datos iniciales se cargan con seed manual solo cuando se necesita inicializar o resetear una BD local.
 
 ## Prerrequisitos
 
@@ -53,6 +53,12 @@ ss -ltnp
 Si hay conflicto, cambiar el puerto en `.env` antes de levantar Docker.
 
 ## Preparacion
+
+Todos los comandos de Docker Compose deben ejecutarse desde la raiz del repo:
+
+```bash
+cd /ruta/al/proyecto/sas-gym-qp
+```
 
 ```bash
 cp .env.local.example .env
@@ -123,9 +129,16 @@ Esto levanta:
 - API NestJS.
 - Prisma Client.
 - Sincronizacion del esquema local con `prisma db push`.
-- Seed de datos locales.
 
 No se necesita ejecutar `npm ci` manualmente en la PC host. Las dependencias del backend se instalan dentro de la imagen Docker.
+
+Este comando no ejecuta seed automaticamente. Si la BD local ya tiene datos, se conservan. Si es la primera instalacion en una PC nueva, ejecutar el seed manualmente una sola vez:
+
+```bash
+docker compose --env-file .env -f infra/docker/compose.local.yml exec api npm run seed:local
+```
+
+Advertencia: `seed:local` resetea la BD local y vuelve a crear usuarios, ventas, productos y membresias demo. No ejecutarlo como parte del uso diario.
 
 Validar:
 
@@ -156,6 +169,12 @@ Servicios previstos:
 - PostgreSQL local: `localhost:5432`
 - Redis local: `localhost:6379`
 
+Para uso diario, si no se requiere reconstruir imagenes:
+
+```bash
+docker compose --env-file .env -f infra/docker/compose.local.yml up -d postgres redis api app-web admin-web
+```
+
 ## Validacion rapida
 
 ```bash
@@ -165,7 +184,17 @@ curl http://localhost:3000/api/v1
 
 ## Datos locales y reset
 
-El compose local usa:
+El compose local ya no ejecuta `seed:local` al iniciar la API. Esto evita que las ventas, membresias y fechas sembradas se regeneren cada vez que se reinicia el contenedor.
+
+El servicio `api` ejecuta:
+
+```sh
+npm run db:setup:local && npm run start:dev
+```
+
+`db:setup:local` genera Prisma Client y sincroniza el schema con `prisma db push`.
+
+El compose local aun define:
 
 ```text
 ALLOW_TEST_DATA_RESET=true
@@ -175,11 +204,12 @@ Con esa variable, si la base local queda incompatible con el schema Prisma actua
 
 Esto es aceptable para desarrollo local porque puede borrar y recrear datos de prueba. No usar esta estrategia en produccion.
 
-Para borrar todo el entorno local y empezar desde cero:
+Para borrar todo el entorno local y empezar desde cero con data demo:
 
 ```bash
 docker compose --env-file .env -f infra/docker/compose.local.yml down -v
 docker compose --env-file .env -f infra/docker/compose.local.yml up -d --build postgres redis api
+docker compose --env-file .env -f infra/docker/compose.local.yml exec api npm run seed:local
 ```
 
 ## Notas

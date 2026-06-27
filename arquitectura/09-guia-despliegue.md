@@ -72,6 +72,7 @@ docker compose --env-file .env -f infra/docker/compose.local.yml config
 Desde la raiz del proyecto:
 
 ```bash
+cd /ruta/al/proyecto/sas-gym-qp
 cp .env.local.example .env
 docker compose --env-file .env -f infra/docker/compose.local.yml up -d --build postgres redis api
 ```
@@ -91,11 +92,20 @@ curl http://localhost:3000/api/v1
 
 El colaborador no necesita ejecutar `npm ci` en su maquina para levantar la API. Docker construye la imagen e instala dependencias dentro del contenedor.
 
+El arranque normal de la API local no ejecuta seed. Si la BD ya tiene datos, se conservan. Para una primera instalacion local con data de prueba, ejecutar manualmente:
+
+```bash
+docker compose --env-file .env -f infra/docker/compose.local.yml exec api npm run seed:local
+```
+
+Advertencia: `seed:local` resetea la BD local y vuelve a crear usuarios, productos, membresias y ventas demo. No usarlo como parte del uso diario.
+
 ## Despliegue local completo con Docker Compose
 
 Desde la raiz del proyecto:
 
 ```bash
+cd /ruta/al/proyecto/sas-gym-qp
 cp .env.local.example .env
 docker compose --env-file .env -f infra/docker/compose.local.yml up -d --build
 ```
@@ -136,12 +146,79 @@ URLs esperadas:
 El servicio `api` del Compose local ejecuta:
 
 ```sh
-npm run db:setup:local && npm run seed:local && npm run start:dev
+npm run db:setup:local && npm run start:dev
 ```
 
 `db:setup:local` genera Prisma Client y sincroniza el schema con `prisma db push`. Si la base local queda incompatible y `ALLOW_TEST_DATA_RESET=true`, puede ejecutar `prisma db push --force-reset`.
 
 Esto es solo para desarrollo local porque puede borrar datos de prueba. No usar `--force-reset` en produccion.
+
+El seed local es manual:
+
+```bash
+docker compose --env-file .env -f infra/docker/compose.local.yml exec api npm run seed:local
+```
+
+Usarlo solo para inicializar o resetear data demo.
+
+## API local para web y app movil
+
+Desde la misma PC, la API local responde en:
+
+```text
+http://localhost:3000/api/v1
+```
+
+Desde un celular fisico conectado a la misma red, no usar `localhost`. Usar la IP LAN de la PC:
+
+```bash
+ip route get 1.1.1.1
+```
+
+Tomar el valor que aparece despues de `src` y formar:
+
+```text
+http://<IP_LAN_PC>:3000/api/v1
+```
+
+Para emulador Android:
+
+```text
+http://10.0.2.2:3000/api/v1
+```
+
+## APK local y ejecucion en celular
+
+Desde la app movil:
+
+```bash
+cd /ruta/al/proyecto/sas-gym-qp/mobile_app
+```
+
+Crear APK local para celular fisico:
+
+```bash
+API_BASE_URL=http://<IP_LAN_PC>:3000/api/v1 ./scripts/build-local-apk.sh
+```
+
+El APK queda en:
+
+```text
+mobile_app/build/app/outputs/flutter-apk/app-dev-debug.apk
+```
+
+Instalar en un celular conectado por cable:
+
+```bash
+flutter devices
+adb install -r build/app/outputs/flutter-apk/app-dev-debug.apk
+```
+
+Ejecutar directamente con Flutter:
+
+```bash
+flutter run --flavor dev --dart-define=APP_ENV=dev --dart-define=APP_MODE=backend --dart-define=API_BASE_URL=http://<IP_LAN_PC>:3000/api/v1 -d <DEVICE_ID>
+```
 
 ## Despliegue manual del backend
 

@@ -5,13 +5,21 @@ Esta guia valida el APK local contra la API local Docker. No usar modo demo.
 ## Precondiciones
 
 - PC y telefono en la misma red WiFi.
-- IP fija del PC: `192.168.1.7`.
-- API arriba en `http://192.168.1.7:3000/api/v1`.
+- API local arriba en `http://<IP_LAN_PC>:3000/api/v1`.
 - Docker local levantado desde la raiz del repo:
 
 ```bash
+cd /ruta/al/proyecto/sas-gym-qp
 docker compose --env-file .env -f infra/docker/compose.local.yml up -d --build postgres redis api
 ```
+
+Para saber la IP LAN de la PC:
+
+```bash
+ip route get 1.1.1.1
+```
+
+Usar el valor que aparece despues de `src`.
 
 - Verificacion rapida:
 
@@ -26,11 +34,13 @@ Debe responder `Hello World!`.
 Desde `mobile_app`:
 
 ```bash
+cd /ruta/al/proyecto/sas-gym-qp/mobile_app
+flutter devices
 flutter run --flavor dev \
   --dart-define=APP_ENV=dev \
   --dart-define=APP_MODE=backend \
-  --dart-define=API_BASE_URL=http://192.168.1.7:3000/api/v1 \
-  -d RRCXA08XX8E
+  --dart-define=API_BASE_URL=http://<IP_LAN_PC>:3000/api/v1 \
+  -d <DEVICE_ID>
 ```
 
 No usar `APP_MODE=demo`. El APK backend local debe fallar si se intenta activar demo sin `ALLOW_DEMO_MODE=true`.
@@ -40,16 +50,22 @@ No usar `APP_MODE=demo`. El APK backend local debe fallar si se intenta activar 
 Desde `mobile_app`:
 
 ```bash
-./scripts/build-local-apk.sh
+API_BASE_URL=http://<IP_LAN_PC>:3000/api/v1 ./scripts/build-local-apk.sh
 ```
 
-Para cambiar la URL controlada:
+APK generado:
+
+```text
+mobile_app/build/app/outputs/flutter-apk/app-dev-debug.apk
+```
+
+Instalar en celular conectado por cable:
 
 ```bash
-API_BASE_URL=http://192.168.1.7:3000/api/v1 ./scripts/build-local-apk.sh
+adb install -r build/app/outputs/flutter-apk/app-dev-debug.apk
 ```
 
-El script rechaza `localhost`, `127.0.0.1` y `10.0.2.2` porque no sirven para un telefono fisico.
+El script exige `API_BASE_URL` y rechaza `localhost`, `127.0.0.1` y `10.0.2.2` porque no sirven para un telefono fisico.
 
 ## Credenciales base
 
