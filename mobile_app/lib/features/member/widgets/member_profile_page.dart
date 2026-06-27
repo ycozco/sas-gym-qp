@@ -68,7 +68,7 @@ class _MemberProfilePageState extends State<MemberProfilePage>
           child: TabBarView(
             controller: _tabController,
             children: [
-              _buildPrivateTab(mateo),
+              _buildPrivateTab(state, mateo),
               _buildSocialTab(state),
               _buildPhysicalTab(mateo),
               _buildPointsTab(state),
@@ -389,7 +389,7 @@ class _MemberProfilePageState extends State<MemberProfilePage>
     );
   }
 
-  Widget _buildPrivateTab(MemberRecord member) {
+  Widget _buildPrivateTab(GymState state, MemberRecord member) {
     final accent = widget.palette.accent;
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -427,6 +427,25 @@ class _MemberProfilePageState extends State<MemberProfilePage>
                 'Correo electrónico',
                 member.email,
                 accent,
+              ),
+              const Divider(color: Color(0xFF2C2C2C), height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: accent,
+                    side: BorderSide(color: accent.withOpacity(0.4)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  onPressed: () => _showEditProfileSheet(state, member),
+                  icon: const Icon(Icons.edit_rounded, size: 18),
+                  label: const Text(
+                    'Editar datos',
+                    style: TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                ),
               ),
             ],
           ),
@@ -496,22 +515,26 @@ class _MemberProfilePageState extends State<MemberProfilePage>
                       ],
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.black45,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: const Color(0xFF2C2C2C)),
-                    ),
-                    child: const Text(
-                      'Ver Perfil',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
+                  InkWell(
+                    borderRadius: BorderRadius.circular(8),
+                    onTap: () => _showTrainerProfile(state),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black45,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFF2C2C2C)),
+                      ),
+                      child: const Text(
+                        'Ver Perfil',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
@@ -563,6 +586,302 @@ class _MemberProfilePageState extends State<MemberProfilePage>
         ),
       ],
     );
+  }
+
+  Future<void> _showEditProfileSheet(
+    GymState state,
+    MemberRecord member,
+  ) async {
+    final profile = state.currentUser?.memberProfile;
+    final medidasJson = profile?['medidas_json'] as Map<String, dynamic>?;
+    final nameCtrl = TextEditingController(
+      text: state.currentUser?.nombreCompleto ?? member.name,
+    );
+    final phoneCtrl = TextEditingController(text: member.phone);
+    final nicknameCtrl = TextEditingController(
+      text: profile?['nickname']?.toString() ?? '',
+    );
+    final objectiveCtrl = TextEditingController(text: member.goal);
+    final injuriesCtrl = TextEditingController(
+      text: profile?['lesiones']?.toString() ?? '',
+    );
+    final weightCtrl = TextEditingController(
+      text: _numberInput(member.physicalMeasurements['peso']),
+    );
+    final heightCtrl = TextEditingController(
+      text: _numberInput(member.physicalMeasurements['altura']),
+    );
+    final waistCtrl = TextEditingController(
+      text: _numberInput(
+        member.physicalMeasurements['cintura'] ??
+            (medidasJson?['cintura'] as num?)?.toDouble(),
+      ),
+    );
+    final chestCtrl = TextEditingController(
+      text: _numberInput(
+        member.physicalMeasurements['pecho'] ??
+            (medidasJson?['pecho'] as num?)?.toDouble(),
+      ),
+    );
+    final hipCtrl = TextEditingController(
+      text: _numberInput(
+        member.physicalMeasurements['cadera'] ??
+            (medidasJson?['cadera'] as num?)?.toDouble(),
+      ),
+    );
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF121212),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+      ),
+      builder: (sheetContext) {
+        bool saving = false;
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            Future<void> save() async {
+              setSheetState(() => saving = true);
+              final success = await state.updateMemberProfile(
+                nombreCompleto: nameCtrl.text.trim(),
+                celular: phoneCtrl.text.trim(),
+                nickname: nicknameCtrl.text.trim(),
+                objetivo: objectiveCtrl.text.trim(),
+                lesiones: injuriesCtrl.text.trim(),
+                pesoKg: _parseDouble(weightCtrl.text),
+                alturaCm: _parseDouble(heightCtrl.text),
+                medidasJson: {
+                  if (_parseDouble(waistCtrl.text) != null)
+                    'cintura': _parseDouble(waistCtrl.text)!,
+                  if (_parseDouble(chestCtrl.text) != null)
+                    'pecho': _parseDouble(chestCtrl.text)!,
+                  if (_parseDouble(hipCtrl.text) != null)
+                    'cadera': _parseDouble(hipCtrl.text)!,
+                },
+              );
+              if (!mounted || !sheetContext.mounted) return;
+              Navigator.of(sheetContext).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    success
+                        ? 'Perfil actualizado correctamente.'
+                        : 'No se pudo actualizar el perfil.',
+                  ),
+                  backgroundColor: success
+                      ? const Color(0xFF00B85C)
+                      : Colors.redAccent,
+                ),
+              );
+            }
+
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 20,
+                right: 20,
+                top: 18,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Editar perfil',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _editField(nameCtrl, 'Nombre completo'),
+                    _editField(phoneCtrl, 'Celular'),
+                    _editField(nicknameCtrl, 'Nickname'),
+                    _editField(objectiveCtrl, 'Objetivo'),
+                    _editField(injuriesCtrl, 'Lesiones o restricciones'),
+                    Row(
+                      children: [
+                        Expanded(child: _editField(weightCtrl, 'Peso kg')),
+                        const SizedBox(width: 10),
+                        Expanded(child: _editField(heightCtrl, 'Altura cm')),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        Expanded(child: _editField(waistCtrl, 'Cintura cm')),
+                        const SizedBox(width: 10),
+                        Expanded(child: _editField(chestCtrl, 'Pecho cm')),
+                        const SizedBox(width: 10),
+                        Expanded(child: _editField(hipCtrl, 'Cadera cm')),
+                      ],
+                    ),
+                    const SizedBox(height: 18),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        style: roleFilledPillButtonStyle(
+                          backgroundColor: widget.palette.accent,
+                          foregroundColor: widget.palette.accentInk,
+                          minimumHeight: 48,
+                        ),
+                        onPressed: saving ? null : save,
+                        child: Text(saving ? 'Guardando...' : 'Guardar'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    for (final ctrl in [
+      nameCtrl,
+      phoneCtrl,
+      nicknameCtrl,
+      objectiveCtrl,
+      injuriesCtrl,
+      weightCtrl,
+      heightCtrl,
+      waistCtrl,
+      chestCtrl,
+      hipCtrl,
+    ]) {
+      ctrl.dispose();
+    }
+  }
+
+  Widget _editField(TextEditingController controller, String label) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: TextField(
+        controller: controller,
+        style: const TextStyle(color: Colors.white),
+        keyboardType: label.contains('kg') || label.contains('cm')
+            ? const TextInputType.numberWithOptions(decimal: true)
+            : TextInputType.text,
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: const TextStyle(color: Colors.white60),
+          filled: true,
+          fillColor: const Color(0xFF1E1E1E),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: Color(0xFF2C2C2C)),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showTrainerProfile(GymState state) {
+    final profile = state.currentUser?.memberProfile;
+    final trainer = profile?['trainer'] as Map<String, dynamic>?;
+    final trainerUser = trainer?['user'] as Map<String, dynamic>?;
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: const Color(0xFF121212),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Perfil del entrenador',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 18),
+              _trainerInfoRow(
+                Icons.person_rounded,
+                'Nombre',
+                trainerUser?['nombre_completo']?.toString() ??
+                    'Sin entrenador asignado',
+              ),
+              _trainerInfoRow(
+                Icons.alternate_email_rounded,
+                'Correo',
+                trainerUser?['email']?.toString() ?? 'Sin correo registrado',
+              ),
+              _trainerInfoRow(
+                Icons.fitness_center_rounded,
+                'Especialidad',
+                trainer?['especialidad']?.toString() ??
+                    'Sin especialidad registrada',
+              ),
+              _trainerInfoRow(
+                Icons.verified_rounded,
+                'Certificaciones',
+                trainer?['certificaciones']?.toString() ??
+                    'Sin certificaciones registradas',
+              ),
+              _trainerInfoRow(
+                Icons.info_outline_rounded,
+                'Bio',
+                trainer?['biografia']?.toString() ?? 'Sin biografía registrada',
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _trainerInfoRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: widget.palette.accent, size: 18),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(color: Colors.grey, fontSize: 11),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  double? _parseDouble(String value) {
+    final normalized = value.trim().replaceAll(',', '.');
+    if (normalized.isEmpty) return null;
+    return double.tryParse(normalized);
+  }
+
+  String _numberInput(double? value) {
+    if (value == null || value <= 0) return '';
+    return value.toStringAsFixed(value.truncateToDouble() == value ? 0 : 1);
   }
 
   Widget _profileCardRow(

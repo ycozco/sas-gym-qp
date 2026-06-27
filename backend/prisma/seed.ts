@@ -217,7 +217,9 @@ async function main() {
       );
       return;
     }
-    console.log('Ejecutando seed productivo inicial con dataset operativo de SaasGym...');
+    console.log(
+      'Ejecutando seed productivo inicial con dataset operativo de SaasGym...',
+    );
   }
 
   if (!isProduction) {
@@ -246,7 +248,8 @@ async function main() {
       direccion: 'Av. Ejercito 1030, Cayma, Arequipa',
       telefono: '999000000',
       horario: 'Administracion central',
-      descripcion: 'Tenant central para superadmin y operacion de la red SaasGym.',
+      descripcion:
+        'Tenant central para superadmin y operacion de la red SaasGym.',
     },
   });
 
@@ -516,7 +519,7 @@ async function main() {
       const tenantPlan = tenantPlans[(i + tenantIndex) % tenantPlans.length];
       const first = firstNames[(i + tenantIndex * 2) % firstNames.length];
       const last = lastNames[(i + tenantIndex * 3) % lastNames.length];
-      
+
       const memberUser = await prisma.user.create({
         data: {
           tenant_id: tenant.id,
@@ -557,6 +560,50 @@ async function main() {
         },
       });
 
+      if (status !== 'SUSPENDED') {
+        await prisma.dietPlan.create({
+          data: {
+            tenant_id: tenant.id,
+            member_id: memberUser.id,
+            trainer_id: trainers[i % trainers.length].user_id,
+            peso_objetivo_kg: 58 + ((i * 2) % 32),
+            calorias_objetivo: 1900 + (i % 6) * 120,
+            proteinas_g: 110 + (i % 5) * 8,
+            carbohidratos_g: 190 + (i % 6) * 18,
+            grasas_g: 55 + (i % 4) * 6,
+            comidas: [
+              {
+                hora: '07:30',
+                nombre: 'Desayuno',
+                alimentos: 'Avena, huevos y fruta de temporada',
+                calorias: 520,
+              },
+              {
+                hora: '12:45',
+                nombre: 'Almuerzo',
+                alimentos: 'Pollo, arroz integral y ensalada',
+                calorias: 720,
+              },
+              {
+                hora: '17:30',
+                nombre: 'Pre entrenamiento',
+                alimentos: 'Yogurt griego con granola',
+                calorias: 330,
+              },
+              {
+                hora: '21:00',
+                nombre: 'Cena',
+                alimentos: 'Pescado, camote y vegetales',
+                calorias: 560,
+              },
+            ],
+            sugerencias:
+              'Plan base cargado desde la BD. Ajustar por progreso semanal y tolerancia alimentaria.',
+            activo: true,
+          },
+        });
+      }
+
       const dates = membershipDates(status, plan, now);
       const discount = i % 6 === 0 ? 10 : 0;
       const paid =
@@ -566,7 +613,7 @@ async function main() {
             ? plan.price
             : Math.round(plan.price * (1 - discount / 100));
       const pending = Math.max(0, plan.price - paid);
-      
+
       const membership = await prisma.membership.create({
         data: {
           tenant_id: tenant.id,
@@ -591,10 +638,8 @@ async function main() {
       // Vincular caja activa
       const caja = cajas[i % cajas.length];
       const paymentState =
-        status === 'PENDING'
-          ? PaymentState.PENDING
-          : PaymentState.APPROVED;
-          
+        status === 'PENDING' ? PaymentState.PENDING : PaymentState.APPROVED;
+
       const method = [
         PaymentMethod.CASH,
         PaymentMethod.MANUAL_YAPE,
@@ -783,7 +828,8 @@ async function main() {
       },
       {
         nombre_clase: 'Spinning Noon',
-        descripcion: 'Sesion de cardio guiada para resistencia y quema calorica.',
+        descripcion:
+          'Sesion de cardio guiada para resistencia y quema calorica.',
         dia_semana: [2, 4],
         hora_inicio: '12:30',
         hora_fin: '13:15',
@@ -791,7 +837,8 @@ async function main() {
       },
       {
         nombre_clase: 'Yoga Recovery',
-        descripcion: 'Bloque de movilidad y recuperacion con foco post entrenamiento.',
+        descripcion:
+          'Bloque de movilidad y recuperacion con foco post entrenamiento.',
         dia_semana: [2, 6],
         hora_inicio: '19:00',
         hora_fin: '20:00',
@@ -851,7 +898,7 @@ async function main() {
   }
 
   console.log(
-    `Sembrado finalizado: tenants=${gyms.length + 1}, gyms=${gyms.length}, users=${totalUsers}, memberships=${totalMemberships}, cajas=${totalCajas}`
+    `Sembrado finalizado: tenants=${gyms.length + 1}, gyms=${gyms.length}, users=${totalUsers}, memberships=${totalMemberships}, cajas=${totalCajas}`,
   );
 }
 

@@ -180,7 +180,23 @@ export class AuthService {
       where: { id: userId },
       include: {
         trainer_profile: true,
-        member_profile: true,
+        member_profile: {
+          include: {
+            trainer: {
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    nombre_completo: true,
+                    email: true,
+                    celular: true,
+                    foto_url: true,
+                  },
+                },
+              },
+            },
+          },
+        },
         memberships: {
           orderBy: { fecha_vencimiento: 'desc' },
           take: 1,

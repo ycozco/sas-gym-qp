@@ -109,6 +109,44 @@ class GymState extends ChangeNotifier {
     }
   }
 
+  Future<bool> updateMemberProfile({
+    String? nombreCompleto,
+    String? celular,
+    String? nickname,
+    double? pesoKg,
+    double? alturaCm,
+    String? objetivo,
+    String? lesiones,
+    Map<String, double>? medidasJson,
+  }) async {
+    if (_currentUser == null || !isBackendMode) return false;
+
+    try {
+      final data = <String, dynamic>{};
+      if (nombreCompleto != null) data['nombreCompleto'] = nombreCompleto;
+      if (celular != null) data['celular'] = celular;
+      if (nickname != null) data['nickname'] = nickname;
+      if (pesoKg != null) data['pesoKg'] = pesoKg;
+      if (alturaCm != null) data['alturaCm'] = alturaCm;
+      if (objetivo != null) data['objetivo'] = objetivo;
+      if (lesiones != null) data['lesiones'] = lesiones;
+      if (medidasJson != null) data['medidasJson'] = medidasJson;
+
+      final response = await ApiClient().dio.patch(
+        '/auth/me/profile',
+        data: data,
+      );
+      _currentUser = LoggedInUser.fromJson(
+        response.data as Map<String, dynamic>,
+      );
+      notifyListeners();
+      return true;
+    } catch (e) {
+      AppLogger.debug('Error updating member profile', e);
+      return false;
+    }
+  }
+
   void _setLocalMemberTrainingVisibility(bool visible) {
     final dni = _currentUser?.dni;
     if (dni == null || dni.isEmpty) return;
@@ -1586,6 +1624,7 @@ class GymState extends ChangeNotifier {
         json['member_profile'] as Map<String, dynamic>? ?? const {};
     final trainer = memberProfile['trainer'] as Map<String, dynamic>?;
     final trainerUser = trainer?['user'] as Map<String, dynamic>?;
+    final medidasJson = memberProfile['medidas_json'] as Map<String, dynamic>?;
     final paymentHistory = memberships.map((membership) {
       final item = membership as Map<String, dynamic>;
       return PaymentRecord(
@@ -1625,8 +1664,18 @@ class GymState extends ChangeNotifier {
           'peso': (memberProfile['peso_kg'] as num).toDouble(),
         if (memberProfile['altura_cm'] != null)
           'altura': (memberProfile['altura_cm'] as num).toDouble(),
+        if (medidasJson?['cintura'] != null)
+          'cintura': (medidasJson!['cintura'] as num).toDouble(),
+        if (medidasJson?['pecho'] != null)
+          'pecho': (medidasJson!['pecho'] as num).toDouble(),
+        if (medidasJson?['cadera'] != null)
+          'cadera': (medidasJson!['cadera'] as num).toDouble(),
       },
-      progressImages: const [],
+      progressImages:
+          (memberProfile['fotos_comparativas'] as List<dynamic>?)
+              ?.map((item) => item.toString())
+              .toList() ??
+          const [],
       todayCheckIn: memberProfile['modo_activo'] == true,
       isActiveInGym: memberProfile['modo_activo'] == true,
       daysLeft: (latestMembership['dias_restantes'] as num?)?.toInt(),
