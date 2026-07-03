@@ -13,6 +13,7 @@ export class TenantsService {
 
   async getAllTenants() {
     return this.prisma.tenant.findMany({
+      include: { saas_plan: true },
       orderBy: { created_at: 'desc' },
     });
   }
@@ -20,6 +21,7 @@ export class TenantsService {
   async getTenantSettings(id: string) {
     const tenant = await this.prisma.tenant.findUnique({
       where: { id },
+      include: { saas_plan: true },
     });
     if (!tenant) {
       throw new NotFoundException('Tenant no encontrado.');

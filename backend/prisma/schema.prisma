@@ -25,7 +25,8 @@ model Tenant {
   color_acento            String?
   dias_gracia             Int                @default(1)
   dias_alerta_vencimiento Int                @default(5)
-  plan_saas               String             @default("BASIC") // BASIC | PRO | ENTERPRISE
+  plan_saas               String             @default("BASIC")
+  saas_plan               SaasPlan?          @relation(fields: [plan_saas], references: [code])
   activo                  Boolean            @default(true)
   created_at              DateTime           @default(now())
   usuarios                User[]
@@ -47,6 +48,20 @@ model Tenant {
   points_movements        PointsMovement[]
   payments                Payment[]
   diet_plans              DietPlan[]
+}
+
+model SaasPlan {
+  id               String   @id @default(uuid())
+  code             String   @unique
+  nombre           String
+  descripcion      String?
+  precio_mensual   Float
+  limite_usuarios  Int
+  caracteristicas  String
+  activo           Boolean  @default(true)
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+  tenants          Tenant[]
 }
 
 // ─── USUARIOS ────────────────────────────────────────────────────

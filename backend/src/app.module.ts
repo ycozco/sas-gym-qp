@@ -20,6 +20,7 @@ import { DietsModule } from './modules/diets/diets.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { CoreServicesModule } from './core/services/core-services.module';
 import { RateLimitingGuard } from './core/guards/rate-limiting.guard';
+import { SaasPlansModule } from './modules/saas-plans/saas-plans.module';
 
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { APP_GUARD } from '@nestjs/core';
@@ -44,6 +45,7 @@ import { IdempotencyInterceptor } from './core/interceptors/idempotency.intercep
     AdminModule,
     PointsModule,
     DietsModule,
+    SaasPlansModule,
     CoreServicesModule,
     ThrottlerModule.forRoot([
       {
