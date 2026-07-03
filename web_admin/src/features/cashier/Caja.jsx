@@ -1,3 +1,6 @@
+import React from 'react';
+import { Badge, Btn, ErrorBlock, I, Kpi, MemberSearchBox, Panel } from '../../../shared.jsx';
+
 function Caja({ app }) {
   const [tab, setTab] = React.useState("turno");
   const [details, setDetails] = React.useState(null);
@@ -40,20 +43,17 @@ function Caja({ app }) {
     }
   }, [details]);
 
-  const products = app?.products?.length
-    ? app.products.filter(p => p.visible && p.status !== "inactivo")
-    : PRODUCTS.map(p => normalizeProduct({ id: p.id, nombre: p.n, categoria: p.cat, precio_venta: p.p, stock_actual: p.stock }));
-  const plans = app?.membershipPlans?.length
-    ? app.membershipPlans.filter(p => p.active)
-    : MEMBERSHIP_PLANS.filter(p => p.on).map(p => normalizeMembershipPlan({ id: p.id, nombre: p.n, duracion_dias: parseInt(p.dur, 10) || 30, precio: p.price, activo: p.on }));
-  const fallbackMovements = CAJA_MOV.map((m, i) => ({ id: i, tipo: m.tipo, monto: m.m, descripcion: m.concepto, created_at: `${TODAY.short} ${m.t}` }));
-  const movements = details?.movements || fallbackMovements;
+  const products = (app?.products || []).filter(p => p.visible && p.status !== "inactivo");
+  const plans = (app?.membershipPlans || []).filter(p => p.active);
+  const movements = details?.movements || [];
   const stats = details?.stats;
   const caja = details?.caja || null;
   const total = cart.reduce((sum, item) => sum + item.unitPrice * item.qty, 0);
   const combinedTotal = Object.values(combined).reduce((sum, value) => sum + (Number(value) || 0), 0);
-  const paid = paymentMode === "combined" ? combinedTotal : (paymentMethod === "Efectivo" ? Number(cashReceived || 0) : total);
-  const canCharge = cart.length > 0 && (paymentMode === "combined" ? combinedTotal >= total : paymentMethod !== "Efectivo" || Number(cashReceived || 0) >= total);
+  const requiresMember = cart.some(item => item.type === "membership");
+  const canCharge = cart.length > 0 &&
+    (!requiresMember || selectedMember?.dni) &&
+    (paymentMode === "combined" ? combinedTotal >= total : paymentMethod !== "Efectivo" || Number(cashReceived || 0) >= total);
 
   const refreshCaja = React.useCallback(async () => {
     if (!app?.getCajaDetails) return;
@@ -70,7 +70,7 @@ function Caja({ app }) {
     }
   }, [app]);
 
-  React.useEffect(() => { refreshCaja(); }, []);
+  React.useEffect(() => { refreshCaja(); }, [refreshCaja]);
 
   React.useEffect(() => {
     let alive = true;
@@ -87,7 +87,7 @@ function Caja({ app }) {
       }
     }, 260);
     return () => { alive = false; clearTimeout(timer); };
-  }, [memberQuery]);
+  }, [app, memberQuery]);
 
   const addToCart = (item) => {
     setCart(prev => {
@@ -179,6 +179,9 @@ function Caja({ app }) {
     setDetails(null); setSales(null);
   }, "Caja cerrada correctamente.");
   const charge = () => run(async () => {
+    if (requiresMember && !selectedMember?.dni) {
+      throw new Error("Selecciona un socio antes de vender una membresía.");
+    }
     const payments = paymentMode === "combined"
       ? Object.entries(combined).filter(([, value]) => Number(value) > 0).map(([metodo, monto]) => ({ metodo, monto: Number(monto) }))
       : null;
@@ -320,6 +323,13 @@ function Caja({ app }) {
                   <div className="price">S/ {item.price}</div>
                 </button>
               ))}
+              {(tab === "pos" ? products : plans).length === 0 && (
+                <div className="empty">
+                  {tab === "pos"
+                    ? "No hay productos activos cargados desde backend."
+                    : "No hay planes activos cargados desde backend."}
+                </div>
+              )}
             </div>
           </Panel>
           <Panel title="Carrito" sub={selectedMember ? selectedMember.nombre_completo || selectedMember.name : "Venta anónima"}>
@@ -525,4 +535,4 @@ function Caja({ app }) {
   );
 }
 
-window.Caja = Caja;
+export { Caja };

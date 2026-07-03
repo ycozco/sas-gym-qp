@@ -1,3 +1,5 @@
+import { GYM, ROLES, TODAY } from './data.jsx';
+
 // shared.jsx — iconos y componentes reutilizables del panel web.
 // Expone todo en window para que data/dashboards/modules/app lo consuman.
 
@@ -73,7 +75,9 @@ function apiRequest(path, { method = "GET", body, token, tenantId, headers = {},
       try {
         if (refreshed.token) localStorage.setItem(AUTH_TOKEN_KEY, refreshed.token);
         if (refreshed.tenantId) localStorage.setItem(TENANT_ID_KEY, refreshed.tenantId);
-      } catch (_) {}
+      } catch (_) {
+        // Storage can be unavailable in privacy-restricted browsers.
+      }
       return apiRequest(path, {
         method,
         body,
@@ -144,6 +148,20 @@ function normalizeProduct(product) {
   };
 }
 
+function normalizeSaasPlan(plan) {
+  return {
+    id: plan.id || "",
+    code: plan.code || "",
+    name: plan.nombre || plan.name || "",
+    description: plan.descripcion || "",
+    price: Number(plan.precio_mensual ?? plan.price ?? 0),
+    userLimit: Number(plan.limite_usuarios ?? plan.userLimit ?? 0),
+    features: plan.caracteristicas || plan.features || "",
+    active: plan.activo ?? true,
+    raw: plan,
+  };
+}
+
 function productToApiPayload(product) {
   return {
     nombre: product.name.trim(),
@@ -168,6 +186,18 @@ function planToApiPayload(plan) {
     precio: Number(plan.price),
     color: plan.color || "#2F6BFF",
     orden: Number(plan.order || 0),
+    activo: Boolean(plan.active),
+  };
+}
+
+function saasPlanToApiPayload(plan) {
+  return {
+    code: plan.code?.trim() || undefined,
+    nombre: plan.name.trim(),
+    descripcion: plan.description?.trim() || "",
+    precioMensual: Number(plan.price || 0),
+    limiteUsuarios: Number(plan.userLimit || 0),
+    caracteristicas: plan.features?.trim() || "",
     activo: Boolean(plan.active),
   };
 }
@@ -440,6 +470,22 @@ function Sidebar({ role, section, onNavigate, tenantSettings }) {
 }
 
 // ─── TOPBAR ────────────────────────────────────────────────────
+function ThemeSwitcher({ themeMode, setThemeMode }) {
+  return (
+    <div className="theme-seg" aria-label="Tema visual">
+      {[
+        ["system", "Sistema", "S"],
+        ["light", "Claro", "L"],
+        ["dark", "Oscuro", "D"],
+      ].map(([id, label, glyph]) => (
+        <button key={id} aria-pressed={themeMode === id} onClick={() => setThemeMode(id)} aria-label={label} title={label}>
+          <span className="theme-glyph" aria-hidden="true">{glyph}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function Topbar({ title, sub, role, currentUser, onLogout, themeMode, setThemeMode }) {
   const r = ROLES[role];
   const displayName = currentUser?.nombre_completo || currentUser?.nombreCompleto || r.who;
@@ -488,23 +534,4 @@ function MemberSearchBox({ query, setQuery, results, selected, setSelected }) {
   );
 }
 
-Object.assign(window, {
-  API_BASE_URL,
-  AUTH_TOKEN_KEY,
-  TENANT_ID_KEY,
-  apiRequest,
-  roleFromBackend,
-  normalizeTenantSettings,
-  normalizeMembershipPlan,
-  normalizeProduct,
-  planToApiPayload,
-  productToApiPayload,
-  colorInk,
-  colorMix,
-  applyTenantTheme,
-  LoadingBlock,
-  ErrorBlock,
-  Modal,
-  I, icon, Avatar, Btn, Badge, StatusBadge, Kpi, Panel, Bars, Donut, Sidebar, Topbar,
-  MemberSearchBox,
-});
+export { API_BASE_URL, AUTH_TOKEN_KEY, TENANT_ID_KEY, THEME_MODE_KEY, apiRequest, roleFromBackend, normalizeThemeMode, normalizeTenantSettings, normalizeMembershipPlan, normalizeProduct, normalizeSaasPlan, planToApiPayload, productToApiPayload, saasPlanToApiPayload, colorInk, colorMix, applyTenantTheme, LoadingBlock, ErrorBlock, Modal, I, icon, Avatar, Btn, Badge, StatusBadge, Kpi, Panel, Bars, Donut, Sidebar, Topbar, MemberSearchBox, ThemeSwitcher };

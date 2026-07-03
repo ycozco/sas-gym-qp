@@ -1,3 +1,50 @@
+import React from "react";
+import { createRoot } from "react-dom/client";
+import {
+  AdminDashboard,
+  CajeroDashboard,
+  CoachDashboard,
+  Login,
+  MiembroDashboard,
+  SuperDashboard,
+} from "./dashboards.jsx";
+import { GYM, ROLES } from "./data.jsx";
+import {
+  AUTH_TOKEN_KEY,
+  Sidebar,
+  TENANT_ID_KEY,
+  THEME_MODE_KEY,
+  ThemeSwitcher,
+  Topbar,
+  apiRequest,
+  applyTenantTheme,
+  normalizeMembershipPlan,
+  normalizeProduct,
+  normalizeSaasPlan,
+  normalizeTenantSettings,
+  normalizeThemeMode,
+  planToApiPayload,
+  productToApiPayload,
+  saasPlanToApiPayload,
+  roleFromBackend,
+} from "./shared.jsx";
+import { Asistencia } from "./src/features/attendance/Asistencia.jsx";
+import { Caja } from "./src/features/cashier/Caja.jsx";
+import { Clases } from "./src/features/classes/ClasesGrupales.jsx";
+import { CRM } from "./src/features/crm/CRM.jsx";
+import { Reportes } from "./src/features/dashboard/Dashboard.jsx";
+import { Dietas } from "./src/features/diets/Dietas.jsx";
+import { Finanzas } from "./src/features/finances/Finanzas.jsx";
+import { Gimnasios } from "./src/features/gyms/Gimnasios.jsx";
+import { Productos } from "./src/features/inventory/Productos.jsx";
+import { Usuarios } from "./src/features/members/Socios.jsx";
+import { Membresias } from "./src/features/memberships/Membresias.jsx";
+import { Pagos } from "./src/features/payments/Pagos.jsx";
+import { Puntos } from "./src/features/points/Puntos.jsx";
+import { PlanesSaaS } from "./src/features/saas/PlanesSaaS.jsx";
+import { Config } from "./src/features/settings/Config.jsx";
+import { Entrenamientos } from "./src/features/workouts/Entrenamientos.jsx";
+
 // app.jsx — raíz del panel: login → shell con sidebar + routing por sección.
 
 const DASHBOARDS = {
@@ -31,23 +78,29 @@ const SECTIONS = {
 
 // Título del topbar por sección. `dashboard` depende del rol.
 const TITLE = {
-  dashboard: { superadmin: "Resumen de la plataforma", admin: "Dashboard", cajero: "Dashboard de turno", coach: "Panel del entrenador", miembro: "Mi resumen" },
-  gimnasios:  { _: "Gimnasios de la red" },
-  planes:     { _: "Planes SaaS" },
-  usuarios:   { coach: "Mis alumnos", _: "Usuarios" },
+  dashboard: {
+    superadmin: "Resumen de la plataforma",
+    admin: "Dashboard",
+    cajero: "Dashboard de turno",
+    coach: "Panel del entrenador",
+    miembro: "Mi resumen",
+  },
+  gimnasios: { _: "Gimnasios de la red" },
+  planes: { _: "Planes SaaS" },
+  usuarios: { coach: "Mis alumnos", _: "Usuarios" },
   asistencia: { _: "Control de asistencia" },
-  pagos:      { cajero: "Cobros del turno", _: "Pagos y acreditaciones" },
-  productos:  { _: "Productos e inventario" },
-  reportes:   { _: "Reportes y analítica" },
-  config:     { _: "Configuración del gimnasio" },
+  pagos: { cajero: "Cobros del turno", _: "Pagos y acreditaciones" },
+  productos: { _: "Productos e inventario" },
+  reportes: { _: "Reportes y analítica" },
+  config: { _: "Configuración del gimnasio" },
   membresias: { _: "Membresías y planes" },
-  caja:       { _: "Caja del turno" },
-  finanzas:   { _: "Finanzas del gimnasio" },
-  puntos:     { _: "Puntos y fidelización" },
-  clases:     { _: "Clases y horarios" },
+  caja: { _: "Caja del turno" },
+  finanzas: { _: "Finanzas del gimnasio" },
+  puntos: { _: "Puntos y fidelización" },
+  clases: { _: "Clases y horarios" },
   entrenamientos: { _: "Entrenamientos y rutinas" },
-  crm:        { _: "CRM · campañas y contactos" },
-  dietas:     { _: "Dietas y Nutrición" },
+  crm: { _: "CRM · campañas y contactos" },
+  dietas: { _: "Dietas y Nutrición" },
 };
 const titleFor = (section, role) => {
   const t = TITLE[section] || {};
@@ -55,12 +108,20 @@ const titleFor = (section, role) => {
 };
 
 function App() {
-  const [role, setRole] = React.useState(null);          // null → login
+  const [role, setRole] = React.useState(null); // null → login
   const [authToken, setAuthToken] = React.useState(() => {
-    try { return localStorage.getItem(AUTH_TOKEN_KEY) || ""; } catch (e) { return ""; }
+    try {
+      return localStorage.getItem(AUTH_TOKEN_KEY) || "";
+    } catch (e) {
+      return "";
+    }
   });
   const [tenantId, setTenantId] = React.useState(() => {
-    try { return localStorage.getItem(TENANT_ID_KEY) || ""; } catch (e) { return ""; }
+    try {
+      return localStorage.getItem(TENANT_ID_KEY) || "";
+    } catch (e) {
+      return "";
+    }
   });
   const [currentUser, setCurrentUser] = React.useState(null);
   const [tenantSettings, setTenantSettings] = React.useState(null);
@@ -72,6 +133,7 @@ function App() {
   const [pendingPayments, setPendingPayments] = React.useState([]);
   const [auditLogs, setAuditLogs] = React.useState([]);
   const [tenants, setTenants] = React.useState([]);
+  const [saasPlans, setSaasPlans] = React.useState([]);
   const [trainerMembers, setTrainerMembers] = React.useState([]);
   const [memberPayments, setMemberPayments] = React.useState([]);
   const [announcements, setAnnouncements] = React.useState([]);
@@ -85,13 +147,21 @@ function App() {
   const [error, setError] = React.useState("");
   const [section, setSection] = React.useState("dashboard");
   const [themeMode, setThemeMode] = React.useState(() => {
-    try { return normalizeThemeMode(localStorage.getItem(THEME_MODE_KEY)); } catch (e) { return "system"; }
+    try {
+      return normalizeThemeMode(localStorage.getItem(THEME_MODE_KEY));
+    } catch (e) {
+      return "system";
+    }
   });
   const themeSyncRef = React.useRef({ ready: false, lastSynced: null });
 
   React.useEffect(() => {
     document.documentElement.dataset.theme = themeMode;
-    try { localStorage.setItem(THEME_MODE_KEY, themeMode); } catch (e) {}
+    try {
+      localStorage.setItem(THEME_MODE_KEY, themeMode);
+    } catch (_) {
+      // Storage can be unavailable in privacy-restricted browsers.
+    }
   }, [themeMode]);
 
   React.useEffect(() => {
@@ -102,7 +172,9 @@ function App() {
     if (!themeSyncRef.current.ready) {
       themeSyncRef.current = {
         ready: true,
-        lastSynced: normalizeThemeMode(currentUser.themePreference || currentUser.theme_preference),
+        lastSynced: normalizeThemeMode(
+          currentUser.themePreference || currentUser.theme_preference,
+        ),
       };
       return;
     }
@@ -118,209 +190,329 @@ function App() {
     })
       .then((result) => {
         if (cancelled) return;
-        const savedMode = normalizeThemeMode(result?.themePreference || result?.theme_preference || nextMode);
+        const savedMode = normalizeThemeMode(
+          result?.themePreference || result?.theme_preference || nextMode,
+        );
         themeSyncRef.current.lastSynced = savedMode;
-        setCurrentUser((prev) => prev ? { ...prev, themePreference: savedMode, theme_preference: savedMode } : prev);
+        setCurrentUser((prev) =>
+          prev
+            ? {
+                ...prev,
+                themePreference: savedMode,
+                theme_preference: savedMode,
+              }
+            : prev,
+        );
         if (savedMode !== themeMode) setThemeMode(savedMode);
       })
       .catch((e) => {
         if (cancelled) return;
-        setError((prev) => prev || e.message || "No se pudo sincronizar el tema.");
+        setError(
+          (prev) => prev || e.message || "No se pudo sincronizar el tema.",
+        );
       });
 
-    return () => { cancelled = true; };
-  }, [authHeaders, currentUser?.id, themeMode]);
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    authHeaders,
+    currentUser?.id,
+    currentUser?.themePreference,
+    currentUser?.theme_preference,
+    themeMode,
+  ]);
 
   React.useEffect(() => {
     applyTenantTheme(tenantSettings);
   }, [tenantSettings]);
 
-  const authHeaders = React.useMemo(() => ({ token: authToken, tenantId }), [authToken, tenantId]);
+  const authHeaders = React.useMemo(
+    () => ({ token: authToken, tenantId }),
+    [authToken, tenantId],
+  );
 
-  const loadTenantSettings = React.useCallback(async (override = authHeaders) => {
-    const data = await apiRequest("/tenants/me", override);
-    const normalized = normalizeTenantSettings(data);
-    setTenantSettings(normalized);
-    return normalized;
-  }, [authHeaders]);
+  const loadTenantSettings = React.useCallback(
+    async (override = authHeaders) => {
+      const data = await apiRequest("/tenants/me", override);
+      const normalized = normalizeTenantSettings(data);
+      setTenantSettings(normalized);
+      return normalized;
+    },
+    [authHeaders],
+  );
 
-  const loadMembershipPlans = React.useCallback(async (includeInactive = role === "admin", override = authHeaders) => {
-    const data = await apiRequest(`/membership-plans?includeInactive=${includeInactive ? "true" : "false"}`, override);
-    const plans = data.map(normalizeMembershipPlan);
-    setMembershipPlans(plans);
-    return plans;
-  }, [authHeaders, role]);
+  const loadMembershipPlans = React.useCallback(
+    async (includeInactive = role === "admin", override = authHeaders) => {
+      const data = await apiRequest(
+        `/membership-plans?includeInactive=${includeInactive ? "true" : "false"}`,
+        override,
+      );
+      const plans = data.map(normalizeMembershipPlan);
+      setMembershipPlans(plans);
+      return plans;
+    },
+    [authHeaders, role],
+  );
 
-  const loadProducts = React.useCallback(async (includeInactive = role === "admin", override = authHeaders) => {
-    const data = await apiRequest(`/products?includeInactive=${includeInactive ? "true" : "false"}`, override);
-    const rows = data.map(normalizeProduct);
-    setProducts(rows);
-    return rows;
-  }, [authHeaders, role]);
+  const loadProducts = React.useCallback(
+    async (includeInactive = role === "admin", override = authHeaders) => {
+      const data = await apiRequest(
+        `/products?includeInactive=${includeInactive ? "true" : "false"}`,
+        override,
+      );
+      const rows = data.map(normalizeProduct);
+      setProducts(rows);
+      return rows;
+    },
+    [authHeaders, role],
+  );
 
-  const loadDashboardSummary = React.useCallback(async (override = authHeaders) => {
-    const data = await apiRequest("/reports/dashboard", override);
-    setDashboardSummary(data);
-    return data;
-  }, [authHeaders]);
+  const loadDashboardSummary = React.useCallback(
+    async (override = authHeaders) => {
+      const data = await apiRequest("/reports/dashboard", override);
+      setDashboardSummary(data);
+      return data;
+    },
+    [authHeaders],
+  );
 
-  const loadAdminData = React.useCallback(async (override = authHeaders) => {
-    const [members, cashierRows, pending, audit] = await Promise.all([
-      apiRequest("/admin/members", override).catch(() => []),
-      apiRequest("/admin/cashiers", override).catch(() => []),
-      apiRequest("/payments/pending", override).catch(() => []),
-      apiRequest("/reports/audit-logs", override).catch(() => []),
-    ]);
-    setAdminMembers(members);
-    setCashiers(cashierRows);
-    setPendingPayments(pending);
-    setAuditLogs(audit);
-    return { members, cashierRows, pending, audit };
-  }, [authHeaders]);
+  const loadAdminData = React.useCallback(
+    async (override = authHeaders) => {
+      const [members, cashierRows, pending, audit] = await Promise.all([
+        apiRequest("/admin/members", override).catch(() => []),
+        apiRequest("/admin/cashiers", override).catch(() => []),
+        apiRequest("/payments/pending", override).catch(() => []),
+        apiRequest("/reports/audit-logs", override).catch(() => []),
+      ]);
+      setAdminMembers(members);
+      setCashiers(cashierRows);
+      setPendingPayments(pending);
+      setAuditLogs(audit);
+      return { members, cashierRows, pending, audit };
+    },
+    [authHeaders],
+  );
 
-  const loadTenants = React.useCallback(async (override = authHeaders) => {
-    const data = await apiRequest("/tenants", override);
-    setTenants(data);
-    return data;
-  }, [authHeaders]);
+  const loadTenants = React.useCallback(
+    async (override = authHeaders) => {
+      const data = await apiRequest("/tenants", override);
+      setTenants(data);
+      return data;
+    },
+    [authHeaders],
+  );
 
-  const loadTrainerData = React.useCallback(async (override = authHeaders) => {
-    const data = await apiRequest("/members/assigned", override);
-    setTrainerMembers(data);
-    return data;
-  }, [authHeaders]);
+  const loadSaasPlans = React.useCallback(
+    async (includeInactive = true, override = authHeaders) => {
+      const data = await apiRequest(
+        `/saas-plans?includeInactive=${includeInactive ? "true" : "false"}`,
+        override,
+      );
+      const rows = data.map(normalizeSaasPlan);
+      setSaasPlans(rows);
+      return rows;
+    },
+    [authHeaders],
+  );
 
-  const loadMemberData = React.useCallback(async (override = authHeaders) => {
-    const data = await apiRequest("/payments/me", override);
-    setMemberPayments(data);
-    return data;
-  }, [authHeaders]);
+  const loadTrainerData = React.useCallback(
+    async (override = authHeaders) => {
+      const data = await apiRequest("/members/assigned", override);
+      setTrainerMembers(data);
+      return data;
+    },
+    [authHeaders],
+  );
 
-  const loadAnnouncements = React.useCallback(async (all = false, override = authHeaders) => {
-    const data = await apiRequest(all ? "/announcements/all" : "/announcements", override);
-    setAnnouncements(data);
-    return data;
-  }, [authHeaders]);
+  const loadMemberData = React.useCallback(
+    async (override = authHeaders) => {
+      const data = await apiRequest("/payments/me", override);
+      setMemberPayments(data);
+      return data;
+    },
+    [authHeaders],
+  );
 
-  const loadObservations = React.useCallback(async (override = authHeaders) => {
-    const data = await apiRequest("/observations", override);
-    setObservations(data);
-    return data;
-  }, [authHeaders]);
+  const loadAnnouncements = React.useCallback(
+    async (all = false, override = authHeaders) => {
+      const data = await apiRequest(
+        all ? "/announcements/all" : "/announcements",
+        override,
+      );
+      setAnnouncements(data);
+      return data;
+    },
+    [authHeaders],
+  );
 
-  const loadActiveRoutine = React.useCallback(async (override = authHeaders) => {
-    const data = await apiRequest("/routines/active", override);
-    setActiveRoutine(data);
-    return data;
-  }, [authHeaders]);
+  const loadObservations = React.useCallback(
+    async (override = authHeaders) => {
+      const data = await apiRequest("/observations", override);
+      setObservations(data);
+      return data;
+    },
+    [authHeaders],
+  );
 
-  const loadSchedules = React.useCallback(async (override = authHeaders) => {
-    const data = await apiRequest("/schedules", override);
-    setSchedules(data);
-    return data;
-  }, [authHeaders]);
+  const loadActiveRoutine = React.useCallback(
+    async (override = authHeaders) => {
+      const data = await apiRequest("/routines/active", override);
+      setActiveRoutine(data);
+      return data;
+    },
+    [authHeaders],
+  );
 
-  const loadDiets = React.useCallback(async (memberId = "", override = authHeaders) => {
-    const query = memberId ? `?memberId=${memberId}` : "";
-    return apiRequest(`/dietas${query}`, override).catch(() => apiRequest(`/diets${query}`, override));
-  }, [authHeaders]);
+  const loadSchedules = React.useCallback(
+    async (override = authHeaders) => {
+      const data = await apiRequest("/schedules", override);
+      setSchedules(data);
+      return data;
+    },
+    [authHeaders],
+  );
 
-  const loadExercises = React.useCallback(async (override = authHeaders) => {
-    return apiRequest("/routines/trainer/exercises", override);
-  }, [authHeaders]);
+  const loadDiets = React.useCallback(
+    async (memberId = "", override = authHeaders) => {
+      const query = memberId ? `?memberId=${memberId}` : "";
+      return apiRequest(`/diets${query}`, override);
+    },
+    [authHeaders],
+  );
 
-  const loadRoutineTemplates = React.useCallback(async (override = authHeaders) => {
-    return apiRequest("/routines/trainer/templates", override);
-  }, [authHeaders]);
+  const loadExercises = React.useCallback(
+    async (override = authHeaders) => {
+      return apiRequest("/routines/trainer/exercises", override);
+    },
+    [authHeaders],
+  );
 
-  const loadPointsData = React.useCallback(async (override = authHeaders) => {
-    const [summary, catalog, config] = await Promise.all([
-      apiRequest("/points/summary", override).catch(() => null),
-      apiRequest("/points/catalog", override).catch(() => null),
-      apiRequest("/points/config", override).catch(() => null),
-    ]);
-    setPointsSummary(summary);
-    setPointsCatalog(catalog);
-    setPointsConfig(config);
-    return { summary, catalog, config };
-  }, [authHeaders]);
+  const loadRoutineTemplates = React.useCallback(
+    async (override = authHeaders) => {
+      return apiRequest("/routines/trainer/templates", override);
+    },
+    [authHeaders],
+  );
 
-  const loadSession = React.useCallback(async (override = authHeaders) => {
-    setLoading(true);
-    setError("");
-    try {
-      const me = await apiRequest("/auth/me", override);
-      const nextRole = roleFromBackend(me.rol);
-      const backendTheme = normalizeThemeMode(me.themePreference || me.theme_preference);
-      themeSyncRef.current = {
-        ready: true,
-        lastSynced: backendTheme,
-      };
-      setThemeMode(backendTheme);
-      setCurrentUser(me);
-      setRole(nextRole);
-      await loadTenantSettings(override);
-      await loadMembershipPlans(nextRole === "admin", override);
-      if (["admin", "cajero"].includes(nextRole)) {
-        await loadProducts(nextRole === "admin", override).catch(() => []);
-      }
-      if (["admin", "cajero", "coach", "miembro"].includes(nextRole)) {
-        await loadAnnouncements(nextRole === "admin", override).catch(() => []);
-        await loadSchedules(override).catch(() => []);
-      }
-      if (["admin", "cajero", "miembro"].includes(nextRole)) {
-        await loadPointsData(override).catch(() => null);
-      }
-      if (nextRole === "admin") {
-        await loadDashboardSummary(override).catch(() => null);
-        await loadAdminData(override).catch(() => null);
-        await loadObservations(override).catch(() => []);
-      }
-      if (nextRole === "superadmin") {
-        await loadTenants(override).catch(() => []);
-      }
-      if (nextRole === "coach") {
-        await loadTrainerData(override).catch(() => []);
-      }
-      if (nextRole === "miembro") {
-        await loadMemberData(override).catch(() => []);
-        await loadActiveRoutine(override).catch(() => null);
-      }
-    } catch (e) {
-      setError(e.message || "No se pudo cargar la sesión.");
-      setRole(null);
-      setCurrentUser(null);
-      setTenantSettings(null);
-      setMembershipPlans([]);
-      setProducts([]);
-      setDashboardSummary(null);
-      setAdminMembers([]);
-      setCashiers([]);
-      setPendingPayments([]);
-      setAuditLogs([]);
-      setTenants([]);
-      setTrainerMembers([]);
-      setMemberPayments([]);
-      setAnnouncements([]);
-      setObservations([]);
-      setActiveRoutine(null);
-      setSchedules([]);
-      setPointsSummary(null);
-      setPointsCatalog(null);
+  const loadPointsData = React.useCallback(
+    async (override = authHeaders) => {
+      const [summary, catalog, config] = await Promise.all([
+        apiRequest("/points/summary", override).catch(() => null),
+        apiRequest("/points/catalog", override).catch(() => null),
+        apiRequest("/points/config", override).catch(() => null),
+      ]);
+      setPointsSummary(summary);
+      setPointsCatalog(catalog);
+      setPointsConfig(config);
+      return { summary, catalog, config };
+    },
+    [authHeaders],
+  );
+
+  const loadSession = React.useCallback(
+    async (override = authHeaders) => {
+      setLoading(true);
+      setError("");
       try {
-        localStorage.removeItem(AUTH_TOKEN_KEY);
-        localStorage.removeItem(TENANT_ID_KEY);
-      } catch (_) {}
-    } finally {
-      setLoading(false);
-    }
-  }, [authHeaders, loadMembershipPlans, loadTenantSettings]);
+        const me = await apiRequest("/auth/me", override);
+        const nextRole = roleFromBackend(me.rol);
+        const backendTheme = normalizeThemeMode(
+          me.themePreference || me.theme_preference,
+        );
+        themeSyncRef.current = {
+          ready: true,
+          lastSynced: backendTheme,
+        };
+        setThemeMode(backendTheme);
+        setCurrentUser(me);
+        setRole(nextRole);
+        await loadTenantSettings(override);
+        await loadMembershipPlans(nextRole === "admin", override);
+        if (["admin", "cajero"].includes(nextRole)) {
+          await loadProducts(nextRole === "admin", override).catch(() => []);
+        }
+        if (["admin", "cajero", "coach", "miembro"].includes(nextRole)) {
+          await loadAnnouncements(nextRole === "admin", override).catch(
+            () => [],
+          );
+          await loadSchedules(override).catch(() => []);
+        }
+        if (["admin", "cajero", "miembro"].includes(nextRole)) {
+          await loadPointsData(override).catch(() => null);
+        }
+        if (nextRole === "admin") {
+          await loadDashboardSummary(override).catch(() => null);
+          await loadAdminData(override).catch(() => null);
+          await loadObservations(override).catch(() => []);
+        }
+        if (nextRole === "superadmin") {
+          await loadTenants(override).catch(() => []);
+          await loadSaasPlans(true, override).catch(() => []);
+        }
+        if (nextRole === "coach") {
+          await loadTrainerData(override).catch(() => []);
+        }
+        if (nextRole === "miembro") {
+          await loadMemberData(override).catch(() => []);
+          await loadActiveRoutine(override).catch(() => null);
+        }
+      } catch (e) {
+        setError(e.message || "No se pudo cargar la sesión.");
+        setRole(null);
+        setCurrentUser(null);
+        setTenantSettings(null);
+        setMembershipPlans([]);
+        setProducts([]);
+        setDashboardSummary(null);
+        setAdminMembers([]);
+        setCashiers([]);
+        setPendingPayments([]);
+        setAuditLogs([]);
+        setTenants([]);
+        setSaasPlans([]);
+        setTrainerMembers([]);
+        setMemberPayments([]);
+        setAnnouncements([]);
+        setObservations([]);
+        setActiveRoutine(null);
+        setSchedules([]);
+        setPointsSummary(null);
+        setPointsCatalog(null);
+        try {
+          localStorage.removeItem(AUTH_TOKEN_KEY);
+          localStorage.removeItem(TENANT_ID_KEY);
+        } catch (_) {
+          // Storage can be unavailable in privacy-restricted browsers.
+        }
+      } finally {
+        setLoading(false);
+      }
+    },
+    [
+      authHeaders,
+      loadActiveRoutine,
+      loadAdminData,
+      loadAnnouncements,
+      loadDashboardSummary,
+      loadMemberData,
+      loadMembershipPlans,
+      loadObservations,
+      loadPointsData,
+      loadProducts,
+      loadSaasPlans,
+      loadSchedules,
+      loadTenantSettings,
+      loadTenants,
+      loadTrainerData,
+    ],
+  );
 
   React.useEffect(() => {
     if (authToken && tenantId && !currentUser) {
       loadSession({ token: authToken, tenantId });
     }
-  }, [authToken, tenantId]);
+  }, [authToken, currentUser, loadSession, tenantId]);
 
   const login = async (emailOrDni, password) => {
     setLoading(true);
@@ -333,7 +525,9 @@ function App() {
       try {
         localStorage.setItem(AUTH_TOKEN_KEY, result.token);
         localStorage.setItem(TENANT_ID_KEY, result.tenantId);
-      } catch (_) {}
+      } catch (_) {
+        // Storage can be unavailable in privacy-restricted browsers.
+      }
       setAuthToken(result.token);
       setTenantId(result.tenantId);
       await loadSession({ token: result.token, tenantId: result.tenantId });
@@ -346,11 +540,18 @@ function App() {
   };
 
   const logout = () => {
-    apiRequest("/auth/logout", { method: "POST", token: authToken, tenantId, _retry: false }).catch(() => null);
+    apiRequest("/auth/logout", {
+      method: "POST",
+      token: authToken,
+      tenantId,
+      _retry: false,
+    }).catch(() => null);
     try {
       localStorage.removeItem(AUTH_TOKEN_KEY);
       localStorage.removeItem(TENANT_ID_KEY);
-    } catch (_) {}
+    } catch (_) {
+      // Storage can be unavailable in privacy-restricted browsers.
+    }
     setAuthToken("");
     setTenantId("");
     setCurrentUser(null);
@@ -363,6 +564,7 @@ function App() {
     setPendingPayments([]);
     setAuditLogs([]);
     setTenants([]);
+    setSaasPlans([]);
     setTrainerMembers([]);
     setMemberPayments([]);
     setAnnouncements([]);
@@ -439,34 +641,145 @@ function App() {
     return loadProducts(true);
   };
 
-  const searchMembers = (q) => apiRequest(`/members/search?q=${encodeURIComponent(q)}`, authHeaders);
+  const searchMembers = (q) =>
+    apiRequest(`/members/search?q=${encodeURIComponent(q)}`, authHeaders);
   const getActiveCaja = () => apiRequest("/payments/caja/active", authHeaders);
-  const openCaja = (payload) => apiRequest("/payments/caja/open", { ...authHeaders, method: "POST", body: payload });
-  const getCajaDetails = () => apiRequest("/payments/caja/details", authHeaders);
+  const openCaja = (payload) =>
+    apiRequest("/payments/caja/open", {
+      ...authHeaders,
+      method: "POST",
+      body: payload,
+    });
+  const getCajaDetails = () =>
+    apiRequest("/payments/caja/details", authHeaders);
   const getCajaSales = () => apiRequest("/payments/caja/sales", authHeaders);
-  const createCajaEgress = (payload) => apiRequest("/payments/caja/egress", { ...authHeaders, method: "POST", body: payload });
-  const closeCaja = (payload) => apiRequest("/payments/caja/close", { ...authHeaders, method: "POST", body: payload });
-  const simulateAccess = (dni) => apiRequest("/attendance/simulation-access", { ...authHeaders, method: "POST", body: { dni } });
-  const chargePOS = (payload) => apiRequest("/payments/pos-charge", { ...authHeaders, method: "POST", body: payload });
-  const editCajaOpeningAmount = (payload) => apiRequest("/payments/caja/edit-opening-amount", { ...authHeaders, method: "PATCH", body: payload });
-  const adminEditCaja = (id, payload) => apiRequest(`/payments/caja/${id}/admin-edit`, { ...authHeaders, method: "PATCH", body: payload });
-  const toggleTenant = (id) => apiRequest(`/tenants/${id}/toggle`, { ...authHeaders, method: "POST" }).then(() => loadTenants());
-  const resolvePayment = (id, status, comments = "") => apiRequest(`/payments/${id}/resolve`, { ...authHeaders, method: "POST", body: { status, comments } }).then(() => loadAdminData());
-  const saveAdminMember = (member) => apiRequest(member.id ? `/admin/members/${member.id}` : "/admin/members", { ...authHeaders, method: member.id ? "PATCH" : "POST", body: member }).then(() => loadAdminData());
-  const toggleAdminMember = (id) => apiRequest(`/admin/members/${id}/toggle-active`, { ...authHeaders, method: "POST" }).then(() => loadAdminData());
-  const saveAnnouncement = (payload) => apiRequest(payload.id ? `/announcements/${payload.id}` : "/announcements", { ...authHeaders, method: payload.id ? "PUT" : "POST", body: payload }).then(() => loadAnnouncements(true));
-  const toggleAnnouncement = (id) => apiRequest(`/announcements/${id}/toggle`, { ...authHeaders, method: "PATCH" }).then(() => loadAnnouncements(true));
+  const createCajaEgress = (payload) =>
+    apiRequest("/payments/caja/egress", {
+      ...authHeaders,
+      method: "POST",
+      body: payload,
+    });
+  const closeCaja = (payload) =>
+    apiRequest("/payments/caja/close", {
+      ...authHeaders,
+      method: "POST",
+      body: payload,
+    });
+  const simulateAccess = (dni) =>
+    apiRequest("/attendance/simulation-access", {
+      ...authHeaders,
+      method: "POST",
+      body: { dni },
+    });
+  const chargePOS = (payload) =>
+    apiRequest("/payments/pos-charge", {
+      ...authHeaders,
+      method: "POST",
+      body: payload,
+    });
+  const editCajaOpeningAmount = (payload) =>
+    apiRequest("/payments/caja/edit-opening-amount", {
+      ...authHeaders,
+      method: "PATCH",
+      body: payload,
+    });
+  const adminEditCaja = (id, payload) =>
+    apiRequest(`/payments/caja/${id}/admin-edit`, {
+      ...authHeaders,
+      method: "PATCH",
+      body: payload,
+    });
+  const toggleTenant = (id) =>
+    apiRequest(`/tenants/${id}/toggle`, {
+      ...authHeaders,
+      method: "POST",
+    }).then(() => loadTenants());
+  const saveSaasPlan = async (plan) => {
+    const payload = saasPlanToApiPayload(plan);
+    if (plan.code) {
+      await apiRequest(`/saas-plans/${plan.code}`, {
+        ...authHeaders,
+        method: "PATCH",
+        body: payload,
+      });
+    } else {
+      await apiRequest("/saas-plans", {
+        ...authHeaders,
+        method: "POST",
+        body: payload,
+      });
+    }
+    return loadSaasPlans(true);
+  };
+  const deactivateSaasPlan = (code) =>
+    apiRequest(`/saas-plans/${code}`, {
+      ...authHeaders,
+      method: "DELETE",
+    }).then(() => loadSaasPlans(true));
+  const resolvePayment = (id, status, comments = "") =>
+    apiRequest(`/payments/${id}/resolve`, {
+      ...authHeaders,
+      method: "POST",
+      body: { status, comments },
+    }).then(() => loadAdminData());
+  const saveAdminMember = (member) =>
+    apiRequest(member.id ? `/admin/members/${member.id}` : "/admin/members", {
+      ...authHeaders,
+      method: member.id ? "PATCH" : "POST",
+      body: member,
+    }).then(() => loadAdminData());
+  const toggleAdminMember = (id) =>
+    apiRequest(`/admin/members/${id}/toggle-active`, {
+      ...authHeaders,
+      method: "POST",
+    }).then(() => loadAdminData());
+  const saveAnnouncement = (payload) =>
+    apiRequest(payload.id ? `/announcements/${payload.id}` : "/announcements", {
+      ...authHeaders,
+      method: payload.id ? "PUT" : "POST",
+      body: payload,
+    }).then(() => loadAnnouncements(true));
+  const toggleAnnouncement = (id) =>
+    apiRequest(`/announcements/${id}/toggle`, {
+      ...authHeaders,
+      method: "PATCH",
+    }).then(() => loadAnnouncements(true));
   const saveDiet = (payload) => {
     if (payload.id) {
-      return apiRequest(`/diets/${payload.id}`, { ...authHeaders, method: "PATCH", body: payload });
+      const { id, ...body } = payload;
+      return apiRequest(`/diets/${id}`, {
+        ...authHeaders,
+        method: "PATCH",
+        body,
+      });
     }
-    return apiRequest("/diets", { ...authHeaders, method: "POST", body: payload });
+    return apiRequest("/diets", {
+      ...authHeaders,
+      method: "POST",
+      body: payload,
+    });
   };
-  const deactivateDiet = (id) => apiRequest(`/diets/${id}`, { ...authHeaders, method: "DELETE" });
+  const deactivateDiet = (id) =>
+    apiRequest(`/diets/${id}`, { ...authHeaders, method: "DELETE" });
 
-  const createExercise = (payload) => apiRequest("/routines/trainer/exercises", { ...authHeaders, method: "POST", body: payload });
-  const createRoutineTemplate = (payload) => apiRequest("/routines/trainer/templates", { ...authHeaders, method: "POST", body: payload });
-  const assignRoutine = (payload) => apiRequest("/routines/trainer/assign", { ...authHeaders, method: "POST", body: payload });
+  const createExercise = (payload) =>
+    apiRequest("/routines/trainer/exercises", {
+      ...authHeaders,
+      method: "POST",
+      body: payload,
+    });
+  const createRoutineTemplate = (payload) =>
+    apiRequest("/routines/trainer/templates", {
+      ...authHeaders,
+      method: "POST",
+      body: payload,
+    });
+  const assignRoutine = (payload) =>
+    apiRequest("/routines/trainer/assign", {
+      ...authHeaders,
+      method: "POST",
+      body: payload,
+    });
   const savePointsConfig = async (payload) => {
     const data = await apiRequest("/points/config", {
       ...authHeaders,
@@ -480,14 +793,14 @@ function App() {
   if (!role) {
     return (
       <>
-        <ThemeSwitcher themeMode={themeMode} setThemeMode={setThemeMode}/>
-        <Login onLogin={login} loading={loading} error={error}/>
+        <ThemeSwitcher themeMode={themeMode} setThemeMode={setThemeMode} />
+        <Login onLogin={login} loading={loading} error={error} />
       </>
     );
   }
 
   // La sección activa debe pertenecer al nav del rol; si no, cae a dashboard.
-  const allowed = ROLES[role].nav.flatMap(g => g.items.map(it => it.id));
+  const allowed = ROLES[role].nav.flatMap((g) => g.items.map((it) => it.id));
   const current = allowed.includes(section) ? section : "dashboard";
 
   let View;
@@ -510,6 +823,7 @@ function App() {
     pendingPayments,
     auditLogs,
     tenants,
+    saasPlans,
     trainerMembers,
     memberPayments,
     announcements,
@@ -527,6 +841,7 @@ function App() {
     reloadDashboardSummary: loadDashboardSummary,
     reloadAdminData: loadAdminData,
     reloadTenants: loadTenants,
+    reloadSaasPlans: loadSaasPlans,
     reloadTrainerData: loadTrainerData,
     reloadMemberData: loadMemberData,
     reloadAnnouncements: loadAnnouncements,
@@ -560,6 +875,8 @@ function App() {
     editCajaOpeningAmount,
     adminEditCaja,
     toggleTenant,
+    saveSaasPlan,
+    deactivateSaasPlan,
     resolvePayment,
     saveAdminMember,
     toggleAdminMember,
@@ -569,11 +886,20 @@ function App() {
 
   return (
     <div className="app">
-      <Sidebar role={role} section={current} onNavigate={go} tenantSettings={tenantSettings}/>
+      <Sidebar
+        role={role}
+        section={current}
+        onNavigate={go}
+        tenantSettings={tenantSettings}
+      />
       <div className="main">
         <Topbar
           title={titleFor(current, role)}
-          sub={role === "superadmin" ? "Red SaasGym · operacion multi-sede" : `${gym.name} · ${ROLES[role].label}`}
+          sub={
+            role === "superadmin"
+              ? "Red SaasGym · operacion multi-sede"
+              : `${gym.name} · ${ROLES[role].label}`
+          }
           role={role}
           currentUser={currentUser}
           onLogout={logout}
@@ -581,27 +907,11 @@ function App() {
           setThemeMode={setThemeMode}
         />
         <main className="content">
-          <View go={go} app={appContext}/>
+          <View go={go} app={appContext} />
         </main>
       </div>
     </div>
   );
 }
 
-function ThemeSwitcher({ themeMode, setThemeMode }) {
-  return (
-    <div className="theme-seg" aria-label="Tema visual">
-      {[
-        ["system", "Sistema", "◎"],
-        ["light", "Claro", "☼"],
-        ["dark", "Oscuro", "◐"],
-      ].map(([id, label, glyph]) => (
-        <button key={id} aria-pressed={themeMode === id} onClick={() => setThemeMode(id)} aria-label={label} title={label}>
-          <span className="theme-glyph" aria-hidden="true">{glyph}</span>
-        </button>
-      ))}
-    </div>
-  );
-}
-
-ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+createRoot(document.getElementById("root")).render(<App />);
