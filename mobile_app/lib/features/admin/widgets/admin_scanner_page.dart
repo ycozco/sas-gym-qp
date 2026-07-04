@@ -238,7 +238,7 @@ class AdminScannerPage extends StatelessWidget {
     } else if (state.isBackendMode) {
       onTriggerVerdict('denied', null, dni);
       return;
-    } else {
+    } else if (!AppConfig.isProduction) {
       final secret = AppConfig.demoTotpSecretForDni(dni);
       final time = DateTime.now().millisecondsSinceEpoch;
       if (secret != null) {
@@ -254,6 +254,9 @@ class AdminScannerPage extends StatelessWidget {
           AppLogger.debug('Error generating simulator TOTP', e);
         }
       }
+    } else {
+      onTriggerVerdict('denied', null, dni);
+      return;
     }
 
     if (state.isBackendMode) {
@@ -278,8 +281,9 @@ class AdminScannerPage extends StatelessWidget {
       onTriggerVerdict(resultStr, member, dni);
     } else {
       final result = state.recordAttendance(dni);
-      final memberIndex = state.allMembersIncludingSoftDeleted
-          .indexWhere((m) => m.dni == dni);
+      final memberIndex = state.allMembersIncludingSoftDeleted.indexWhere(
+        (m) => m.dni == dni,
+      );
       final MemberRecord? member = memberIndex != -1
           ? state.allMembersIncludingSoftDeleted[memberIndex]
           : null;

@@ -76,7 +76,11 @@ class CashierScanPage extends StatelessWidget {
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.videocam_rounded, color: Colors.red, size: 14),
+                          Icon(
+                            Icons.videocam_rounded,
+                            color: Colors.red,
+                            size: 14,
+                          ),
                           SizedBox(width: 6),
                           Text(
                             'CAM_SIMULATOR_ON',
@@ -322,10 +326,7 @@ class CashierScanPage extends StatelessWidget {
               ),
               Text(
                 subtitle,
-                style: TextStyle(
-                  color: colors.textSecondary,
-                  fontSize: 10.5,
-                ),
+                style: TextStyle(color: colors.textSecondary, fontSize: 10.5),
               ),
             ],
           ),
@@ -471,7 +472,7 @@ class CashierScanPage extends StatelessWidget {
     } else if (state.isBackendMode) {
       onTriggerVerdict('denied', null, dni);
       return;
-    } else {
+    } else if (!AppConfig.isProduction) {
       final secret = AppConfig.demoTotpSecretForDni(dni);
       final time = DateTime.now().millisecondsSinceEpoch;
       if (secret != null) {
@@ -487,6 +488,9 @@ class CashierScanPage extends StatelessWidget {
           AppLogger.debug('Error generating simulator TOTP', e);
         }
       }
+    } else {
+      onTriggerVerdict('denied', null, dni);
+      return;
     }
 
     if (state.isBackendMode) {
@@ -511,8 +515,9 @@ class CashierScanPage extends StatelessWidget {
       onTriggerVerdict(resultStr, member, dni);
     } else {
       final result = state.recordAttendance(dni);
-      final memberIndex = state.allMembersIncludingSoftDeleted
-          .indexWhere((m) => m.dni == dni);
+      final memberIndex = state.allMembersIncludingSoftDeleted.indexWhere(
+        (m) => m.dni == dni,
+      );
       final MemberRecord? member = memberIndex != -1
           ? state.allMembersIncludingSoftDeleted[memberIndex]
           : null;
