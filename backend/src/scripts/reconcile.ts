@@ -7,6 +7,7 @@ import {
   UserState,
 } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
+import { randomBytes } from 'crypto';
 
 const prisma = new PrismaClient();
 
@@ -72,6 +73,15 @@ const SAAS_PLANS = [
   },
 ] as const;
 
+const DEFAULT_SUPER_TENANT_ID = '11111111-1111-4111-8111-111111111111';
+
+const DEFAULT_PRESENTATION_TENANT_IDS = [
+  '22222222-2222-4222-8220-000000000001',
+  '22222222-2222-4222-8221-000000000002',
+  '22222222-2222-4222-8222-000000000003',
+  '22222222-2222-4222-8223-000000000004',
+] as const;
+
 function requireSecret(name: string): string {
   const value = process.env[name]?.trim();
   if (!value) {
@@ -124,23 +134,35 @@ async function ensureUser(params: {
   nombre: string;
   dni: string;
   celular: string;
+  qrSecret?: string;
 }) {
-  return prisma.user.upsert({
+  const existing = await prisma.user.findUnique({
     where: {
       tenant_id_email: {
         tenant_id: params.tenantId,
         email: params.email,
       },
     },
-    update: {
-      password_hash: params.passwordHash,
-      rol: params.rol,
-      nombre_completo: params.nombre,
-      dni: params.dni,
-      celular: params.celular,
-      estado: UserState.ACTIVE,
-    },
-    create: {
+    select: { id: true, qr_secret: true },
+  });
+
+  if (existing) {
+    return prisma.user.update({
+      where: { id: existing.id },
+      data: {
+        password_hash: params.passwordHash,
+        rol: params.rol,
+        nombre_completo: params.nombre,
+        dni: params.dni,
+        celular: params.celular,
+        estado: UserState.ACTIVE,
+        qr_secret: existing.qr_secret ?? params.qrSecret,
+      },
+    });
+  }
+
+  return prisma.user.create({
+    data: {
       tenant_id: params.tenantId,
       email: params.email,
       password_hash: params.passwordHash,
@@ -149,8 +171,20 @@ async function ensureUser(params: {
       dni: params.dni,
       celular: params.celular,
       estado: UserState.ACTIVE,
+      qr_secret: params.qrSecret,
     },
   });
+}
+
+function createQrSecret(): string {
+  return randomBytes(32).toString('base64url');
+}
+
+function presentationTenantId(index: number): string {
+  return (
+    process.env[`PRESENTATION_TENANT_${index + 1}_ID`] ||
+    DEFAULT_PRESENTATION_TENANT_IDS[index]
+  );
 }
 
 async function ensureSchedule(params: {
@@ -312,7 +346,7 @@ async function main() {
 
   const superTenant = await prisma.tenant.upsert({
     where: {
-      id: process.env.PRESENTATION_SUPER_TENANT_ID || '11111111-1111-4111-8111-111111111111',
+      id: process.env.PRESENTATION_SUPER_TENANT_ID || DEFAULT_SUPER_TENANT_ID,
     },
     update: {
       nombre: 'SaasGym Network',
@@ -324,7 +358,7 @@ async function main() {
       descripcion: 'Tenant central de operacion y supervision comercial.',
     },
     create: {
-      id: process.env.PRESENTATION_SUPER_TENANT_ID || '11111111-1111-4111-8111-111111111111',
+      id: process.env.PRESENTATION_SUPER_TENANT_ID || DEFAULT_SUPER_TENANT_ID,
       nombre: 'SaasGym Network',
       plan_saas: 'ENTERPRISE',
       activo: true,
@@ -347,9 +381,7 @@ async function main() {
 
   for (let index = 0; index < PRESENTATION_GYMS.length; index += 1) {
     const gym = PRESENTATION_GYMS[index];
-    const tenantId =
-      process.env[`PRESENTATION_TENANT_${index + 1}_ID`] ||
-      `22222222-2222-4222-822${index}-${index}${index}${index}${index}${index}${index}${index}${index}`;
+    const tenantId = presentationTenantId(index);
 
     const tenant = await prisma.tenant.upsert({
       where: { id: tenantId },
@@ -418,6 +450,7 @@ async function main() {
       nombre: `Socio Demo ${gym.name}`,
       dni: `${index + 1}0000004`,
       celular: `90000040${index}`,
+      qrSecret: createQrSecret(),
     });
 
     const trainerProfile = await prisma.trainerProfile.upsert({
@@ -737,7 +770,32 @@ async function main() {
     }
   }
 
-  console.log(`Reconciliacion productiva completada para ${PRESENTATION_GYMS.length} gimnasios.`);
+  const summary = await Promise.all(
+    PRESENTATION_GYMS.map(async (gym, index) => {
+      const tenantId = presentationTenantId(index);
+      const [users, plans, products, schedules, diets] = await Promise.all([
+        prisma.user.count({ where: { tenant_id: tenantId } }),
+        prisma.membershipPlan.count({ where: { tenant_id: tenantId } }),
+        prisma.product.count({ where: { tenant_id: tenantId, es_visible: true } }),
+        prisma.schedule.count({ where: { tenant_id: tenantId, activo: true } }),
+        prisma.dietPlan.count({ where: { tenant_id: tenantId, activo: true } }),
+      ]);
+      return {
+        gym: gym.code,
+        tenantId,
+        users,
+        plans,
+        products,
+        schedules,
+        diets,
+      };
+    }),
+  );
+
+  console.log(
+    `Reconciliacion productiva completada para ${PRESENTATION_GYMS.length} gimnasios.`,
+  );
+  console.table(summary);
 }
 
 void main()
