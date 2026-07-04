@@ -1,13 +1,9 @@
-import {
-  Injectable,
-  UnauthorizedException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { createHash, randomBytes } from 'crypto';
-import { ThemePreference, UserState } from '@prisma/client';
+import { Prisma, ThemePreference, User, UserState } from '@prisma/client';
 import { UpdatePreferencesDto } from './dto/update-preferences.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { getRefreshTokenDays } from '../../core/config/env';
@@ -17,6 +13,8 @@ export interface AuthRequestMeta {
   userAgent?: string;
 }
 
+type AuthenticatedUserRecord = Omit<User, 'password_hash'>;
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -24,17 +22,36 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async validateUser(emailOrDni: string, pass: string): Promise<any> {
-    // Buscar al usuario por email o DNI usando consultas parametrizadas seguras de Prisma
-    const user = await this.prisma.user.findFirst({
+  async validateUser(
+    emailOrDni: string,
+    pass: string,
+    tenantId?: string,
+  ): Promise<AuthenticatedUserRecord> {
+    const normalizedIdentifier = emailOrDni.trim();
+    const normalizedTenantId = tenantId?.trim() || undefined;
+
+    const candidates = await this.prisma.user.findMany({
       where: {
-        OR: [{ email: emailOrDni }, { dni: emailOrDni }],
+        OR: [
+          { email: normalizedIdentifier },
+          { dni: normalizedIdentifier },
+        ],
+        ...(normalizedTenantId ? { tenant_id: normalizedTenantId } : {}),
       },
+      orderBy: { created_at: 'asc' },
     });
 
-    if (!user) {
+    if (candidates.length === 0) {
       throw new UnauthorizedException('Credenciales incorrectas.');
     }
+
+    if (!normalizedTenantId && candidates.length > 1) {
+      throw new UnauthorizedException(
+        'Se encontraron varias cuentas con ese identificador. Vuelve a intentarlo desde tu sede.',
+      );
+    }
+
+    const user = candidates[0];
 
     // Verificar si el inquilino (gimnasio) existe y está activo
     const tenant = await this.prisma.tenant.findUnique({
@@ -75,10 +92,11 @@ export class AuthService {
 
     // Excluir hash de contraseña
     const { password_hash, ...result } = user;
+    void password_hash;
     return result;
   }
 
-  async login(user: any, meta: AuthRequestMeta = {}) {
+  async login(user: AuthenticatedUserRecord, meta: AuthRequestMeta = {}) {
     const payload = {
       sub: user.id,
       email: user.email,
@@ -191,6 +209,7 @@ export class AuthService {
       throw new UnauthorizedException('Usuario no encontrado.');
     }
     const { password_hash, ...result } = user;
+    void password_hash;
     const memberProfile = result.member_profile
       ? {
           ...result.member_profile,
@@ -232,8 +251,9 @@ export class AuthService {
   }
 
   async updateProfile(userId: string, dto: UpdateProfileDto) {
-    const userUpdates: any = {};
-    if (dto.nombreCompleto !== undefined) userUpdates.nombre_completo = dto.nombreCompleto.trim();
+    const userUpdates: Prisma.UserUpdateInput = {};
+    if (dto.nombreCompleto !== undefined)
+      userUpdates.nombre_completo = dto.nombreCompleto.trim();
     if (dto.celular !== undefined) userUpdates.celular = dto.celular.trim();
 
     const user = await this.prisma.user.update({
@@ -243,13 +263,14 @@ export class AuthService {
     });
 
     if (user.member_profile) {
-      const profileUpdates: any = {};
+      const profileUpdates: Prisma.MemberProfileUpdateInput = {};
       if (dto.nickname !== undefined) profileUpdates.nickname = dto.nickname;
       if (dto.pesoKg !== undefined) profileUpdates.peso_kg = dto.pesoKg;
       if (dto.alturaCm !== undefined) profileUpdates.altura_cm = dto.alturaCm;
       if (dto.objetivo !== undefined) profileUpdates.objetivo = dto.objetivo;
       if (dto.lesiones !== undefined) profileUpdates.lesiones = dto.lesiones;
-      if (dto.medidasJson !== undefined) profileUpdates.medidas_json = dto.medidasJson;
+      if (dto.medidasJson !== undefined)
+        profileUpdates.medidas_json = dto.medidasJson;
 
       if (Object.keys(profileUpdates).length > 0) {
         await this.prisma.memberProfile.update({

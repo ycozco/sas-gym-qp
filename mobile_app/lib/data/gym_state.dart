@@ -204,9 +204,15 @@ class GymState extends ChangeNotifier {
     notifyListeners();
 
     try {
+      final rememberedTenantId = await SecureStorage.getTenantId();
       final response = await ApiClient().dio.post(
         '/auth/login',
-        data: {'emailOrDni': emailOrDni, 'password': password},
+        data: {
+          'emailOrDni': emailOrDni,
+          'password': password,
+          if (rememberedTenantId != null && rememberedTenantId.isNotEmpty)
+            'tenantId': rememberedTenantId,
+        },
       );
 
       final token = response.data['token'] as String;

@@ -520,7 +520,11 @@ function App() {
     try {
       const result = await apiRequest("/auth/login", {
         method: "POST",
-        body: { emailOrDni, password },
+        body: {
+          emailOrDni,
+          password,
+          ...(tenantId ? { tenantId } : {}),
+        },
       });
       try {
         localStorage.setItem(AUTH_TOKEN_KEY, result.token);

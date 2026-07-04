@@ -1,3 +1,4 @@
+import type { AuthenticatedRequest } from '../../core/types/authenticated-request';
 import {
   Controller,
   Post,
@@ -37,10 +38,12 @@ export class AuthController {
     const user = await this.authService.validateUser(
       loginDto.emailOrDni,
       loginDto.password,
+      loginDto.tenantId,
     );
     const result = await this.authService.login(user, this.requestMeta(req));
     this.setRefreshCookie(res, result.refreshToken);
     const { refreshToken, ...publicResult } = result;
+    void refreshToken;
     return publicResult;
   }
 
@@ -58,6 +61,7 @@ export class AuthController {
     );
     this.setRefreshCookie(res, result.refreshToken);
     const { refreshToken: _refreshToken, ...publicResult } = result;
+    void _refreshToken;
     return publicResult;
   }
 
@@ -74,7 +78,7 @@ export class AuthController {
   @Public()
   @HttpCode(HttpStatus.OK)
   @Post('forgot-password')
-  async forgotPassword(@Body('email') email: string) {
+  forgotPassword(@Body('email') email: string) {
     if (!email) {
       throw new BadRequestException('El correo electrónico es requerido.');
     }
@@ -84,14 +88,14 @@ export class AuthController {
   }
 
   @Get('me')
-  async getProfile(@Req() req: any) {
+  async getProfile(@Req() req: AuthenticatedRequest) {
     const userId = req.user.sub;
     return this.authService.getUserProfile(userId);
   }
 
   @Patch('me/preferences')
   async updatePreferences(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Body() preferencesDto: UpdatePreferencesDto,
   ) {
     const userId = req.user.sub;
@@ -100,7 +104,7 @@ export class AuthController {
 
   @Patch('me/profile')
   async updateProfile(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Body() profileDto: UpdateProfileDto,
   ) {
     const userId = req.user.sub;
