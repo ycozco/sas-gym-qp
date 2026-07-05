@@ -46,6 +46,13 @@ Levanta el stack con `docker compose --env-file .env -f infra/docker/compose.loc
 
 ## Comandos locales equivalentes
 
+Verificación integral reproducible:
+
+```powershell
+cd d:\proyectos\sas_gym
+node scripts\full-verification.mjs
+```
+
 ```powershell
 cd backend
 npm ci
