@@ -46,6 +46,13 @@ Levanta el stack con `docker compose up --build -d` y verifica:
 
 ## Comandos locales equivalentes
 
+Verificación integral reproducible:
+
+```powershell
+cd d:\proyectos\sas_gym
+node scripts\full-verification.mjs
+```
+
 ```powershell
 cd backend
 npm ci

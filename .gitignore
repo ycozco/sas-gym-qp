@@ -37,6 +37,7 @@ obj/
 
 # Logs
 *.log
+.artifacts/
 
 # Database dumps / backups
 *.sql
