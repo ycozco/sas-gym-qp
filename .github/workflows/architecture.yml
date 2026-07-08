@@ -1,0 +1,33 @@
+name: architecture
+
+on:
+  pull_request:
+    branches: [main, production]
+  push:
+    branches: [main, production]
+
+jobs:
+  validate-architecture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Clone pinned Repomix source
+        run: |
+          git clone https://github.com/yamadashy/repomix.git ../repomix
+          git -C ../repomix checkout 0852f0b5ee1440eac547febbbe5a93a2e517e0eb
+          npm ci --prefix ../repomix
+
+      - name: Generate architecture graph
+        env:
+          REPOMIX_HOME: ${{ github.workspace }}/../repomix
+        run: node scripts/generate-architecture-graph.mjs
+
+      - name: Enforce architecture contracts
+        run: |
+          node -e "const g=require('./graphs/architecture/graph.json'); const gaps=g.edges.filter(e=>e.relation==='unmatched_api_call'); if(g.cycles.length||gaps.length){console.error({cycles:g.cycles,gaps});process.exit(1)}"

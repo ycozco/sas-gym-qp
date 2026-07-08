@@ -1,98 +1,134 @@
 import {
   CallHandler,
   ExecutionContext,
-  Injectable,
-  NestInterceptor,
   HttpException,
   HttpStatus,
+  Injectable,
   Logger,
+  NestInterceptor,
 } from '@nestjs/common';
-import { from, Observable } from 'rxjs';
-import { lastValueFrom } from 'rxjs';
+import type { Request, Response } from 'express';
+import { from, lastValueFrom, Observable } from 'rxjs';
 import { RedisService } from '../services/redis.service';
 
+interface CachedResponse {
+  status: number;
+  body: unknown;
+}
+
+function parseCachedResponse(value: string): CachedResponse {
+  const parsed: unknown = JSON.parse(value);
+  if (!parsed || typeof parsed !== 'object')
+    throw new Error('Respuesta idempotente invalida.');
+  const record = parsed as Record<string, unknown>;
+  if (typeof record.status !== 'number')
+    throw new Error('Estado idempotente invalido.');
+  return { status: record.status, body: record.body };
+}
+
 @Injectable()
-export class IdempotencyInterceptor implements NestInterceptor {
+export class IdempotencyInterceptor implements NestInterceptor<
+  unknown,
+  unknown
+> {
   private readonly logger = new Logger(IdempotencyInterceptor.name);
-  private readonly TTL_SECONDS = 86400; // 24 horas
+  private readonly TTL_SECONDS = 86400;
 
   constructor(private readonly redisService: RedisService) {}
 
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    const http = context.switchToHttp();
-    const req = http.getRequest();
-    const res = http.getResponse();
+  intercept(
+    context: ExecutionContext,
+    next: CallHandler<unknown>,
+  ): Observable<unknown> {
+    const req = context.switchToHttp().getRequest<Request>();
+    const header = req.headers['idempotency-key'];
+    const key = Array.isArray(header) ? header[0] : header;
 
-    const idempotencyKey = req.headers['idempotency-key'] || req.headers['Idempotency-Key'];
-
-    if (req.method !== 'POST' || !idempotencyKey) {
-      return next.handle();
-    }
-
-    return from(this.handleIdempotency(idempotencyKey as string, context, next));
+    if (req.method !== 'POST' || !key) return next.handle();
+    return from(this.handleIdempotency(key, context, next));
   }
 
   private async handleIdempotency(
     key: string,
     context: ExecutionContext,
-    next: CallHandler,
-  ): Promise<any> {
+    next: CallHandler<unknown>,
+  ): Promise<unknown> {
     const redisKey = `idem:${key}`;
-    const redis = this.redisService.getClient();
 
-    // Intentar adquirir de forma atómica el estado "IN_PROGRESS"
-    // NX: Solo si no existe
-    // EX: Expiración en segundos
-    const acquired = await (redis as any).set(redisKey, 'IN_PROGRESS', 'NX', 'EX', this.TTL_SECONDS);
+    let acquired: string | null;
+    try {
+      acquired = await this.redisService
+        .getClient()
+        .set(redisKey, 'IN_PROGRESS', 'EX', this.TTL_SECONDS, 'NX');
+    } catch (err: any) {
+      this.logger.warn(
+        `Redis disconnected, bypassing idempotency check: ${err.message || err}`,
+      );
+      return lastValueFrom(next.handle());
+    }
 
-    if (acquired === 'OK') {
-      // Primera vez que se recibe esta clave: Procesar la petición
-      this.logger.log(`Clave de idempotencia adquirida: ${key}. Procesando petición.`);
+    if (acquired! === 'OK') {
+      this.logger.log(
+        `Clave de idempotencia adquirida: ${key}. Procesando petición.`,
+      );
       try {
         const result = await lastValueFrom(next.handle());
-        
-        // Guardar resultado exitoso en Redis
-        const httpResponse = context.switchToHttp().getResponse();
-        const cachedData = {
-          status: httpResponse.statusCode || HttpStatus.CREATED,
+        const response = context.switchToHttp().getResponse<Response>();
+        const cachedData: CachedResponse = {
+          status: response.statusCode || HttpStatus.CREATED,
           body: result,
         };
-
-        await this.redisService.set(redisKey, JSON.stringify(cachedData), this.TTL_SECONDS);
+        try {
+          await this.redisService.set(
+            redisKey,
+            JSON.stringify(cachedData),
+            this.TTL_SECONDS,
+          );
+        } catch (e: any) {
+          this.logger.warn(
+            `Failed to cache response in Redis: ${e.message || e}`,
+          );
+        }
         return result;
-      } catch (err) {
-        // Si la petición falla, liberamos la clave para permitir reintentos
-        await this.redisService.del(redisKey);
-        this.logger.warn(`Petición fallida para clave ${key}. Clave liberada para reintentos.`);
-        throw err;
-      }
-    } else {
-      // La clave ya existe en Redis (duplicada o ya resuelta)
-      const stored = await this.redisService.get(redisKey);
-
-      if (stored === 'IN_PROGRESS') {
-        // Petición idéntica concurrente en curso
-        this.logger.warn(`Intento concurrente detectado para clave ${key}. Retornando HTTP 409.`);
-        throw new HttpException(
-          'Hay otra transacción idéntica en proceso. Por favor, espere.',
-          HttpStatus.CONFLICT,
+      } catch (error: unknown) {
+        try {
+          await this.redisService.del(redisKey);
+        } catch (e: any) {
+          this.logger.warn(
+            `Failed to delete idempotency key in Redis: ${e.message || e}`,
+          );
+        }
+        this.logger.warn(
+          `Petición fallida para clave ${key}. Clave liberada para reintentos.`,
         );
+        throw error;
       }
+    }
 
-      if (stored) {
-        // Petición resuelta anteriormente. Retornar el resultado en caché.
-        this.logger.log(`Clave de idempotencia resuelta anteriormente: ${key}. Retornando caché.`);
-        const cached = JSON.parse(stored);
-        const res = context.switchToHttp().getResponse();
-        res.status(cached.status);
-        return cached.body;
-      }
+    let stored: string | null;
+    try {
+      stored = await this.redisService.get(redisKey);
+    } catch (e: any) {
+      this.logger.warn(
+        `Failed to read idempotency key in Redis: ${e.message || e}`,
+      );
+      return lastValueFrom(next.handle());
+    }
 
-      // Fallback si por alguna razón no hay valor
+    if (stored! === 'IN_PROGRESS') {
       throw new HttpException(
-        'Error al procesar la clave de idempotencia.',
-        HttpStatus.INTERNAL_SERVER_ERROR,
+        'Hay otra transacción idéntica en proceso. Por favor, espere.',
+        HttpStatus.CONFLICT,
       );
     }
+    if (stored) {
+      const cached = parseCachedResponse(stored);
+      context.switchToHttp().getResponse<Response>().status(cached.status);
+      return cached.body;
+    }
+    throw new HttpException(
+      'Error al procesar la clave de idempotencia.',
+      HttpStatus.INTERNAL_SERVER_ERROR,
+    );
   }
 }
