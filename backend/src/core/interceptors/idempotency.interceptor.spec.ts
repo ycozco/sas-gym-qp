@@ -1,4 +1,9 @@
-import { ExecutionContext, CallHandler, HttpException, HttpStatus } from '@nestjs/common';
+import {
+  ExecutionContext,
+  CallHandler,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { of, throwError } from 'rxjs';
 import { IdempotencyInterceptor } from './idempotency.interceptor';
@@ -45,7 +50,7 @@ describe('IdempotencyInterceptor', () => {
 
     const res = {
       statusCode: 200,
-      status: jest.fn().mockImplementation(function(this: any, code: number) {
+      status: jest.fn().mockImplementation(function (this: any, code: number) {
         this.statusCode = code;
         return this;
       }),
@@ -91,7 +96,13 @@ describe('IdempotencyInterceptor', () => {
     const result = await interceptor.intercept(context, handler).toPromise();
 
     expect(result).toBe('payment_done');
-    expect(mockRedisClient.set).toHaveBeenCalledWith('idem:key123', 'IN_PROGRESS', 'NX', 'EX', 86400);
+    expect(mockRedisClient.set).toHaveBeenCalledWith(
+      'idem:key123',
+      'IN_PROGRESS',
+      'EX',
+      86400,
+      'NX',
+    );
     expect(redisService.set).toHaveBeenCalledWith(
       'idem:key123',
       JSON.stringify({ status: 200, body: 'payment_done' }),
@@ -101,12 +112,16 @@ describe('IdempotencyInterceptor', () => {
 
   it('debe liberar clave en Redis si la ejecución de la petición falla', async () => {
     mockRedisClient.set.mockResolvedValue('OK');
-    const context = createMockContext('POST', { 'idempotency-key': 'key_fail' });
+    const context = createMockContext('POST', {
+      'idempotency-key': 'key_fail',
+    });
     const handler = {
       handle: () => throwError(() => new Error('Db Error')),
     };
 
-    await expect(interceptor.intercept(context, handler).toPromise()).rejects.toThrow('Db Error');
+    await expect(
+      interceptor.intercept(context, handler).toPromise(),
+    ).rejects.toThrow('Db Error');
     expect(redisService.del).toHaveBeenCalledWith('idem:key_fail');
   });
 
@@ -114,10 +129,14 @@ describe('IdempotencyInterceptor', () => {
     mockRedisClient.set.mockResolvedValue(null); // No adquirió el lock (ya existe)
     redisService.get.mockResolvedValue('IN_PROGRESS');
 
-    const context = createMockContext('POST', { 'idempotency-key': 'key_locked' });
+    const context = createMockContext('POST', {
+      'idempotency-key': 'key_locked',
+    });
     const handler = createMockHandler();
 
-    await expect(interceptor.intercept(context, handler).toPromise()).rejects.toThrow(
+    await expect(
+      interceptor.intercept(context, handler).toPromise(),
+    ).rejects.toThrow(
       new HttpException(
         'Hay otra transacción idéntica en proceso. Por favor, espere.',
         HttpStatus.CONFLICT,
@@ -133,8 +152,10 @@ describe('IdempotencyInterceptor', () => {
     };
     redisService.get.mockResolvedValue(JSON.stringify(cachedResponse));
 
-    const context = createMockContext('POST', { 'idempotency-key': 'key_cached' });
-    const res = context.switchToHttp().getResponse() as any;
+    const context = createMockContext('POST', {
+      'idempotency-key': 'key_cached',
+    });
+    const res = context.switchToHttp().getResponse();
     const handler = createMockHandler('should_not_run_this');
 
     const result = await interceptor.intercept(context, handler).toPromise();

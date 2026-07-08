@@ -1,5 +1,9 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+} from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { getOptionalEnv } from '../config/env';
 
@@ -39,7 +43,11 @@ export class S3StorageService implements OnModuleInit {
    * @param mimeType Tipo MIME del archivo.
    * @returns La clave del archivo subido.
    */
-  async uploadFile(key: string, buffer: Buffer, mimeType: string): Promise<string> {
+  async uploadFile(
+    key: string,
+    buffer: Buffer,
+    mimeType: string,
+  ): Promise<string> {
     this.logger.log(`Subiendo archivo a S3: ${key} (MIME: ${mimeType})`);
     const command = new PutObjectCommand({
       Bucket: this.bucketName,

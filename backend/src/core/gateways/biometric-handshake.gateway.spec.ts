@@ -2,7 +2,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { SaasGateway } from './saas.gateway';
 import { PrismaService } from '../../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
-import { Socket } from 'socket.io';
 import { BiometricHandshakeDto } from '../../modules/biometric/biometric-handshake.dto';
 
 describe('SaasGateway — biometric-handshake', () => {
@@ -15,7 +14,8 @@ describe('SaasGateway — biometric-handshake', () => {
   const mockDto: BiometricHandshakeDto = {
     dispositivoId: 'zkteco-01',
     datosHuella: 'YmFzZTY0X2ZpbmdlcnByaW50X3RlbXBsYXRl',
-    hashVerificacion: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+    hashVerificacion:
+      'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
     tokenRegistro: 'd3b07384-d113-4a11-a5c1-e0e0a51c4a01',
   };
 
@@ -39,7 +39,8 @@ describe('SaasGateway — biometric-handshake', () => {
     usuario_id: 'user-001',
     dedo: 'pulgar_der',
     datos_huella: 'YmFzZTY0X2ZpbmdlcnByaW50X3RlbXBsYXRl',
-    hash_verificacion: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+    hash_verificacion:
+      'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
     token_registro: 'd3b07384-d113-4a11-a5c1-e0e0a51c4a01',
     usuario: mockUser,
   };
@@ -149,12 +150,17 @@ describe('SaasGateway — biometric-handshake', () => {
   });
 
   it('debe autorizar el acceso, registrar asistencias y abrir la puerta si la membresía está activa', async () => {
-    (prisma.fingerprint.findUnique as jest.Mock).mockResolvedValue(mockFingerprint);
+    (prisma.fingerprint.findUnique as jest.Mock).mockResolvedValue(
+      mockFingerprint,
+    );
 
     const result = await gateway.handleBiometricHandshake(mockSocket, mockDto);
 
     expect(result.success).toBe(true);
-    expect(mockSocket.emit).toHaveBeenCalledWith('OPEN_GATE', expect.any(Object));
+    expect(mockSocket.emit).toHaveBeenCalledWith(
+      'OPEN_GATE',
+      expect.any(Object),
+    );
     expect(mockServer.to).toHaveBeenCalledWith('tenant-001');
     expect(prisma.$transaction).toHaveBeenCalled();
   });

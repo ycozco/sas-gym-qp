@@ -1,3 +1,4 @@
+import type { AuthenticatedRequest } from '../../core/types/authenticated-request';
 import { Controller, Get, Req, Query, UseGuards } from '@nestjs/common';
 import { ReportsService } from './reports.service';
 import { AuthGuard } from '../../core/guards/auth.guard';
@@ -14,7 +15,7 @@ export class ReportsController {
   @Get('audit-logs')
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   async getAuditLogs(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Query('limit') limit?: string,
     @Query('cursor') cursor?: string,
   ) {
@@ -25,7 +26,7 @@ export class ReportsController {
 
   @Get('dashboard')
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
-  async getDashboard(@Req() req: any) {
+  async getDashboard(@Req() req: AuthenticatedRequest) {
     return this.reportsService.getDashboard(req.user.tenantId);
   }
 }

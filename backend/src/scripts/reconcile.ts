@@ -69,7 +69,8 @@ const SAAS_PLANS = [
     descripcion: 'Operacion multi-sede con control total y soporte preferente.',
     precio_mensual: 899,
     limite_usuarios: 5000,
-    caracteristicas: 'Todo Pro, mas red SaaS, auditoria ampliada y alta escala.',
+    caracteristicas:
+      'Todo Pro, mas red SaaS, auditoria ampliada y alta escala.',
   },
 ] as const;
 
@@ -85,7 +86,9 @@ const DEFAULT_PRESENTATION_TENANT_IDS = [
 function requireSecret(name: string): string {
   const value = process.env[name]?.trim();
   if (!value) {
-    throw new Error(`Falta la variable obligatoria ${name} para reconciliar datos productivos.`);
+    throw new Error(
+      `Falta la variable obligatoria ${name} para reconciliar datos productivos.`,
+    );
   }
   return value;
 }
@@ -98,11 +101,23 @@ function addDays(base: Date, days: number): Date {
 
 async function hashPasswords() {
   return {
-    superadmin: await bcrypt.hash(requireSecret('PRESENTATION_SUPERADMIN_PASSWORD'), 10),
+    superadmin: await bcrypt.hash(
+      requireSecret('PRESENTATION_SUPERADMIN_PASSWORD'),
+      10,
+    ),
     admin: await bcrypt.hash(requireSecret('PRESENTATION_ADMIN_PASSWORD'), 10),
-    trainer: await bcrypt.hash(requireSecret('PRESENTATION_TRAINER_PASSWORD'), 10),
-    cashier: await bcrypt.hash(requireSecret('PRESENTATION_CASHIER_PASSWORD'), 10),
-    member: await bcrypt.hash(requireSecret('PRESENTATION_MEMBER_PASSWORD'), 10),
+    trainer: await bcrypt.hash(
+      requireSecret('PRESENTATION_TRAINER_PASSWORD'),
+      10,
+    ),
+    cashier: await bcrypt.hash(
+      requireSecret('PRESENTATION_CASHIER_PASSWORD'),
+      10,
+    ),
+    member: await bcrypt.hash(
+      requireSecret('PRESENTATION_MEMBER_PASSWORD'),
+      10,
+    ),
   };
 }
 
@@ -303,7 +318,9 @@ async function ensureTemplate(params: {
 
   for (let index = 0; index < params.exerciseIds.length; index += 1) {
     const exerciseId = params.exerciseIds[index];
-    const row = existing?.ejercicios.find((item) => item.exercise_id === exerciseId);
+    const row = existing?.ejercicios.find(
+      (item) => item.exercise_id === exerciseId,
+    );
     if (row) {
       await prisma.routineExercise.update({
         where: { id: row.id },
@@ -705,7 +722,11 @@ async function main() {
           member_id: memberProfile.id,
           trainer_id: trainerProfile.id,
           template_id: template.id,
-          agenda_semanal: { MON: template.id, WED: template.id, FRI: template.id },
+          agenda_semanal: {
+            MON: template.id,
+            WED: template.id,
+            FRI: template.id,
+          },
           publicada: true,
         },
       });
@@ -734,7 +755,8 @@ async function main() {
             { nombre: 'Almuerzo', detalle: 'Pollo, arroz y ensalada' },
             { nombre: 'Cena', detalle: 'Tortilla de claras con camote' },
           ],
-          sugerencias: 'Mantener hidratacion de 2.5L y control semanal de peso.',
+          sugerencias:
+            'Mantener hidratacion de 2.5L y control semanal de peso.',
           activo: true,
         },
       });
@@ -776,7 +798,9 @@ async function main() {
       const [users, plans, products, schedules, diets] = await Promise.all([
         prisma.user.count({ where: { tenant_id: tenantId } }),
         prisma.membershipPlan.count({ where: { tenant_id: tenantId } }),
-        prisma.product.count({ where: { tenant_id: tenantId, es_visible: true } }),
+        prisma.product.count({
+          where: { tenant_id: tenantId, es_visible: true },
+        }),
         prisma.schedule.count({ where: { tenant_id: tenantId, activo: true } }),
         prisma.dietPlan.count({ where: { tenant_id: tenantId, activo: true } }),
       ]);

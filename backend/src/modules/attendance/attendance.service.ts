@@ -1,6 +1,5 @@
 import {
   Injectable,
-  UnauthorizedException,
   BadRequestException,
   ForbiddenException,
 } from '@nestjs/common';
@@ -18,7 +17,7 @@ export class AttendanceService {
     totp.options = { step: 30, window: 1 };
   }
 
-  async simulateAccess(dni: string, tenantId: string): Promise<any> {
+  async simulateAccess(dni: string, tenantId: string) {
     const simulatorEnabled =
       getOptionalEnv('ENABLE_QR_SIMULATOR', 'false') === 'true';
     const isProduction =
@@ -52,11 +51,7 @@ export class AttendanceService {
     };
   }
 
-  async verifyQrToken(
-    dni: string,
-    token: string,
-    tenantId: string,
-  ): Promise<any> {
+  async verifyQrToken(dni: string, token: string, tenantId: string) {
     if (!dni || !token) {
       throw new BadRequestException('El DNI y el Token OTP son requeridos.');
     }

@@ -1,3 +1,4 @@
+import type { AuthenticatedRequest } from '../../core/types/authenticated-request';
 import {
   Controller,
   Get,
@@ -40,7 +41,7 @@ export class AnnouncementsController {
   @Roles(Role.ADMIN)
   async createBanner(
     @TenantId() tenantId: string,
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
     @Body() dto: CreateAnnouncementDto,
   ) {
     const authorId = req.user.sub;

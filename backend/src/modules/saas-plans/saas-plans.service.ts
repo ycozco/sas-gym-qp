@@ -49,7 +49,10 @@ export class SaasPlansService {
       where: { code: current.code },
       data: {
         nombre: dto.nombre?.trim(),
-        descripcion: dto.descripcion === undefined ? undefined : dto.descripcion.trim() || null,
+        descripcion:
+          dto.descripcion === undefined
+            ? undefined
+            : dto.descripcion.trim() || null,
         precio_mensual: dto.precioMensual,
         limite_usuarios: dto.limiteUsuarios,
         caracteristicas: dto.caracteristicas?.trim(),

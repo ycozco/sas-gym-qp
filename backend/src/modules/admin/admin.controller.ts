@@ -1,3 +1,4 @@
+import type { AuthenticatedRequest } from '../../core/types/authenticated-request';
 import {
   Body,
   Controller,
@@ -25,7 +26,7 @@ export class AdminController {
   @Get('members')
   @Roles(Role.ADMIN, Role.CAJA)
   listMembers(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Query('q') q?: string,
     @Query('state') state?: string,
   ) {
@@ -37,13 +38,13 @@ export class AdminController {
   }
 
   @Post('members')
-  createMember(@Req() req: any, @Body() dto: UpsertUserDto) {
+  createMember(@Req() req: AuthenticatedRequest, @Body() dto: UpsertUserDto) {
     return this.adminService.createMember(req.user.tenantId, dto);
   }
 
   @Patch('members/:id')
   updateMember(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Param('id') id: string,
     @Body() dto: Partial<UpsertUserDto>,
   ) {
@@ -51,23 +52,23 @@ export class AdminController {
   }
 
   @Post('members/:id/toggle-active')
-  toggleMember(@Req() req: any, @Param('id') id: string) {
+  toggleMember(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
     return this.adminService.toggleMember(req.user.tenantId, id);
   }
 
   @Get('cashiers')
-  listCashiers(@Req() req: any) {
+  listCashiers(@Req() req: AuthenticatedRequest) {
     return this.adminService.listCashiers(req.user.tenantId);
   }
 
   @Post('cashiers')
-  createCashier(@Req() req: any, @Body() dto: UpsertUserDto) {
+  createCashier(@Req() req: AuthenticatedRequest, @Body() dto: UpsertUserDto) {
     return this.adminService.createCashier(req.user.tenantId, dto);
   }
 
   @Patch('cashiers/:id')
   updateCashier(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Param('id') id: string,
     @Body() dto: Partial<UpsertUserDto>,
   ) {
@@ -75,13 +76,13 @@ export class AdminController {
   }
 
   @Post('cashiers/:id/toggle-active')
-  toggleCashier(@Req() req: any, @Param('id') id: string) {
+  toggleCashier(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
     return this.adminService.toggleCashier(req.user.tenantId, id);
   }
 
   @Patch('cashiers/:id/permissions')
   updatePermissions(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Param('id') id: string,
     @Body('permissions') permissions: string[],
   ) {

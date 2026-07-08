@@ -17,6 +17,8 @@ import { ProductsModule } from './modules/products/products.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { PointsModule } from './modules/points/points.module';
 import { DietsModule } from './modules/diets/diets.module';
+import { CrmModule } from './modules/crm/crm.module';
+import { FinancesModule } from './modules/finances/finances.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { CoreServicesModule } from './core/services/core-services.module';
 import { RateLimitingGuard } from './core/guards/rate-limiting.guard';
@@ -45,6 +47,8 @@ import { IdempotencyInterceptor } from './core/interceptors/idempotency.intercep
     AdminModule,
     PointsModule,
     DietsModule,
+    CrmModule,
+    FinancesModule,
     SaasPlansModule,
     CoreServicesModule,
     ThrottlerModule.forRoot([

@@ -1,4 +1,9 @@
-import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  OnModuleInit,
+  OnModuleDestroy,
+  Logger,
+} from '@nestjs/common';
 import Redis from 'ioredis';
 import { getOptionalEnv } from '../config/env';
 
@@ -18,7 +23,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       this.logger.log('Conexión con Redis establecida exitosamente.');
     });
 
-    this.client.on('error', (err) => {
+    this.client.on('error', (err: any) => {
       this.logger.error('Error en el cliente de Redis:', err);
     });
   }

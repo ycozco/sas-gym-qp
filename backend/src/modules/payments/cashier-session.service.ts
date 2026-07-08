@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { PaymentMethod, PaymentState } from '@prisma/client';
+import { PaymentMethod, PaymentState, Prisma } from '@prisma/client';
 import { IsNumber, IsOptional, IsString, Min } from 'class-validator';
 
 export class OpenCajaDto {
@@ -389,16 +389,26 @@ export class CashierSessionService {
       throw new NotFoundException('La caja especificada no existe.');
     }
 
-    const dataToUpdate: any = {};
-    if (dto.montoApertura !== undefined) dataToUpdate.monto_apertura = dto.montoApertura;
-    if (dto.fechaApertura !== undefined) dataToUpdate.fecha_apertura = new Date(dto.fechaApertura);
-    if (dto.fechaCierre !== undefined) dataToUpdate.fecha_cierre = dto.fechaCierre ? new Date(dto.fechaCierre) : null;
+    const dataToUpdate: Prisma.CajaUpdateInput = {};
+    if (dto.montoApertura !== undefined)
+      dataToUpdate.monto_apertura = dto.montoApertura;
+    if (dto.fechaApertura !== undefined)
+      dataToUpdate.fecha_apertura = new Date(dto.fechaApertura);
+    if (dto.fechaCierre !== undefined)
+      dataToUpdate.fecha_cierre = dto.fechaCierre
+        ? new Date(dto.fechaCierre)
+        : null;
     if (dto.estado !== undefined) dataToUpdate.estado = dto.estado;
-    if (dto.montoCierreEfectivo !== undefined) dataToUpdate.monto_cierre_efectivo = dto.montoCierreEfectivo;
-    if (dto.montoCierreTransferencia !== undefined) dataToUpdate.monto_cierre_transferencia = dto.montoCierreTransferencia;
-    if (dto.montoCierreYape !== undefined) dataToUpdate.monto_cierre_yape = dto.montoCierreYape;
-    if (dto.montoCierrePOS !== undefined) dataToUpdate.monto_cierre_pos = dto.montoCierrePOS;
-    if (dto.observaciones !== undefined) dataToUpdate.observaciones = dto.observaciones;
+    if (dto.montoCierreEfectivo !== undefined)
+      dataToUpdate.monto_cierre_efectivo = dto.montoCierreEfectivo;
+    if (dto.montoCierreTransferencia !== undefined)
+      dataToUpdate.monto_cierre_transferencia = dto.montoCierreTransferencia;
+    if (dto.montoCierreYape !== undefined)
+      dataToUpdate.monto_cierre_yape = dto.montoCierreYape;
+    if (dto.montoCierrePOS !== undefined)
+      dataToUpdate.monto_cierre_pos = dto.montoCierrePOS;
+    if (dto.observaciones !== undefined)
+      dataToUpdate.observaciones = dto.observaciones;
 
     if (dto.montoApertura !== undefined) {
       const initialMove = await this.prisma.movimientoCaja.findFirst({
@@ -430,7 +440,8 @@ export class CashierSessionService {
         (caja.monto_cierre_transferencia ?? 0) +
         (caja.monto_cierre_yape ?? 0) +
         (caja.monto_cierre_pos ?? 0);
-      const diferencia = totalCierre - (caja.monto_apertura + stats.total_esperado);
+      const diferencia =
+        totalCierre - (caja.monto_apertura + stats.total_esperado);
       caja = await this.prisma.caja.update({
         where: { id },
         data: {
@@ -513,7 +524,11 @@ export class CashierSessionService {
         rol: 'CAJA',
         accion: 'UPDATE',
         entidad: 'Caja',
-        detalles: { antes: originalCaja, despues: updatedCaja, nota: 'Ajuste de monto inicial por cajero' },
+        detalles: {
+          antes: originalCaja,
+          despues: updatedCaja,
+          nota: 'Ajuste de monto inicial por cajero',
+        },
       },
     });
 

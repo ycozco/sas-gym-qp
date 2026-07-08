@@ -21,12 +21,28 @@ import {
 import { randomBytes } from 'crypto';
 import * as bcrypt from 'bcryptjs';
 
+export interface PosCartItem {
+  id?: string;
+  productId?: string;
+  planId?: string;
+  name: string;
+  type?: string;
+  price: number;
+  unitPrice?: number;
+  qty: number;
+}
+
+export interface PosPaymentInput {
+  metodo: string;
+  monto: number;
+}
+
 export class ChargePosDto {
   @IsString()
   memberDni: string;
 
   @IsArray()
-  cartItems: any[];
+  cartItems: PosCartItem[];
 
   @IsNumber()
   @IsPositive()
@@ -37,7 +53,7 @@ export class ChargePosDto {
 
   @IsOptional()
   @IsArray()
-  payments?: any[];
+  payments?: PosPaymentInput[];
 }
 
 @Injectable()
@@ -59,7 +75,7 @@ export class PaymentsService {
     metodoStr: string,
     planNombre: string,
     filename: string,
-  ): Promise<any> {
+  ) {
     // 1. Determinar duración en días según el plan
     let duracionDias = 30;
     if (planNombre.toLowerCase().includes('trimestral')) {
@@ -109,7 +125,7 @@ export class PaymentsService {
     };
   }
 
-  async getPendingPayments(tenantId: string): Promise<any[]> {
+  async getPendingPayments(tenantId: string) {
     return this.prisma.payment.findMany({
       where: {
         tenant_id: tenantId,
@@ -128,7 +144,7 @@ export class PaymentsService {
     });
   }
 
-  async getMemberPayments(userId: string, tenantId: string): Promise<any[]> {
+  async getMemberPayments(userId: string, tenantId: string) {
     return this.prisma.payment.findMany({
       where: {
         tenant_id: tenantId,
@@ -147,7 +163,7 @@ export class PaymentsService {
     tenantId: string,
     status: 'APPROVED' | 'REJECTED',
     comments?: string,
-  ): Promise<any> {
+  ) {
     const payment = await this.prisma.payment.findFirst({
       where: {
         id: paymentId,
@@ -206,6 +222,7 @@ export class PaymentsService {
     return {
       payment: updatedPayment,
       membership: updatedMembership,
+      resolutionComments: comments?.trim() || null,
     };
   }
 
@@ -243,7 +260,7 @@ export class PaymentsService {
     cashierId: string,
     tenantId: string,
     dto: ChargePosDto,
-  ): Promise<any> {
+  ) {
     const isShiftActive = await this.checkShiftSession(cashierId);
     if (!isShiftActive) {
       throw new BadRequestException(
@@ -495,7 +512,7 @@ export class PaymentsService {
 
       // Registrar movimiento de ingreso en la caja (siempre se registra para que la caja cuadre)
       const descItems = dto.cartItems
-        .map((c) => `${c['qty']}x ${c['name']}`)
+        .map((c) => `${c.qty}x ${c.name}`)
         .join(', ');
       await this.prisma.movimientoCaja.create({
         data: {

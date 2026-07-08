@@ -47,10 +47,17 @@ describe('MembersService — freeze/unfreeze', () => {
     const txMock = {
       membershipFreeze: {
         create: jest.fn().mockResolvedValue(mockFreeze),
-        update: jest.fn().mockResolvedValue({ ...mockFreeze, fecha_descongelacion: new Date() }),
+        update: jest.fn().mockResolvedValue({
+          ...mockFreeze,
+          fecha_descongelacion: new Date(),
+        }),
       },
       membership: {
-        update: jest.fn().mockResolvedValue({ ...mockMembership, congelada: true, freezes: [mockFreeze] }),
+        update: jest.fn().mockResolvedValue({
+          ...mockMembership,
+          congelada: true,
+          freezes: [mockFreeze],
+        }),
       },
     };
 
@@ -79,7 +86,9 @@ describe('MembersService — freeze/unfreeze', () => {
   // ─── freezeMembership ──────────────────────────────────────────────
   describe('freezeMembership', () => {
     it('should freeze an active membership successfully', async () => {
-      (prisma.membership.findFirst as jest.Mock).mockResolvedValue(mockMembership);
+      (prisma.membership.findFirst as jest.Mock).mockResolvedValue(
+        mockMembership,
+      );
 
       const result = await service.freezeMembership('mem-001', 'tenant-001', {
         razon: 'Viaje al exterior',
@@ -154,6 +163,34 @@ describe('MembersService — freeze/unfreeze', () => {
         },
       });
       expect(result).toEqual(mockUsers);
+    });
+  });
+
+  describe('assignedMembers', () => {
+    it('should return an empty list when the trainer has no assigned members', async () => {
+      (prisma as any).trainerProfile = {
+        findUnique: jest.fn().mockResolvedValue({ id: 'trainer-profile-1' }),
+      };
+      (prisma.user as any).findMany.mockResolvedValue([]);
+
+      const result = await service.assignedMembers(
+        'trainer-user-1',
+        'tenant-1',
+      );
+
+      expect((prisma.user as any).findMany).toHaveBeenCalledWith({
+        where: {
+          tenant_id: 'tenant-1',
+          rol: 'MEMBER',
+          member_profile: { trainer_id: 'trainer-profile-1' },
+        },
+        include: {
+          member_profile: true,
+          memberships: { orderBy: { fecha_vencimiento: 'desc' }, take: 1 },
+        },
+        orderBy: { nombre_completo: 'asc' },
+      });
+      expect(result).toEqual([]);
     });
   });
 });

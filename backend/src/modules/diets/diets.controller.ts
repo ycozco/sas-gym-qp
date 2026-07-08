@@ -1,3 +1,4 @@
+import type { AuthenticatedRequest } from '../../core/types/authenticated-request';
 import {
   Body,
   Controller,
@@ -25,22 +26,41 @@ export class DietsController {
 
   @Post()
   @Roles(Role.ADMIN, Role.TRAINER)
-  async create(@Req() req: any, @Body() dto: CreateDietPlanDto) {
+  async create(
+    @Req() req: AuthenticatedRequest,
+    @Body() dto: CreateDietPlanDto,
+  ) {
     const tenantId = req.user.tenantId;
-    const trainerId = req.user.rol === Role.TRAINER ? req.user.sub : null;
-    return this.dietsService.create(tenantId, trainerId, dto);
+    return this.dietsService.create(
+      tenantId,
+      {
+        userId: req.user.sub,
+        role: req.user.rol,
+      },
+      dto,
+    );
   }
 
   @Get()
   @Roles(Role.ADMIN, Role.TRAINER)
-  async list(@Req() req: any, @Query('memberId') memberId?: string) {
+  async list(
+    @Req() req: AuthenticatedRequest,
+    @Query('memberId') memberId?: string,
+  ) {
     const tenantId = req.user.tenantId;
-    return this.dietsService.findAll(tenantId, memberId);
+    return this.dietsService.findAll(
+      tenantId,
+      {
+        userId: req.user.sub,
+        role: req.user.rol,
+      },
+      memberId,
+    );
   }
 
   @Get('me')
   @Roles(Role.MEMBER)
-  async getMyDiet(@Req() req: any) {
+  async getMyDiet(@Req() req: AuthenticatedRequest) {
     const memberId = req.user.sub;
     const tenantId = req.user.tenantId;
     return this.dietsService.findActiveForMember(memberId, tenantId);
@@ -49,18 +69,29 @@ export class DietsController {
   @Patch(':id')
   @Roles(Role.ADMIN, Role.TRAINER)
   async update(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Param('id') id: string,
     @Body() dto: UpdateDietPlanDto,
   ) {
     const tenantId = req.user.tenantId;
-    return this.dietsService.update(tenantId, id, dto);
+    return this.dietsService.update(
+      tenantId,
+      id,
+      {
+        userId: req.user.sub,
+        role: req.user.rol,
+      },
+      dto,
+    );
   }
 
   @Delete(':id')
   @Roles(Role.ADMIN, Role.TRAINER)
-  async deactivate(@Req() req: any, @Param('id') id: string) {
+  async deactivate(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
     const tenantId = req.user.tenantId;
-    return this.dietsService.deactivate(tenantId, id);
+    return this.dietsService.deactivate(tenantId, id, {
+      userId: req.user.sub,
+      role: req.user.rol,
+    });
   }
 }

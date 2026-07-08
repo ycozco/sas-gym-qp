@@ -13,6 +13,15 @@ import { getCorsOrigins, getJwtSecret } from '../config/env';
 import { PrismaService } from '../../prisma/prisma.service';
 import { BiometricHandshakeDto } from '../../modules/biometric/biometric-handshake.dto';
 import { UsePipes, ValidationPipe } from '@nestjs/common';
+import type { AuthenticatedUser } from '../types/authenticated-request';
+
+type SocketEvents = Record<string, (...args: unknown[]) => void>;
+type AuthenticatedSocket = Socket<
+  SocketEvents,
+  SocketEvents,
+  SocketEvents,
+  { user?: AuthenticatedUser }
+>;
 
 @WebSocketGateway({ cors: { origin: getCorsOrigins(), credentials: true } })
 export class SaasGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -24,7 +33,7 @@ export class SaasGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly prisma: PrismaService,
   ) {}
 
-  async handleConnection(client: Socket) {
+  async handleConnection(client: AuthenticatedSocket): Promise<void> {
     try {
       const token = client.handshake.auth?.token as string | undefined;
       if (!token) {
@@ -33,9 +42,10 @@ export class SaasGateway implements OnGatewayConnection, OnGatewayDisconnect {
         return;
       }
 
-      const payload = await this.jwtService.verifyAsync(token, {
-        secret: getJwtSecret(),
-      });
+      const payload = await this.jwtService.verifyAsync<AuthenticatedUser>(
+        token,
+        { secret: getJwtSecret() },
+      );
 
       client.data.user = payload;
       console.log(`Cliente WebSocket autenticado: ${client.id}`);
@@ -47,15 +57,15 @@ export class SaasGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  handleDisconnect(client: Socket) {
+  handleDisconnect(client: AuthenticatedSocket): void {
     console.log(`Cliente WebSocket desconectado: ${client.id}`);
   }
 
   @SubscribeMessage('join')
-  handleJoinRoom(client: Socket) {
+  async handleJoinRoom(client: AuthenticatedSocket): Promise<void> {
     const user = client.data.user;
     if (user && user.tenantId) {
-      client.join(user.tenantId);
+      await client.join(user.tenantId);
       console.log(`Cliente WebSocket unido a sala tenant: ${client.id}`);
     }
   }
@@ -63,7 +73,7 @@ export class SaasGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
   @SubscribeMessage('biometric-handshake')
   async handleBiometricHandshake(
-    @ConnectedSocket() client: Socket,
+    @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody() dto: BiometricHandshakeDto,
   ) {
     const fingerprint = await this.prisma.fingerprint.findUnique({
@@ -81,13 +91,17 @@ export class SaasGateway implements OnGatewayConnection, OnGatewayDisconnect {
     });
 
     if (!fingerprint) {
-      client.emit('biometric-rejected', { reason: 'Huella digital no registrada.' });
+      client.emit('biometric-rejected', {
+        reason: 'Huella digital no registrada.',
+      });
       return { success: false, reason: 'Huella digital no registrada.' };
     }
 
     // Verificar integridad del hash
     if (fingerprint.hash_verificacion !== dto.hashVerificacion) {
-      client.emit('biometric-rejected', { reason: 'Error de integridad en los datos biométricos.' });
+      client.emit('biometric-rejected', {
+        reason: 'Error de integridad en los datos biométricos.',
+      });
       return { success: false, reason: 'Firma de huella inválida.' };
     }
 
@@ -97,7 +111,8 @@ export class SaasGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const activeMembership = user.memberships[0];
     const isApproved =
       activeMembership &&
-      (activeMembership.estado === 'ACTIVE' || activeMembership.estado === 'GRACE');
+      (activeMembership.estado === 'ACTIVE' ||
+        activeMembership.estado === 'GRACE');
 
     if (!isApproved) {
       // Registrar intento fallido
@@ -118,7 +133,8 @@ export class SaasGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     // Registrar asistencia biométrica
-    const ip = client.handshake.address || client.conn.remoteAddress || 'unknown';
+    const ip =
+      client.handshake.address || client.conn.remoteAddress || 'unknown';
     await this.prisma.$transaction(async (tx) => {
       await tx.fingerprintAttendance.create({
         data: {
@@ -154,9 +170,10 @@ export class SaasGateway implements OnGatewayConnection, OnGatewayDisconnect {
         rol: user.rol,
       },
       verdict: activeMembership.estado === 'GRACE' ? 'AMBER' : 'GREEN',
-      reason: activeMembership.estado === 'GRACE'
-        ? 'Ingreso autorizado en día de gracia.'
-        : 'Ingreso autorizado.',
+      reason:
+        activeMembership.estado === 'GRACE'
+          ? 'Ingreso autorizado en día de gracia.'
+          : 'Ingreso autorizado.',
     });
 
     return { success: true, message: 'Acceso autorizado y puerta abierta.' };

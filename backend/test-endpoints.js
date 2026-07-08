@@ -4,7 +4,7 @@ const crypto = require('crypto');
 const BASE_URL = 'http://localhost:3000/api/v1';
 const HOST = 'localhost';
 const PORT = 3000;
-const TENANT_ID = '77777777-7777-7777-7777-777777777777';
+const TENANT_ID = '48ad96e3-dc9f-45b4-aa19-b608742cd502';
 
 function request(method, path, body = null, token = null) {
   return new Promise((resolve, reject) => {
@@ -74,7 +74,7 @@ async function runTests() {
     // 1. Iniciar sesión como Cajero
     console.log('[1] Iniciando sesión como cajero...');
     const loginRes = await request('POST', '/auth/login', {
-      emailOrDni: 'caja@gymsmart.com',
+      emailOrDni: 'caja1.surco@test.sasgym.com',
       password: 'caja_secure_pass',
     });
 
@@ -111,15 +111,15 @@ async function runTests() {
 
     // 3. Buscar Miembros
     console.log('\n[3] Probando búsqueda por relevancia...');
-    const searchRes = await request('GET', '/members/search?q=11111111', null, token);
+    const searchRes = await request('GET', '/members/search?q=10000401', null, token);
     if (searchRes.statusCode !== 200) {
       console.error('Fallo al buscar socio:', searchRes.body);
       process.exit(1);
     }
 
-    const mateoSocio = searchRes.body.find(u => u.dni === '11111111');
+    const mateoSocio = searchRes.body.find(u => u.dni === '10000401');
     if (!mateoSocio) {
-      console.error('No se encontró al socio Mateo Salas.');
+      console.error('No se encontró al socio Lucia Quispe.');
       process.exit(1);
     }
     console.log(`Socio encontrado: ${mateoSocio.nombre_completo} (ID: ${mateoSocio.id})`);
@@ -195,8 +195,8 @@ async function runTests() {
     // 6. Validar Puntos Acumulados
     console.log('\n[6] Verificando acumulación de puntos...');
     // Realizamos una nueva búsqueda para obtener los puntos actualizados del socio
-    const pointsRes = await request('GET', `/members/search?q=11111111`, null, token);
-    const updatedSocio = pointsRes.body.find(u => u.dni === '11111111');
+    const pointsRes = await request('GET', `/members/search?q=10000401`, null, token);
+    const updatedSocio = pointsRes.body.find(u => u.dni === '10000401');
     const puntosBalance = updatedSocio?.points_balance;
     console.log('Saldo de puntos actual del socio en BD:', puntosBalance);
     

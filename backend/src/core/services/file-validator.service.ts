@@ -29,11 +29,15 @@ export class FileValidatorService {
     if (isPdf) detectedTypes.push('pdf');
 
     if (detectedTypes.length === 0) {
-      throw new BadRequestException('Firma binaria de archivo no reconocida u origen potencialmente malicioso.');
+      throw new BadRequestException(
+        'Firma binaria de archivo no reconocida u origen potencialmente malicioso.',
+      );
     }
 
     // Verificar si el tipo detectado coincide con los permitidos
-    const isAllowed = detectedTypes.some((type) => allowedExtensions.includes(type));
+    const isAllowed = detectedTypes.some((type) =>
+      allowedExtensions.includes(type),
+    );
     if (!isAllowed) {
       throw new BadRequestException(
         `Tipo de archivo no permitido. Tipos permitidos: ${allowedExtensions.join(', ')}`,

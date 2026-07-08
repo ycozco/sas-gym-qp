@@ -4,6 +4,7 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { PrismaModule } from '../../prisma/prisma.module';
 import { getAccessTokenTtl, getJwtSecret } from '../../core/config/env';
+import type { SignOptions } from 'jsonwebtoken';
 
 @Module({
   imports: [
@@ -11,7 +12,9 @@ import { getAccessTokenTtl, getJwtSecret } from '../../core/config/env';
     JwtModule.register({
       global: true,
       secret: getJwtSecret(),
-      signOptions: { expiresIn: getAccessTokenTtl() as any },
+      signOptions: {
+        expiresIn: getAccessTokenTtl() as SignOptions['expiresIn'],
+      },
     }),
   ],
   controllers: [AuthController],

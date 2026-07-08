@@ -33,6 +33,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_started
     ports:
       - "3000:3000"
     volumes:
@@ -42,6 +44,7 @@ services:
       - ./backend/.env
     environment:
       - DATABASE_URL=postgresql://postgres:postgres_secure_password@db:5432/gymsmart?schema=public
+      - REDIS_URL=redis://redis:6379
       - PORT=3000
       - TZ=America/Lima # Forzar zona horaria en el contenedor para turnos POS
       - ENABLE_QR_SIMULATOR=true
@@ -106,6 +109,18 @@ services:
     networks:
       - external-test-net
 
+  # ─── CACHÉ / SEGURIDAD (REDIS EN RED INTERNA) ──────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: gymsmart-redis
+    restart: always
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - internal-net
+
 networks:
   # Red aislada interna: solo accesible por db y api. No tiene salida externa.
   internal-net:
@@ -122,3 +137,4 @@ networks:
 
 volumes:
   postgres_data:
+  redis_data:

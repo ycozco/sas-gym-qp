@@ -10,7 +10,7 @@ services:
       POSTGRES_PASSWORD: postgres_secure_password
       POSTGRES_DB: gymsmart
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -19,6 +19,13 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7-alpine
+    container_name: gymsmart-redis
+    restart: always
+    ports:
+      - "6379:6379"
+
   api:
     build: .
     container_name: gymsmart-api
@@ -26,12 +33,15 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_started
     ports:
       - "3000:3000"
     env_file:
       - ./.env
     environment:
       - DATABASE_URL=postgresql://postgres:postgres_secure_password@db:5432/gymsmart?schema=public
+      - REDIS_URL=redis://redis:6379
       - PORT=3000
     command: >
       sh -c "npm run db:setup:local && npm run start:dev"

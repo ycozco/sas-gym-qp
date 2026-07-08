@@ -123,8 +123,10 @@ export class PointsService {
   ) {
     const data: Record<string, unknown> = {};
     if (dto.activo !== undefined) data.activo = dto.activo;
-    if (dto.puntosPorSol !== undefined) data.puntos_por_sol = Number(dto.puntosPorSol);
-    if (dto.minCanje !== undefined) data.minimo_para_canje = Number(dto.minCanje);
+    if (dto.puntosPorSol !== undefined)
+      data.puntos_por_sol = Number(dto.puntosPorSol);
+    if (dto.minCanje !== undefined)
+      data.minimo_para_canje = Number(dto.minCanje);
     if (dto.vencimientoDias !== undefined) {
       data.puntos_expiran = dto.vencimientoDias !== null;
       if (dto.vencimientoDias !== null) {
@@ -154,8 +156,7 @@ export class PointsService {
         usuario: {
           select: {
             id: true,
-            nombre: true,
-            apellido: true,
+            nombre_completo: true,
             foto_url: true,
           },
         },
@@ -167,7 +168,7 @@ export class PointsService {
     return balances.map((b, idx) => ({
       rank: idx + 1,
       userId: b.usuario_id,
-      nombre: `${b.usuario.nombre} ${b.usuario.apellido ?? ''}`.trim(),
+      nombre: b.usuario.nombre_completo,
       fotoUrl: b.usuario.foto_url,
       puntosDisponibles: b.puntos_disponibles,
       puntosTotales: b.puntos_totales_ganados,
@@ -192,7 +193,8 @@ export class PointsService {
     const user = await this.prisma.user.findFirst({
       where: { id: dto.userId, tenant_id: tenantId },
     });
-    if (!user) throw new NotFoundException('Usuario no encontrado en este gimnasio.');
+    if (!user)
+      throw new NotFoundException('Usuario no encontrado en este gimnasio.');
 
     const balance = await this.prisma.pointsBalance.upsert({
       where: { usuario_id: dto.userId },
@@ -354,6 +356,78 @@ export class PointsService {
             balance.puntos_totales_canjeados + pointsCost,
         },
       };
+    });
+  }
+
+  async createProduct(tenantId: string, dto: any) {
+    return this.prisma.pointsProduct.create({
+      data: {
+        tenant_id: tenantId,
+        nombre: dto.nombre,
+        descripcion: dto.descripcion,
+        precio_puntos: dto.precio_puntos,
+        stock: dto.stock ?? 0,
+        stock_minimo: dto.stock_minimo ?? 5,
+        destacado: dto.destacado ?? false,
+      },
+    });
+  }
+
+  async updateProduct(tenantId: string, id: string, dto: any) {
+    const item = await this.prisma.pointsProduct.findFirst({
+      where: { id, tenant_id: tenantId },
+    });
+    if (!item) throw new Error('Points product not found.');
+    return this.prisma.pointsProduct.update({
+      where: { id },
+      data: dto,
+    });
+  }
+
+  async deleteProduct(tenantId: string, id: string) {
+    const item = await this.prisma.pointsProduct.findFirst({
+      where: { id, tenant_id: tenantId },
+    });
+    if (!item) throw new Error('Points product not found.');
+    return this.prisma.pointsProduct.update({
+      where: { id },
+      data: { activo: false },
+    });
+  }
+
+  async createMembership(tenantId: string, dto: any) {
+    return this.prisma.pointsMembership.create({
+      data: {
+        tenant_id: tenantId,
+        nombre: dto.nombre,
+        descripcion: dto.descripcion,
+        precio_puntos: dto.precio_puntos,
+        duracion_dias: dto.duracion_dias,
+        stock: dto.stock ?? 0,
+        destacada: dto.destacada ?? false,
+      },
+    });
+  }
+
+  async updateMembership(tenantId: string, id: string, dto: any) {
+    const item = await this.prisma.pointsMembership.findFirst({
+      where: { id, tenant_id: tenantId },
+    });
+    if (!item) throw new Error('Points membership not found.');
+    return this.prisma.pointsMembership.update({
+      where: { id },
+      data: dto,
+    });
+  }
+
+  async deleteMembership(tenantId: string, id: string) {
+    const item = await this.prisma.pointsMembership.findFirst({
+      where: { id, tenant_id: tenantId },
+    });
+    if (!item) throw new Error('Points membership not found.');
+    return this.prisma.pointsMembership.update({
+      where: { id },
+      data: { activo: false },
     });
   }
 }

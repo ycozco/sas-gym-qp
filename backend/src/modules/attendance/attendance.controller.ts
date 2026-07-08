@@ -1,3 +1,4 @@
+import type { AuthenticatedRequest } from '../../core/types/authenticated-request';
 import { Controller, Post, Body, UseGuards, Req } from '@nestjs/common';
 import { AttendanceService } from './attendance.service';
 import {
@@ -32,7 +33,7 @@ export class AttendanceController {
 
   @Post('verify')
   @Roles(Role.ADMIN, Role.CAJA)
-  async verifyQr(@Req() req: any, @Body() dto: VerifyQrDto) {
+  async verifyQr(@Req() req: AuthenticatedRequest, @Body() dto: VerifyQrDto) {
     const tenantId = req.user.tenantId;
     return this.attendanceService.verifyQrToken(
       dto.dni,
@@ -43,7 +44,10 @@ export class AttendanceController {
 
   @Post('simulation-access')
   @Roles(Role.ADMIN, Role.CAJA)
-  async simulateAccess(@Req() req: any, @Body('dni') dni: string) {
+  async simulateAccess(
+    @Req() req: AuthenticatedRequest,
+    @Body('dni') dni: string,
+  ) {
     const tenantId = req.user.tenantId;
     return this.attendanceService.simulateAccess(dni, tenantId);
   }

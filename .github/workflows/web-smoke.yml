@@ -2,8 +2,9 @@ name: web-smoke
 
 on:
   pull_request:
+    branches: [main, production]
   push:
-    branches: [main]
+    branches: [main, production]
 
 jobs:
   smoke-web-admin:
@@ -14,7 +15,21 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web_admin/package-lock.json
+
+      - name: Install web admin
+        working-directory: web_admin
+        run: npm ci
+
+      - name: Lint web admin
+        working-directory: web_admin
+        run: npm run lint
+
+      - name: Build web admin
+        working-directory: web_admin
+        run: npm run build
 
       - name: Static smoke
         run: node scripts/web-smoke-check.mjs

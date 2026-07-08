@@ -175,6 +175,7 @@ async function resetDatabase() {
   await prisma.refreshTokenSession.deleteMany();
   await prisma.user.deleteMany();
   await prisma.tenant.deleteMany();
+  await prisma.saasPlan.deleteMany();
 }
 
 function membershipDates(status: MemberStatus, plan: PlanDef, now: Date) {
@@ -237,6 +238,44 @@ async function main() {
   let totalUsers = 0;
   let totalMemberships = 0;
   let totalCajas = 0;
+
+  // Sembrar los planes SaaS para evitar conflictos de llave foránea
+  console.log('Sembrando planes SaaS...');
+  await prisma.saasPlan.upsert({
+    where: { code: 'BASIC' },
+    update: {},
+    create: {
+      code: 'BASIC',
+      nombre: 'Plan Básico',
+      precio_mensual: 29.0,
+      limite_usuarios: 500,
+      caracteristicas: 'Acceso QR, control de caja simple, reporte básico',
+    },
+  });
+
+  await prisma.saasPlan.upsert({
+    where: { code: 'PRO' },
+    update: {},
+    create: {
+      code: 'PRO',
+      nombre: 'Plan Profesional',
+      precio_mensual: 59.0,
+      limite_usuarios: 1500,
+      caracteristicas: 'Acceso biométrico, caja móvil, soporte premium, reporte avanzado',
+    },
+  });
+
+  await prisma.saasPlan.upsert({
+    where: { code: 'ENTERPRISE' },
+    update: {},
+    create: {
+      code: 'ENTERPRISE',
+      nombre: 'Plan Enterprise',
+      precio_mensual: 119.0,
+      limite_usuarios: 9999,
+      caracteristicas: 'Soporte 24/7, multitenant central, integraciones custom, reportes analytics',
+    },
+  });
 
   const superTenant = await prisma.tenant.create({
     data: {

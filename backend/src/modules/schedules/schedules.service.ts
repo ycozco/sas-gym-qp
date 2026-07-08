@@ -125,4 +125,88 @@ export class SchedulesService {
       data: { estado: 'CANCELLED' },
     });
   }
+
+  async create(tenantId: string, data: any) {
+    return this.prisma.schedule.create({
+      data: {
+        tenant_id: tenantId,
+        trainer_id: data.trainer_id,
+        nombre_clase: data.nombre_clase,
+        descripcion: data.descripcion || '',
+        dia_semana: data.dia_semana || [],
+        hora_inicio: data.hora_inicio,
+        hora_fin: data.hora_fin,
+        cupo_maximo: Number(data.cupo_maximo) || 20,
+        activo: true,
+      },
+    });
+  }
+
+  async update(tenantId: string, id: string, data: any) {
+    const existing = await this.prisma.schedule.findFirst({
+      where: { id, tenant_id: tenantId },
+    });
+    if (!existing) {
+      throw new NotFoundException('Clase no encontrada.');
+    }
+    return this.prisma.schedule.update({
+      where: { id },
+      data: {
+        trainer_id:
+          data.trainer_id !== undefined ? data.trainer_id : existing.trainer_id,
+        nombre_clase:
+          data.nombre_clase !== undefined
+            ? data.nombre_clase
+            : existing.nombre_clase,
+        descripcion:
+          data.descripcion !== undefined
+            ? data.descripcion
+            : existing.descripcion,
+        dia_semana:
+          data.dia_semana !== undefined ? data.dia_semana : existing.dia_semana,
+        hora_inicio:
+          data.hora_inicio !== undefined
+            ? data.hora_inicio
+            : existing.hora_inicio,
+        hora_fin:
+          data.hora_fin !== undefined ? data.hora_fin : existing.hora_fin,
+        cupo_maximo:
+          data.cupo_maximo !== undefined
+            ? Number(data.cupo_maximo)
+            : existing.cupo_maximo,
+        activo: data.activo !== undefined ? data.activo : existing.activo,
+      },
+    });
+  }
+
+  async delete(tenantId: string, id: string) {
+    const existing = await this.prisma.schedule.findFirst({
+      where: { id, tenant_id: tenantId },
+    });
+    if (!existing) {
+      throw new NotFoundException('Clase no encontrada.');
+    }
+    return this.prisma.schedule.update({
+      where: { id },
+      data: { activo: false },
+    });
+  }
+
+  async listTrainers(tenantId: string) {
+    return this.prisma.user.findMany({
+      where: {
+        tenant_id: tenantId,
+        rol: Role.TRAINER,
+        estado: 'ACTIVE',
+      },
+      select: {
+        id: true,
+        nombre_completo: true,
+        email: true,
+      },
+      orderBy: {
+        nombre_completo: 'asc',
+      },
+    });
+  }
 }

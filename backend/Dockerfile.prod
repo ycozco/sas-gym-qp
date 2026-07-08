@@ -1,5 +1,5 @@
 # ─── STAGE 1: BUILDER (Compilación de TypeScript) ──────────────────────
-FROM node:20-alpine AS builder
+FROM node:24-alpine@sha256:461d310e527d9bf0d3509d3bdfd8e96bf7b5c305b9b1d9bf5bdf8e98679d63c5 AS builder
 
 # Dependencias nativas necesarias para Prisma/Node en Alpine
 RUN apk add --no-cache libc6-compat openssl
@@ -19,7 +19,7 @@ RUN npx prisma generate
 RUN npm run build
 
 # ─── STAGE 2: RUNNER (Imagen de Producción Limpia) ──────────────────────
-FROM node:20-alpine AS runner
+FROM node:24-alpine@sha256:461d310e527d9bf0d3509d3bdfd8e96bf7b5c305b9b1d9bf5bdf8e98679d63c5 AS runner
 
 # Librería SSL necesaria para la conexión Postgres en Alpine
 RUN apk add --no-cache openssl

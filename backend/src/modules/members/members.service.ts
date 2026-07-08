@@ -6,12 +6,31 @@ import {
 import { PrismaService } from '../../prisma/prisma.service';
 import { SessionState } from '@prisma/client';
 
+export interface WorkoutSeriesLogInput {
+  exerciseId: string;
+  serieNumero: number;
+  pesoRealKg?: number;
+  repsReales?: number;
+  completada?: boolean;
+}
+
+export interface SaveWorkoutLogInput {
+  templateId: string;
+  fecha?: string;
+  estado?: 'COMPLETED' | 'SKIPPED';
+  seriesLog: WorkoutSeriesLogInput[];
+}
+
 @Injectable()
 export class MembersService {
   constructor(private prisma: PrismaService) {}
 
   // ─── WORKOUT LOG ─────────────────────────────────────────────────
-  async saveWorkoutLog(userId: string, tenantId: string, dto: any) {
+  async saveWorkoutLog(
+    userId: string,
+    tenantId: string,
+    dto: SaveWorkoutLogInput,
+  ) {
     const memberProfile = await this.prisma.memberProfile.findUnique({
       where: { user_id: userId },
     });
@@ -31,7 +50,7 @@ export class MembersService {
             ? SessionState.SKIPPED
             : SessionState.COMPLETED,
         series_log: {
-          create: dto.seriesLog.map((log: any) => ({
+          create: dto.seriesLog.map((log) => ({
             exercise_id: log.exerciseId,
             serie_numero: log.serieNumero,
             peso_real_kg: log.pesoRealKg,
@@ -131,17 +150,7 @@ export class MembersService {
       orderBy: { nombre_completo: 'asc' },
     });
 
-    if (members.length > 0) return members;
-
-    return this.prisma.user.findMany({
-      where: { tenant_id: tenantId, rol: 'MEMBER' },
-      include: {
-        member_profile: true,
-        memberships: { orderBy: { fecha_vencimiento: 'desc' }, take: 1 },
-      },
-      orderBy: { nombre_completo: 'asc' },
-      take: 20,
-    });
+    return members;
   }
 
   // ─── LISTADO DE MIEMBROS PAGINADO POR CURSOR ──────────────────────

@@ -1,14 +1,36 @@
+import { Type } from 'class-transformer';
 import {
   IsArray,
   IsInt,
+  IsNotEmpty,
   IsNumber,
   IsOptional,
   IsPositive,
   IsString,
   IsUUID,
   Min,
+  ValidateNested,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+
+class DietMealDto {
+  @IsString()
+  @IsNotEmpty()
+  hora: string;
+
+  @IsString()
+  @IsNotEmpty()
+  nombre: string;
+
+  @IsString()
+  @IsNotEmpty()
+  alimentos: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  calorias?: number;
+}
 
 export class CreateDietPlanDto {
   @IsUUID()
@@ -45,7 +67,9 @@ export class CreateDietPlanDto {
   grasasG?: number;
 
   @IsArray()
-  comidas: any[];
+  @ValidateNested({ each: true })
+  @Type(() => DietMealDto)
+  comidas: DietMealDto[];
 
   @IsOptional()
   @IsString()
@@ -85,7 +109,9 @@ export class UpdateDietPlanDto {
 
   @IsOptional()
   @IsArray()
-  comidas?: any[];
+  @ValidateNested({ each: true })
+  @Type(() => DietMealDto)
+  comidas?: DietMealDto[];
 
   @IsOptional()
   @IsString()

@@ -32,10 +32,7 @@ export class AuthService {
 
     const candidates = await this.prisma.user.findMany({
       where: {
-        OR: [
-          { email: normalizedIdentifier },
-          { dni: normalizedIdentifier },
-        ],
+        OR: [{ email: normalizedIdentifier }, { dni: normalizedIdentifier }],
         ...(normalizedTenantId ? { tenant_id: normalizedTenantId } : {}),
       },
       orderBy: { created_at: 'asc' },

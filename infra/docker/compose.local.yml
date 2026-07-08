@@ -2,7 +2,7 @@ name: sasgym-local
 
 services:
   postgres:
-    image: postgres:16-alpine
+    image: postgres:16.14-alpine3.24@sha256:df4e3a4e9bbf29a6744c80327f272379b32b88b22a001fb1cfbfcd0ef81e4b
     container_name: sasgym_postgres_local
     restart: unless-stopped
     environment:
@@ -22,13 +22,18 @@ services:
       - sasgym_backend_local
 
   redis:
-    image: redis:7-alpine
+    image: redis:7.2-alpine@sha256:0d5bdfdf8e98679d63c5fd3cfd5d0f6fd35a09c252ef0f117c464a3875dc06cfc
     container_name: sasgym_redis_local
     restart: unless-stopped
     ports:
       - "${REDIS_PORT:-6379}:6379"
     volumes:
       - sasgym_redisdata_local:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - sasgym_backend_local
 
@@ -126,7 +131,7 @@ services:
       - sasgym_public_local
 
   admin-web:
-    image: nginx:alpine
+    image: nginx:alpine@sha256:28c6168e312b9bf0d3509d3bdfd8e96bf7b5c305b9b1d9bf5bdf8e98679d63c57
     container_name: sasgym_admin_web_local
     restart: unless-stopped
     ports:
@@ -137,6 +142,11 @@ services:
       - ../../mockups/mobile:/usr/share/nginx/html/mockups/mobile:ro
       - ../../mockups/web:/usr/share/nginx/html/mockups/web:ro
       - ../../docs:/usr/share/nginx/html/docs:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - sasgym_public_local
 

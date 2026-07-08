@@ -48,6 +48,10 @@ model Tenant {
   points_movements        PointsMovement[]
   payments                Payment[]
   diet_plans              DietPlan[]
+  leads                   Lead[]
+  campaigns               Campaign[]
+  expenses                Expense[]
+  payrolls                Payroll[]
 }
 
 model SaasPlan {
@@ -108,6 +112,7 @@ model User {
 
   @@unique([tenant_id, email])
   @@unique([tenant_id, dni])
+  payrolls_received          Payroll[]               @relation("TrainerPayrolls")
 }
 
 model RefreshTokenSession {
@@ -834,4 +839,69 @@ model DietPlan {
 
   @@index([tenant_id])
   @@index([member_id])
+}
+
+
+// ─── CRM (LEADS Y CAMPAÑAS) ───────────────────────────────────────
+model Lead {
+  id              String   @id @default(uuid())
+  tenant_id       String
+  tenant          Tenant   @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  nombre          String
+  email           String?
+  celular         String?
+  origen          String   @default("Recomendado") // Web, Facebook, Instagram, Recomendado, etc.
+  estado          String   @default("Nuevo") // Nuevo, Contactado, Interesado, Cerrado, Descartado
+  notas           String?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  @@index([tenant_id])
+}
+
+model Campaign {
+  id              String   @id @default(uuid())
+  tenant_id       String
+  tenant          Tenant   @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  nombre          String
+  descripcion     String?
+  canal           String   @default("Push") // Email, WhatsApp, Push
+  estado          String   @default("Programada") // Programada, Activa, Finalizada
+  alcance         Int      @default(0) // Alcance estimado
+  fecha_envio     DateTime @default(now())
+  created_at      DateTime @default(now())
+
+  @@index([tenant_id])
+}
+
+// ─── FINANZAS (EGRESOS Y PLANILLAS GENERALES) ──────────────────────
+model Expense {
+  id           String   @id @default(uuid())
+  tenant_id    String
+  tenant       Tenant   @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  monto        Float
+  categoria    String   @default("Gasto") // Sueldo, Servicio, Mantenimiento, Gasto, etc.
+  descripcion  String
+  fecha        DateTime @default(now())
+  metodo_pago  String   @default("efectivo") // efectivo, transferencia, yape, pos
+  created_at   DateTime @default(now())
+
+  @@index([tenant_id])
+}
+
+model Payroll {
+  id           String    @id @default(uuid())
+  tenant_id    String
+  tenant       Tenant    @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  trainer_id   String
+  trainer      User      @relation("TrainerPayrolls", fields: [trainer_id], references: [id], onDelete: Cascade)
+  monto_sueldo Float
+  mes          Int
+  anio         Int
+  estado_pago  String    @default("Pendiente") // Pendiente, Pagado
+  fecha_pago   DateTime?
+  created_at   DateTime  @default(now())
+
+  @@index([tenant_id])
+  @@index([trainer_id])
 }

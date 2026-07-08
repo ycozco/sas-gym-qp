@@ -1,3 +1,5 @@
+import type { AuthenticatedRequest } from '../../core/types/authenticated-request';
+import type { SaveWorkoutLogInput } from './members.service';
 import {
   Controller,
   Post,
@@ -35,15 +37,22 @@ export class MembersController {
   // ─── WORKOUT ─────────────────────────────────────────────────────
   @Post('workout-log')
   @Roles(Role.MEMBER)
-  async saveWorkoutLog(@Req() req: any, @Body() dto: any) {
-    return this.membersService.saveWorkoutLog(req.user.sub, req.user.tenantId, dto);
+  async saveWorkoutLog(
+    @Req() req: AuthenticatedRequest,
+    @Body() dto: SaveWorkoutLogInput,
+  ) {
+    return this.membersService.saveWorkoutLog(
+      req.user.sub,
+      req.user.tenantId,
+      dto,
+    );
   }
 
   // ─── LISTADO DE MIEMBROS PAGINADO POR CURSOR ──────────────────────
   @Get()
   @Roles(Role.ADMIN, Role.CAJA)
   async findAll(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Query('limit') limit?: string,
     @Query('cursor') cursor?: string,
   ) {
@@ -54,14 +63,14 @@ export class MembersController {
   // ─── BÚSQUEDA ────────────────────────────────────────────────────
   @Get('search')
   @Roles(Role.ADMIN, Role.CAJA)
-  async search(@Req() req: any, @Query('q') query: string) {
+  async search(@Req() req: AuthenticatedRequest, @Query('q') query: string) {
     return this.membersService.searchMembers(req.user.tenantId, query);
   }
 
   // ─── TRAINER ─────────────────────────────────────────────────────
   @Get('assigned')
   @Roles(Role.TRAINER)
-  async assigned(@Req() req: any) {
+  async assigned(@Req() req: AuthenticatedRequest) {
     return this.membersService.assignedMembers(req.user.sub, req.user.tenantId);
   }
 
@@ -71,7 +80,7 @@ export class MembersController {
   @Post('memberships/:membershipId/freeze')
   @Roles(Role.ADMIN)
   async freeze(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Param('membershipId') membershipId: string,
     @Body() dto: FreezeMembershipDto,
   ) {
@@ -86,7 +95,7 @@ export class MembersController {
   @Delete('memberships/:membershipId/freeze')
   @Roles(Role.ADMIN)
   async unfreeze(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Param('membershipId') membershipId: string,
   ) {
     return this.membersService.unfreezeMembership(
@@ -99,12 +108,9 @@ export class MembersController {
   @Get('memberships/:membershipId/freeze-history')
   @Roles(Role.ADMIN)
   async freezeHistory(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Param('membershipId') membershipId: string,
   ) {
-    return this.membersService.freezeHistory(
-      membershipId,
-      req.user.tenantId,
-    );
+    return this.membersService.freezeHistory(membershipId, req.user.tenantId);
   }
 }

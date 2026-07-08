@@ -73,9 +73,7 @@ async function bootstrap() {
             },
           }
         : false, // Desactivado en dev para facilitar depuración
-      hsts: isProd
-        ? { maxAge: 31536000, includeSubDomains: true }
-        : false,
+      hsts: isProd ? { maxAge: 31536000, includeSubDomains: true } : false,
       crossOriginEmbedderPolicy: false, // Compatible con Flutter WebView
     }),
   );
@@ -86,6 +84,11 @@ async function bootstrap() {
   if (getOptionalEnv('PUBLIC_UPLOADS_ENABLED', 'false') === 'true') {
     app.use('/uploads', express.static(join(process.cwd(), 'uploads')));
   }
+
+  // ─── FRONTEND ESTÁTICO UNIFICADO (LANDING Y ADMIN) ────────────────
+  const publicPath = join(process.cwd(), 'public');
+  app.use('/admin', express.static(join(publicPath, 'admin')));
+  app.use('/', express.static(join(publicPath, 'landing')));
 
   // ─── PREFIJO GLOBAL ───────────────────────────────────────────────
   app.setGlobalPrefix('api/v1');
@@ -125,4 +128,4 @@ async function bootstrap() {
   ╚════════════════════════════════════════════╝
   `);
 }
-bootstrap();
+void bootstrap();
