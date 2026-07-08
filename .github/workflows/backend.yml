@@ -2,8 +2,9 @@ name: backend
 
 on:
   pull_request:
+    branches: [main, production]
   push:
-    branches: [main]
+    branches: [main, production]
 
 jobs:
   test-backend:
@@ -35,13 +36,14 @@ jobs:
       JWT_ACCESS_TTL: 15m
       JWT_REFRESH_DAYS: 7
       CORS_ORIGINS: http://localhost:8282,http://localhost:8383,http://localhost:3000
+      ALLOW_TEST_DATA_RESET: "true"
 
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
           cache-dependency-path: backend/package-lock.json
 
@@ -56,8 +58,11 @@ jobs:
       - name: Prisma setup
         run: |
           npm run prisma:generate
-          npm run db:push
+          npm run migrate:deploy
           npm run seed:test
+
+      - name: Lint
+        run: npm run lint
 
       - name: Build
         run: npm run build

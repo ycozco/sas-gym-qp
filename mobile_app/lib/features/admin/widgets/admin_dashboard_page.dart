@@ -13,6 +13,7 @@ class AdminDashboardPage extends StatelessWidget {
     required this.onGoCreateMember,
     required this.onGoSettings,
     required this.onGoAuditLogs,
+    required this.onGoCajaAudit,
   });
 
   final RolePalette palette;
@@ -21,6 +22,7 @@ class AdminDashboardPage extends StatelessWidget {
   final VoidCallback onGoCreateMember;
   final VoidCallback onGoSettings;
   final VoidCallback onGoAuditLogs;
+  final VoidCallback onGoCajaAudit;
 
   @override
   Widget build(BuildContext context) {
@@ -49,6 +51,10 @@ class AdminDashboardPage extends StatelessWidget {
         }
       }
     }
+
+    final int activeCajasCount = state.cashiers
+        .where((c) => c.shift.toLowerCase() == 'abierta')
+        .length;
 
     return ListView(
       key: const PageStorageKey<String>('admin-dashboard'),
@@ -156,12 +162,14 @@ class AdminDashboardPage extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: AdminMetric(
-                label: 'Cuentas Caja',
-                value: '${state.cashiers.length}',
-                note:
-                    '${state.cashiers.where((c) => c.active).length} activas hoy',
-                accent: Colors.blueAccent,
+              child: GestureDetector(
+                onTap: onGoCajaAudit,
+                child: AdminMetric(
+                  label: 'Cajas y Cuadre',
+                  value: '$activeCajasCount',
+                  note: '$activeCajasCount abiertas · Pulsa para auditar',
+                  accent: Colors.blueAccent,
+                ),
               ),
             ),
           ],
@@ -182,11 +190,11 @@ class AdminDashboardPage extends StatelessWidget {
             const SizedBox(width: 10),
             Expanded(
               child: ActionTile(
-                icon: Icons.fact_check_outlined,
-                label: 'Auditoría',
-                note: 'Bitácora general',
+                icon: Icons.point_of_sale_rounded,
+                label: 'Control de Caja',
+                note: 'Turnos y descuadres',
                 accent: palette.accent,
-                onTap: onGoAuditLogs,
+                onTap: onGoCajaAudit,
               ),
             ),
           ],
@@ -213,6 +221,22 @@ class AdminDashboardPage extends StatelessWidget {
                 onTap: onGoApprovals,
               ),
             ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: ActionTile(
+                icon: Icons.fact_check_outlined,
+                label: 'Auditoría',
+                note: 'Bitácora general',
+                accent: palette.accent,
+                onTap: onGoAuditLogs,
+              ),
+            ),
+            const SizedBox(width: 10),
+            const Spacer(),
           ],
         ),
         const SizedBox(height: 24),

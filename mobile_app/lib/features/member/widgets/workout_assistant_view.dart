@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../core/config/app_config.dart';
-import '../../../data/gym_seed.dart';
 import '../../../data/gym_state.dart';
 import '../../../models/gym_models.dart';
 import '../../../widgets/app_shell.dart';
@@ -61,17 +60,21 @@ class _WorkoutAssistantViewState extends State<WorkoutAssistantView> {
           for (var item in ejerciciosList) {
             final exercise = item['exercise'];
             if (exercise != null) {
-              parsed.add(ExerciseItem(
-                id: exercise['id'] as String?,
-                name: exercise['nombre'] ?? 'Ejercicio',
-                muscle: exercise['grupo_muscular'] ?? 'General',
-                sets: item['series'] ?? 4,
-                reps: '${item['repeticiones']}',
-                weight: item['peso_sugerido_kg'] != null ? (item['peso_sugerido_kg'] as num).toInt() : null,
-                restSeconds: item['descanso_seg'] ?? 60,
-                icon: Icons.fitness_center,
-                available: exercise['activo'] ?? true,
-              ));
+              parsed.add(
+                ExerciseItem(
+                  id: exercise['id'] as String?,
+                  name: exercise['nombre'] ?? 'Ejercicio',
+                  muscle: exercise['grupo_muscular'] ?? 'General',
+                  sets: item['series'] ?? 4,
+                  reps: '${item['repeticiones']}',
+                  weight: item['peso_sugerido_kg'] != null
+                      ? (item['peso_sugerido_kg'] as num).toInt()
+                      : null,
+                  restSeconds: item['descanso_seg'] ?? 60,
+                  icon: Icons.fitness_center,
+                  available: exercise['activo'] ?? true,
+                ),
+              );
             }
           }
         }
@@ -84,13 +87,13 @@ class _WorkoutAssistantViewState extends State<WorkoutAssistantView> {
         }
       }
       setState(() {
-        _exercises = List.from(memberExercises);
+        _exercises = const [];
         _loading = false;
       });
     } catch (e) {
       AppLogger.debug('Error loading active routine', e);
       setState(() {
-        _exercises = List.from(memberExercises);
+        _exercises = const [];
         _loading = false;
       });
     }
@@ -131,7 +134,9 @@ class _WorkoutAssistantViewState extends State<WorkoutAssistantView> {
     _stopRest();
 
     // Accumulate stats
-    _totalWeightLifted += (current.weight ?? 0) * (int.tryParse(current.reps.split('-')[0]) ?? 10);
+    _totalWeightLifted +=
+        (current.weight ?? 0) *
+        (int.tryParse(current.reps.split('-')[0]) ?? 10);
 
     if (_setIndex < current.sets - 1) {
       setState(() {
@@ -188,12 +193,20 @@ class _WorkoutAssistantViewState extends State<WorkoutAssistantView> {
           backgroundColor: Colors.transparent,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+            icon: const Icon(
+              Icons.arrow_back_ios_new_rounded,
+              color: Colors.white,
+            ),
             onPressed: widget.onBack,
           ),
           title: const Text(
             'CARGANDO RUTINA...',
-            style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900, letterSpacing: 1),
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 13,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1,
+            ),
           ),
           centerTitle: true,
         ),
@@ -206,6 +219,46 @@ class _WorkoutAssistantViewState extends State<WorkoutAssistantView> {
     }
 
     final totalExercises = _exercises.length;
+
+    if (totalExercises == 0) {
+      return Scaffold(
+        backgroundColor: const Color(0xFF0F0F0F),
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(
+              Icons.arrow_back_ios_new_rounded,
+              color: Colors.white,
+            ),
+            onPressed: widget.onBack,
+          ),
+          title: const Text(
+            'RUTINA ACTIVA',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 13,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1,
+            ),
+          ),
+          centerTitle: true,
+        ),
+        body: const Center(
+          child: Padding(
+            padding: EdgeInsets.all(24),
+            child: Text(
+              'No tienes una rutina activa publicada en este momento.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white70,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
 
     // Summary/Finished screen
     if (_exerciseIndex >= totalExercises) {
@@ -224,17 +277,29 @@ class _WorkoutAssistantViewState extends State<WorkoutAssistantView> {
                     color: Color(0xFFD2FF3A),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.emoji_events, size: 48, color: Colors.black),
+                  child: const Icon(
+                    Icons.emoji_events,
+                    size: 48,
+                    color: Colors.black,
+                  ),
                 ),
                 const SizedBox(height: 24),
                 const Text(
                   '¡ENTRENAMIENTO COMPLETADO!',
-                  style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: -0.5),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.5,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Has registrado con éxito tu sesión del día.',
-                  style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 13.5),
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.5),
+                    fontSize: 13.5,
+                  ),
                 ),
                 const SizedBox(height: 32),
 
@@ -248,14 +313,23 @@ class _WorkoutAssistantViewState extends State<WorkoutAssistantView> {
                   ),
                   child: Column(
                     children: [
-                      _finishedStatRow('Ejercicios realizados', '$_completedExercisesCount / $totalExercises'),
+                      _finishedStatRow(
+                        'Ejercicios realizados',
+                        '$_completedExercisesCount / $totalExercises',
+                      ),
                       const Divider(color: Color(0xFF2C2C2C), height: 24),
-                      _finishedStatRow('Volumen levantado', '${_totalWeightLifted.round()} kg'),
+                      _finishedStatRow(
+                        'Volumen levantado',
+                        '${_totalWeightLifted.round()} kg',
+                      ),
                       const Divider(color: Color(0xFF2C2C2C), height: 24),
                       _finishedStatRow('Duración aproximada', '48 min'),
                       if (_prAlerts.isNotEmpty) ...[
                         const Divider(color: Color(0xFF2C2C2C), height: 24),
-                        _finishedStatRow('Nuevos Récords (PR)', _prAlerts.first),
+                        _finishedStatRow(
+                          'Nuevos Récords (PR)',
+                          _prAlerts.first,
+                        ),
                       ],
                     ],
                   ),
@@ -266,13 +340,19 @@ class _WorkoutAssistantViewState extends State<WorkoutAssistantView> {
                   style: roleFilledPillButtonStyle(
                     backgroundColor: const Color(0xFFD2FF3A),
                     foregroundColor: Colors.black,
-                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 16,
+                    ),
                     minimumHeight: 54,
                   ),
                   onPressed: () {
                     widget.onBack();
                   },
-                  child: const Text('Volver a Inicio', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
+                  child: const Text(
+                    'Volver a Inicio',
+                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
+                  ),
                 ),
               ],
             ),
@@ -289,7 +369,10 @@ class _WorkoutAssistantViewState extends State<WorkoutAssistantView> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Colors.white,
+          ),
           onPressed: () {
             // Confirm quit
             showDialog(
@@ -300,19 +383,31 @@ class _WorkoutAssistantViewState extends State<WorkoutAssistantView> {
                   borderRadius: BorderRadius.circular(12),
                   side: const BorderSide(color: Color(0xFF2C2C2C)),
                 ),
-                title: const Text('¿Abandonar entrenamiento?', style: TextStyle(color: Colors.white)),
-                content: const Text('Tu progreso de series registradas hoy no se guardará.', style: TextStyle(color: Colors.white70)),
+                title: const Text(
+                  '¿Abandonar entrenamiento?',
+                  style: TextStyle(color: Colors.white),
+                ),
+                content: const Text(
+                  'Tu progreso de series registradas hoy no se guardará.',
+                  style: TextStyle(color: Colors.white70),
+                ),
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.pop(ctx),
-                    child: const Text('Continuar', style: TextStyle(color: Color(0xFFD2FF3A))),
+                    child: const Text(
+                      'Continuar',
+                      style: TextStyle(color: Color(0xFFD2FF3A)),
+                    ),
                   ),
                   TextButton(
                     onPressed: () {
                       Navigator.pop(ctx);
                       widget.onBack();
                     },
-                    child: const Text('Salir', style: TextStyle(color: Colors.grey)),
+                    child: const Text(
+                      'Salir',
+                      style: TextStyle(color: Colors.grey),
+                    ),
                   ),
                 ],
               ),
@@ -321,7 +416,12 @@ class _WorkoutAssistantViewState extends State<WorkoutAssistantView> {
         ),
         title: Text(
           'ASISTENTE: EJERCICIO ${_exerciseIndex + 1} DE $totalExercises',
-          style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900, letterSpacing: 1),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 13,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1,
+          ),
         ),
         centerTitle: true,
       ),
@@ -330,7 +430,9 @@ class _WorkoutAssistantViewState extends State<WorkoutAssistantView> {
           return SingleChildScrollView(
             padding: const EdgeInsets.all(22.0),
             child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: constraints.maxHeight - 44),
+              constraints: BoxConstraints(
+                minHeight: constraints.maxHeight - 44,
+              ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -342,12 +444,21 @@ class _WorkoutAssistantViewState extends State<WorkoutAssistantView> {
                       // Header
                       Text(
                         currentExercise.name,
-                        style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w900, letterSpacing: -0.6),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.6,
+                        ),
                       ),
                       const SizedBox(height: 6),
                       Text(
                         'Músculo: ${currentExercise.muscle} · Meta: ${currentExercise.sets} series de ${currentExercise.reps} reps',
-                        style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 13.5, fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.5),
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                       const SizedBox(height: 20),
 
@@ -365,8 +476,8 @@ class _WorkoutAssistantViewState extends State<WorkoutAssistantView> {
                                 color: isCompleted
                                     ? const Color(0xFFD2FF3A)
                                     : isActive
-                                        ? const Color(0xFF0066FF)
-                                        : const Color(0xFF2C2C2C),
+                                    ? const Color(0xFF0066FF)
+                                    : const Color(0xFF2C2C2C),
                                 borderRadius: BorderRadius.circular(99),
                               ),
                             ),
@@ -405,11 +516,19 @@ class _WorkoutAssistantViewState extends State<WorkoutAssistantView> {
                               child: OutlinedButton(
                                 style: roleOutlinedPillButtonStyle(
                                   foregroundColor: Colors.white,
-                                  side: const BorderSide(color: Color(0xFF3C3C3C)),
+                                  side: const BorderSide(
+                                    color: Color(0xFF3C3C3C),
+                                  ),
                                   minimumHeight: 60,
                                 ),
                                 onPressed: () => _addRestSeconds(15),
-                                child: const Text('+15s', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                child: const Text(
+                                  '+15s',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
                               ),
                             ),
                             const SizedBox(width: 14),
@@ -421,7 +540,13 @@ class _WorkoutAssistantViewState extends State<WorkoutAssistantView> {
                                   minimumHeight: 60,
                                 ),
                                 onPressed: _stopRest,
-                                child: const Text('Saltar Descanso', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                                child: const Text(
+                                  'Saltar Descanso',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                  ),
+                                ),
                               ),
                             ),
                           ],
@@ -438,13 +563,16 @@ class _WorkoutAssistantViewState extends State<WorkoutAssistantView> {
                             showDialog(
                               context: context,
                               builder: (ctx) => LogEffortModal(
-                                exerciseName: '${currentExercise.name} - Serie ${_setIndex + 1}',
+                                exerciseName:
+                                    '${currentExercise.name} - Serie ${_setIndex + 1}',
                                 defaultReps: currentExercise.reps,
                                 defaultWeight: currentExercise.weight,
                                 onSave: (reps, weight, rpe) {
                                   // Save this set's log
                                   _loggedSeries.add({
-                                    'exerciseId': currentExercise.id ?? currentExercise.name,
+                                    'exerciseId':
+                                        currentExercise.id ??
+                                        currentExercise.name,
                                     'serieNumero': _setIndex + 1,
                                     'pesoRealKg': weight.toDouble(),
                                     'repsReales': reps,
@@ -453,8 +581,11 @@ class _WorkoutAssistantViewState extends State<WorkoutAssistantView> {
                                   });
                                   // Update stats with real logged weight
                                   setState(() {
-                                    if (weight > (currentExercise.weight ?? 0)) {
-                                      _prAlerts.add('${currentExercise.name} a $weight kg!');
+                                    if (weight >
+                                        (currentExercise.weight ?? 0)) {
+                                      _prAlerts.add(
+                                        '${currentExercise.name} a $weight kg!',
+                                      );
                                     }
                                   });
                                   _nextSet(currentExercise);
@@ -465,7 +596,11 @@ class _WorkoutAssistantViewState extends State<WorkoutAssistantView> {
                           icon: const Icon(Icons.check_circle, size: 26),
                           label: Text(
                             'COMPLETAR SERIE ${_setIndex + 1}',
-                            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: 0.5),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 16,
+                              letterSpacing: 0.5,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 12),
@@ -473,7 +608,10 @@ class _WorkoutAssistantViewState extends State<WorkoutAssistantView> {
                           onPressed: _nextExercise,
                           child: Text(
                             'Saltar Ejercicio',
-                            style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.5),
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ],
@@ -492,8 +630,18 @@ class _WorkoutAssistantViewState extends State<WorkoutAssistantView> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: const TextStyle(color: Colors.white60, fontSize: 13.5)),
-        Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14.5)),
+        Text(
+          label,
+          style: const TextStyle(color: Colors.white60, fontSize: 13.5),
+        ),
+        Text(
+          value,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 14.5,
+          ),
+        ),
       ],
     );
   }

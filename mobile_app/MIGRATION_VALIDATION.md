@@ -12,7 +12,7 @@
 | Fase | Commit | Estado | ValidaciÃ³n contenerizada |
 |------|--------|--------|--------------------------|
 | Baseline | `8a2b97d` | âœ… | n/a (snapshot) |
-| Pre-requisitos containerizaciÃ³n | `fee4507` | âœ… | api, frontend-web, flutter-ci buildeables |
+| Pre-requisitos containerizaciÃ³n | `fee4507` | âœ… | api y app-web buildeables |
 | Plan contenerizado | `6e92514` | âœ… | docs |
 | Fase 0: inventario + smoke tests | `75d2dcd` | âœ… | flutter-ci 7/7 + api OK |
 | Fase 1: aislar punto de entrada | `5f8f999` | âœ… | flutter-ci 7/7 |
@@ -21,10 +21,10 @@
 | Fase 2.3: trainer â†’ features/trainer | `296ebde` | âœ… | flutter-ci 7/7 |
 | Fase 2.4: cashier â†’ features/cashier | `019a0bf` | âœ… | flutter-ci 7/7 |
 | Fase 2.5: admin â†’ features/admin | `330aefd` | âœ… | flutter-ci 7/7 |
-| Fase 2.6: superadmin â†’ features/superadmin + cierre | `5ba23be` | âœ… | flutter-ci 7/7 + api + frontend-web |
-| Fase 3: widgets con dominio reubicados | `867bb78` | âœ… | flutter-ci 11/11 + api + frontend-web |
+| Fase 2.6: superadmin â†’ features/superadmin + cierre | `5ba23be` | âœ… | tests Flutter 7/7 + api + app-web |
+| Fase 3: widgets con dominio reubicados | `867bb78` | âœ… | tests Flutter 11/11 + api + app-web |
 | Fase 4: fronteras core/data/models | `2132559` | âœ… | flutter-ci 11/11 + api |
-| Fase 5: barriles e imports normalizados | `cbf06bc` | âœ… | flutter-ci 11/11 + api + frontend-web |
+| Fase 5: barriles e imports normalizados | `cbf06bc` | âœ… | tests Flutter 11/11 + api + app-web |
 
 ---
 
@@ -68,10 +68,10 @@ Imagen `sas_gym-api` build limpio (compilaciÃ³n TS con `nest build` dentro del
 ### 2.3 Flutter web release dentro de Docker
 
 ```powershell
-docker compose build frontend-web
+docker compose --env-file ../.env.local.example -f ../infra/docker/compose.local.yml build app-web
 ```
 
-Imagen `sas_gym-frontend-web` build limpio. El stage `build` corre `flutter build web --release` y deja el bundle estÃ¡tico servido por nginx en el puerto 80.
+Imagen `sasgym_app_web_local` build limpio. El stage `build` corre `flutter build web --release` y deja el bundle estÃ¡tico servido por nginx en el puerto 80.
 
 ### 2.4 VerificaciÃ³n estÃ¡tica de paths antiguos
 
@@ -145,7 +145,7 @@ lib/
 - [x] `widgets/` no contiene lÃ³gica especÃ­fica de un rol (los widgets de dominio movidos a `features/member/widgets/`).
 - [x] `docker compose --profile ci build flutter-ci` verde (analyze + 11 tests).
 - [x] `docker compose build api` verde.
-- [x] `docker compose build frontend-web` verde (Flutter web release build dentro del contenedor).
+- [x] `docker compose --env-file ../.env.local.example -f ../infra/docker/compose.local.yml build app-web` verde (Flutter web release build dentro del contenedor).
 - [x] ValidaciÃ³n 100 % contenerizada â€” sin `flutter`/`npm` en el host.
 
 ---
@@ -168,4 +168,3 @@ Cada commit de fase es revertible con `git revert`. Las dependencias son lineale
 ```powershell
 git reset --hard 8a2b97d
 ```
-

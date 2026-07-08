@@ -12,92 +12,121 @@ datasource db {
 
 // ─── MULTI-TENANT ────────────────────────────────────────────────
 model Tenant {
-  id              String   @id @default(uuid())
-  nombre          String
-  logo_url        String?
-  direccion       String?
-  telefono        String?
-  horario         String?
-  descripcion     String?
-  redes_sociales  Json?
-  color_primario  String?
-  color_secundario String?
-  color_acento    String?
-  dias_gracia     Int      @default(1)
-  dias_alerta_vencimiento Int @default(5)
-  plan_saas       String   @default("BASIC")  // BASIC | PRO | ENTERPRISE
-  activo          Boolean  @default(true)
-  created_at      DateTime @default(now())
-  usuarios        User[]
-  membership_plans MembershipPlan[]
-  memberships     Membership[]
-  attendances     Attendance[]
-  exercises       Exercise[]
-  schedules       Schedule[]
-  announcements   Announcement[]
-  observations    Observation[]
-  cajas           Caja[]
-  products        Product[]
-  product_sales   ProductSale[]
-  categories      ProductCategory[]
+  id                      String             @id @default(uuid())
+  nombre                  String
+  logo_url                String?
+  direccion               String?
+  telefono                String?
+  horario                 String?
+  descripcion             String?
+  redes_sociales          Json?
+  color_primario          String?
+  color_secundario        String?
+  color_acento            String?
+  dias_gracia             Int                @default(1)
+  dias_alerta_vencimiento Int                @default(5)
+  plan_saas               String             @default("BASIC")
+  saas_plan               SaasPlan?          @relation(fields: [plan_saas], references: [code])
+  activo                  Boolean            @default(true)
+  created_at              DateTime           @default(now())
+  usuarios                User[]
+  membership_plans        MembershipPlan[]
+  memberships             Membership[]
+  attendances             Attendance[]
+  exercises               Exercise[]
+  schedules               Schedule[]
+  announcements           Announcement[]
+  observations            Observation[]
+  cajas                   Caja[]
+  products                Product[]
+  product_sales           ProductSale[]
+  categories              ProductCategory[]
+  points_config           PointsConfig?
+  points_products         PointsProduct[]
+  points_memberships      PointsMembership[]
+  points_exchanges        PointsExchange[]
+  points_movements        PointsMovement[]
+  payments                Payment[]
+  diet_plans              DietPlan[]
+  leads                   Lead[]
+  campaigns               Campaign[]
+  expenses                Expense[]
+  payrolls                Payroll[]
+}
+
+model SaasPlan {
+  id               String   @id @default(uuid())
+  code             String   @unique
+  nombre           String
+  descripcion      String?
+  precio_mensual   Float
+  limite_usuarios  Int
+  caracteristicas  String
+  activo           Boolean  @default(true)
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+  tenants          Tenant[]
 }
 
 // ─── USUARIOS ────────────────────────────────────────────────────
 model User {
-  id              String   @id @default(uuid())
-  tenant_id       String
-  tenant          Tenant   @relation(fields: [tenant_id], references: [id])
-  email           String
-  password_hash   String
-  rol             Role     @default(MEMBER)
-  nombre_completo String
-  dni             String?
-  celular         String?
-  foto_url        String?
-  estado          UserState @default(PENDING)
+  id               String          @id @default(uuid())
+  tenant_id        String
+  tenant           Tenant          @relation(fields: [tenant_id], references: [id])
+  email            String
+  password_hash    String
+  rol              Role            @default(MEMBER)
+  nombre_completo  String
+  dni              String?
+  celular          String?
+  foto_url         String?
+  estado           UserState       @default(PENDING)
   theme_preference ThemePreference @default(SYSTEM)
-  refresh_token   String?
-  qr_secret       String?
-  created_at      DateTime @default(now())
-  updated_at      DateTime @updatedAt
+  refresh_token    String?
+  qr_secret        String?
+  created_at       DateTime        @default(now())
+  updated_at       DateTime        @updatedAt
 
   // Relaciones según rol
-  trainer_profile    TrainerProfile?
-  member_profile     MemberProfile?
-  memberships        Membership[]
-  payments_registered Payment[] @relation("RegisteredBy")
-  attendances        Attendance[]
+  trainer_profile          TrainerProfile?
+  member_profile           MemberProfile?
+  memberships              Membership[]
+  payments_registered      Payment[]        @relation("RegisteredBy")
+  attendances              Attendance[]
   membership_plans_created MembershipPlan[]
 
   // Nuevas relaciones para Caja, Ventas de Productos, Huellas y Puntos
-  cajas_registradas           Caja[]            @relation("CajeroSessions")
-  ventas_registradas          ProductSale[]     @relation("CajeroSales")
-  compras_realizadas          ProductSale[]     @relation("ClientPurchases")
-  huellas                     Fingerprint[]
-  asistencias_huella          FingerprintAttendance[]
-  points_balance              PointsBalance?
-  points_exchanges            PointsExchange[]  @relation("UserExchanges")
-  points_exchanges_processed  PointsExchange[]  @relation("ExchangesProcessed")
-  points_movements            PointsMovement[]
-  inventory_movements         InventoryMovement[]
-  refresh_sessions            RefreshTokenSession[]
+  cajas_registradas          Caja[]                  @relation("CajeroSessions")
+  ventas_registradas         ProductSale[]           @relation("CajeroSales")
+  compras_realizadas         ProductSale[]           @relation("ClientPurchases")
+  huellas                    Fingerprint[]
+  asistencias_huella         FingerprintAttendance[]
+  points_balance             PointsBalance?
+  points_exchanges           PointsExchange[]        @relation("UserExchanges")
+  points_exchanges_processed PointsExchange[]        @relation("ExchangesProcessed")
+  points_movements           PointsMovement[]
+  inventory_movements        InventoryMovement[]
+  refresh_sessions           RefreshTokenSession[]
+  member_diets               DietPlan[]              @relation("MemberDiets")
+  trainer_diets              DietPlan[]              @relation("TrainerDiets")
 
   @@unique([tenant_id, email])
   @@unique([tenant_id, dni])
+  payrolls_received          Payroll[]               @relation("TrainerPayrolls")
 }
 
 model RefreshTokenSession {
-  id              String    @id @default(uuid())
-  user_id         String
-  user            User      @relation(fields: [user_id], references: [id])
-  token_hash      String    @unique
-  user_agent      String?
-  ip_address      String?
-  expires_at      DateTime
-  revoked_at      DateTime?
-  replaced_by_id  String?
-  created_at      DateTime  @default(now())
-  updated_at      DateTime  @updatedAt
+  id             String    @id @default(uuid())
+  user_id        String
+  user           User      @relation(fields: [user_id], references: [id])
+  token_hash     String    @unique
+  user_agent     String?
+  ip_address     String?
+  expires_at     DateTime
+  revoked_at     DateTime?
+  replaced_by_id String?
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
 
   @@index([user_id])
   @@index([expires_at])
@@ -126,39 +155,39 @@ enum ThemePreference {
 
 // ─── PERFILES ────────────────────────────────────────────────────
 model TrainerProfile {
-  id              String  @id @default(uuid())
-  user_id         String  @unique
-  user            User    @relation(fields: [user_id], references: [id])
-  especialidad    String?
-  anos_experiencia Int?
-  certificaciones String?
-  biografia       String?
+  id                  String              @id @default(uuid())
+  user_id             String              @unique
+  user                User                @relation(fields: [user_id], references: [id])
+  especialidad        String?
+  anos_experiencia    Int?
+  certificaciones     String?
+  biografia           String?
   // Relaciones
-  assigned_members MemberProfile[]
-  exercises       Exercise[]
+  assigned_members    MemberProfile[]
+  exercises           Exercise[]
   routine_assignments RoutineAssignment[]
 }
 
 model MemberProfile {
-  id                  String   @id @default(uuid())
-  user_id             String   @unique
-  user                User     @relation(fields: [user_id], references: [id])
-  trainer_id          String?
-  trainer             TrainerProfile? @relation(fields: [trainer_id], references: [id])
+  id         String          @id @default(uuid())
+  user_id    String          @unique
+  user       User            @relation(fields: [user_id], references: [id])
+  trainer_id String?
+  trainer    TrainerProfile? @relation(fields: [trainer_id], references: [id])
 
   // Vista Social
-  nickname            String?
-  modo_activo         Boolean  @default(true)
+  nickname    String?
+  modo_activo Boolean @default(true)
 
   // Vista Técnica (solo entrenador ve)
-  peso_kg             Float?
-  altura_cm           Float?
-  objetivo            String?
-  lesiones            String?
+  peso_kg   Float?
+  altura_cm Float?
+  objetivo  String?
+  lesiones  String?
 
   // Vista Física (solo el usuario ve)
-  medidas_json        Json?    // { cintura: 80, cadera: 95, pecho: 100 }
-  fotos_comparativas  String[] // URLs de fotos Antes/Después
+  medidas_json       Json? // { cintura: 80, cadera: 95, pecho: 100 }
+  fotos_comparativas String[] // URLs de fotos Antes/Después
 
   workout_sessions    WorkoutSession[]
   routine_assignments RoutineAssignment[]
@@ -166,60 +195,61 @@ model MemberProfile {
 
 // ─── MEMBRESÍAS Y PAGOS ──────────────────────────────────────────
 model Membership {
-  id              String          @id @default(uuid())
-  tenant_id       String
-  tenant          Tenant          @relation(fields: [tenant_id], references: [id])
-  user_id         String
-  user            User            @relation(fields: [user_id], references: [id])
-  plan_id         String?
-  plan            MembershipPlan? @relation(fields: [plan_id], references: [id])
-  plan_nombre     String          // "Mensual", "Trimestral"
-  duracion_dias   Int             // 30, 90, 365
-  monto           Float
-  estado          MembershipState @default(PENDING)
-  fecha_inicio    DateTime?
+  id                String          @id @default(uuid())
+  tenant_id         String
+  tenant            Tenant          @relation(fields: [tenant_id], references: [id])
+  user_id           String
+  user              User            @relation(fields: [user_id], references: [id])
+  plan_id           String?
+  plan              MembershipPlan? @relation(fields: [plan_id], references: [id])
+  plan_nombre       String // "Mensual", "Trimestral"
+  duracion_dias     Int // 30, 90, 365
+  monto             Float
+  estado            MembershipState @default(PENDING)
+  fecha_inicio      DateTime?
   fecha_vencimiento DateTime?
-  payments        Payment[]
-  created_at      DateTime        @default(now())
-  updated_at      DateTime        @updatedAt
+  payments          Payment[]
+  created_at        DateTime        @default(now())
+  updated_at        DateTime        @updatedAt
 
   // Campos financieros de paridad
-  descuento_porcentaje        Float             @default(0)
-  descuento_monto             Float             @default(0)
-  precio_pagado               Float             @default(0)
-  monto_pendiente             Float             @default(0)
-  pago_completo               Boolean           @default(true)
-  
-  // Congelamiento y Traspaso
-  congelada                   Boolean           @default(false)
-  fecha_congelacion           DateTime?
-  fecha_descongelacion        DateTime?
-  razon_congelacion           String?
-  fecha_traspaso              DateTime?
-  razon_traspaso              String?
-  
-  usuario_original_id         String?
-  traspasada_a_id             String?
+  descuento_porcentaje Float   @default(0)
+  descuento_monto      Float   @default(0)
+  precio_pagado        Float   @default(0)
+  monto_pendiente      Float   @default(0)
+  pago_completo        Boolean @default(true)
 
-  points_movements            PointsMovement[]
+  // Congelamiento - campo de compatibilidad (ahora usa tabla MembershipFreeze)
+  congelada      Boolean   @default(false)
+  fecha_traspaso DateTime?
+  razon_traspaso String?
+
+  usuario_original_id String?
+  traspasada_a_id     String?
+
+  points_movements PointsMovement[]
+  freezes          MembershipFreeze[]
+
+  @@index([user_id])
+  @@index([tenant_id, estado])
 }
 
 model MembershipPlan {
-  id              String   @id @default(uuid())
-  tenant_id       String
-  tenant          Tenant   @relation(fields: [tenant_id], references: [id])
-  nombre          String
-  descripcion     String?
-  duracion_dias   Int
-  precio          Float
-  color           String?
-  orden           Int      @default(0)
-  activo          Boolean  @default(true)
-  created_by_id   String?
-  created_by      User?    @relation(fields: [created_by_id], references: [id])
-  created_at      DateTime @default(now())
-  updated_at      DateTime @updatedAt
-  memberships     Membership[]
+  id            String       @id @default(uuid())
+  tenant_id     String
+  tenant        Tenant       @relation(fields: [tenant_id], references: [id])
+  nombre        String
+  descripcion   String?
+  duracion_dias Int
+  precio        Float
+  color         String?
+  orden         Int          @default(0)
+  activo        Boolean      @default(true)
+  created_by_id String?
+  created_by    User?        @relation(fields: [created_by_id], references: [id])
+  created_at    DateTime     @default(now())
+  updated_at    DateTime     @updatedAt
+  memberships   Membership[]
 
   @@unique([tenant_id, nombre])
   @@index([tenant_id, activo, orden])
@@ -230,39 +260,44 @@ enum MembershipState {
 
   EXPIRED
   PENDING
-  GRACE      // Dentro del día de gracia
+  GRACE // Dentro del día de gracia
   SUSPENDED
 }
 
 model Payment {
-  id                  String        @id @default(uuid())
-  tenant_id           String
-  membership_id       String
-  membership          Membership    @relation(fields: [membership_id], references: [id])
-  registrado_por_id   String?
-  registrado_por      User?         @relation("RegisteredBy", fields: [registrado_por_id], references: [id])
-  monto               Float
-  metodo              PaymentMethod
-  estado              PaymentState  @default(APPROVED)
-  comprobante_url     String?       // Para acreditación manual
-  referencia_externa  String?       // ID de transacción de la pasarela
-  timestamp           DateTime      @default(now())
+  id                 String        @id @default(uuid())
+  tenant_id          String
+  tenant             Tenant        @relation(fields: [tenant_id], references: [id])
+  membership_id      String
+  membership         Membership    @relation(fields: [membership_id], references: [id])
+  registrado_por_id  String?
+  registrado_por     User?         @relation("RegisteredBy", fields: [registrado_por_id], references: [id])
+  monto              Float
+  metodo             PaymentMethod
+  estado             PaymentState  @default(APPROVED)
+  comprobante_url    String? // Para acreditación manual
+  referencia_externa String? // ID de transacción de la pasarela
+  timestamp          DateTime      @default(now())
 
   // Relación con turno de caja y prevención de doble submit
-  caja_id             String?
-  caja                Caja?         @relation(fields: [caja_id], references: [id])
-  venta_token         String?       @unique
+  caja_id     String?
+  caja        Caja?   @relation(fields: [caja_id], references: [id])
+  venta_token String? @unique
 
-  points_movements    PointsMovement[]
+  points_movements PointsMovement[]
+
+  @@index([membership_id])
+  @@index([caja_id])
+  @@index([tenant_id, timestamp])
 }
 
 enum PaymentMethod {
   CASH
-  GATEWAY      // Culqi / Izipay
-  MANUAL_YAPE  // Acreditación manual Yape
-  MANUAL_PLIN  // Acreditación manual Plin
-  TRANSFER     // Transferencia bancaria
-  POS          // Cobro tarjeta POS físico
+  GATEWAY // Culqi / Izipay
+  MANUAL_YAPE // Acreditación manual Yape
+  MANUAL_PLIN // Acreditación manual Plin
+  TRANSFER // Transferencia bancaria
+  POS // Cobro tarjeta POS físico
 }
 
 enum PaymentState {
@@ -273,45 +308,54 @@ enum PaymentState {
 
 // ─── ASISTENCIA ──────────────────────────────────────────────────
 model Attendance {
-  id            String   @id @default(uuid())
+  id            String       @id @default(uuid())
   tenant_id     String
-  tenant        Tenant   @relation(fields: [tenant_id], references: [id])
+  tenant        Tenant       @relation(fields: [tenant_id], references: [id])
   user_id       String
-  user          User     @relation(fields: [user_id], references: [id])
-  timestamp     DateTime @default(now())
+  user          User         @relation(fields: [user_id], references: [id])
+  timestamp     DateTime     @default(now())
   metodo_acceso AccessMethod @default(QR_ADMIN)
+
+  @@index([tenant_id, timestamp])
+  @@index([user_id])
 }
 
 enum AccessMethod {
-  QR_AUTONOMOUS  // Cámara fija
-  QR_ADMIN       // Admin escaneó desde celular
-  MANUAL_ADMIN   // Admin registró manualmente
+  QR_AUTONOMOUS // Cámara fija
+  QR_ADMIN // Admin escaneó desde celular
+  MANUAL_ADMIN // Admin registró manualmente
 }
 
 // ─── RESERVAS Y HORARIOS (CrossHero) ─────────────────────────────
 model Schedule {
-  id              String   @id @default(uuid())
-  tenant_id       String
-  tenant          Tenant   @relation(fields: [tenant_id], references: [id])
-  trainer_id      String
-  nombre_clase    String
-  descripcion     String?
-  dia_semana      Int[]    // [1,3,5] = Lunes, Miércoles, Viernes
-  hora_inicio     String   // "08:00"
-  hora_fin        String   // "09:00"
-  cupo_maximo     Int
-  activo          Boolean  @default(true)
-  bookings        Booking[]
+  id           String    @id @default(uuid())
+  tenant_id    String
+  tenant       Tenant    @relation(fields: [tenant_id], references: [id])
+  trainer_id   String
+  nombre_clase String
+  descripcion  String?
+  dia_semana   Int[] // [1,3,5] = Lunes, Miércoles, Viernes
+  hora_inicio  String // "08:00"
+  hora_fin     String // "09:00"
+  cupo_maximo  Int
+  activo       Boolean   @default(true)
+  bookings     Booking[]
+
+  @@index([tenant_id])
+  @@index([trainer_id])
 }
 
 model Booking {
-  id          String        @id @default(uuid())
+  id          String       @id @default(uuid())
   schedule_id String
-  schedule    Schedule      @relation(fields: [schedule_id], references: [id])
+  schedule    Schedule     @relation(fields: [schedule_id], references: [id])
   user_id     String
-  fecha       DateTime      // Fecha específica de la clase
-  estado      BookingState  @default(CONFIRMED)
-  created_at  DateTime      @default(now())
+  fecha       DateTime // Fecha específica de la clase
+  estado      BookingState @default(CONFIRMED)
+  created_at  DateTime     @default(now())
+
+  @@index([schedule_id])
+  @@index([user_id])
 }
 
 enum BookingState {
@@ -323,69 +367,69 @@ enum BookingState {
 
 // ─── EJERCICIOS Y RUTINAS ────────────────────────────────────────
 model Exercise {
-  id                String   @id @default(uuid())
+  id                String            @id @default(uuid())
   tenant_id         String
-  tenant            Tenant   @relation(fields: [tenant_id], references: [id])
+  tenant            Tenant            @relation(fields: [tenant_id], references: [id])
   trainer_id        String
-  trainer           TrainerProfile @relation(fields: [trainer_id], references: [id])
+  trainer           TrainerProfile    @relation(fields: [trainer_id], references: [id])
   nombre            String
   descripcion       String?
   grupo_muscular    String
   imagen_url        String?
-  animacion_url     String?  // GIF o WebM
-  animacion_version Int      @default(1)  // Incrementar para invalidar caché
-  activo            Boolean  @default(true)
-  created_at        DateTime @default(now())
+  animacion_url     String? // GIF o WebM
+  animacion_version Int               @default(1) // Incrementar para invalidar caché
+  activo            Boolean           @default(true)
+  created_at        DateTime          @default(now())
   routine_exercises RoutineExercise[]
 }
 
 model RoutineTemplate {
-  id              String    @id @default(uuid())
-  tenant_id       String
-  trainer_id      String
-  nombre          String
-  descripcion     String?
-  ejercicios      RoutineExercise[]
-  assignments     RoutineAssignment[]
-  created_at      DateTime  @default(now())
+  id          String              @id @default(uuid())
+  tenant_id   String
+  trainer_id  String
+  nombre      String
+  descripcion String?
+  ejercicios  RoutineExercise[]
+  assignments RoutineAssignment[]
+  created_at  DateTime            @default(now())
 }
 
 model RoutineExercise {
-  id                String          @id @default(uuid())
-  template_id       String
-  template          RoutineTemplate @relation(fields: [template_id], references: [id])
-  exercise_id       String
-  exercise          Exercise        @relation(fields: [exercise_id], references: [id])
-  orden             Int
-  series            Int
-  repeticiones      Int
-  peso_sugerido_kg  Float?
-  descanso_seg      Int             @default(60)
+  id               String          @id @default(uuid())
+  template_id      String
+  template         RoutineTemplate @relation(fields: [template_id], references: [id])
+  exercise_id      String
+  exercise         Exercise        @relation(fields: [exercise_id], references: [id])
+  orden            Int
+  series           Int
+  repeticiones     Int
+  peso_sugerido_kg Float?
+  descanso_seg     Int             @default(60)
 }
 
 model RoutineAssignment {
-  id              String          @id @default(uuid())
-  tenant_id       String
-  member_id       String
-  member          MemberProfile   @relation(fields: [member_id], references: [id])
-  trainer_id      String
-  trainer         TrainerProfile  @relation(fields: [trainer_id], references: [id])
-  template_id     String
-  template        RoutineTemplate @relation(fields: [template_id], references: [id])
-  agenda_semanal  Json            // El formato JSON: { "MON": "template_id", "WED": "template_id", ... }
-  publicada       Boolean         @default(false)
-  created_at      DateTime        @default(now())
+  id             String          @id @default(uuid())
+  tenant_id      String
+  member_id      String
+  member         MemberProfile   @relation(fields: [member_id], references: [id])
+  trainer_id     String
+  trainer        TrainerProfile  @relation(fields: [trainer_id], references: [id])
+  template_id    String
+  template       RoutineTemplate @relation(fields: [template_id], references: [id])
+  agenda_semanal Json // El formato JSON: { "MON": "template_id", "WED": "template_id", ... }
+  publicada      Boolean         @default(false)
+  created_at     DateTime        @default(now())
 }
 
 model WorkoutSession {
-  id              String        @id @default(uuid())
-  tenant_id       String
-  member_id       String
-  member          MemberProfile @relation(fields: [member_id], references: [id])
-  template_id     String
-  fecha           DateTime      @default(now())
-  estado          SessionState  @default(IN_PROGRESS)
-  series_log      SeriesLog[]
+  id          String        @id @default(uuid())
+  tenant_id   String
+  member_id   String
+  member      MemberProfile @relation(fields: [member_id], references: [id])
+  template_id String
+  fecha       DateTime      @default(now())
+  estado      SessionState  @default(IN_PROGRESS)
+  series_log  SeriesLog[]
 }
 
 enum SessionState {
@@ -395,28 +439,28 @@ enum SessionState {
 }
 
 model SeriesLog {
-  id              String         @id @default(uuid())
-  session_id      String
-  session         WorkoutSession @relation(fields: [session_id], references: [id])
-  exercise_id     String
-  serie_numero    Int
-  peso_real_kg    Float?
-  reps_reales     Int?
-  completada      Boolean        @default(true)
-  timestamp       DateTime       @default(now())
+  id           String         @id @default(uuid())
+  session_id   String
+  session      WorkoutSession @relation(fields: [session_id], references: [id])
+  exercise_id  String
+  serie_numero Int
+  peso_real_kg Float?
+  reps_reales  Int?
+  completada   Boolean        @default(true)
+  timestamp    DateTime       @default(now())
 }
 
 // ─── OBSERVACIONES Y ANUNCIOS ────────────────────────────────────
 model Observation {
-  id          String   @id @default(uuid())
-  tenant_id   String
-  tenant      Tenant   @relation(fields: [tenant_id], references: [id])
-  author_id   String
-  autor_rol   Role
-  texto       String
-  foto_url    String?
-  revisado    Boolean  @default(false)
-  created_at  DateTime @default(now())
+  id         String   @id @default(uuid())
+  tenant_id  String
+  tenant     Tenant   @relation(fields: [tenant_id], references: [id])
+  author_id  String
+  autor_rol  Role
+  texto      String
+  foto_url   String?
+  revisado   Boolean  @default(false)
+  created_at DateTime @default(now())
 }
 
 model Announcement {
@@ -438,65 +482,70 @@ model AuditLog {
   actor_id   String
   actor_name String
   rol        String
-  accion     String   // "CREATE" | "UPDATE" | "DELETE"
-  entidad    String   // "Payment" | "Membership" | "CashierSession" etc.
+  accion     String // "CREATE" | "UPDATE" | "DELETE"
+  entidad    String // "Payment" | "Membership" | "CashierSession" etc.
   detalles   Json
   timestamp  DateTime @default(now())
 }
 
 // ─── CAJA (SALA DE CAJERO) ───────────────────────────────────────
 model Caja {
-  id                          String          @id @default(uuid())
-  tenant_id                   String
-  tenant                      Tenant          @relation(fields: [tenant_id], references: [id])
-  cajero_id                   String
-  cajero                      User            @relation("CajeroSessions", fields: [cajero_id], references: [id])
-  fecha_apertura              DateTime        @default(now())
-  fecha_cierre                DateTime?
-  monto_apertura              Float           @default(0)
-  monto_cierre_efectivo       Float?
-  monto_cierre_transferencia  Float?
-  monto_cierre_yape           Float?
-  monto_cierre_pos            Float?
-  total_ventas_efectivo       Float           @default(0)
-  total_ventas_transferencia  Float           @default(0)
-  total_ventas_yape           Float           @default(0)
-  total_ventas_pos            Float           @default(0)
-  total_ingresos              Float           @default(0)
-  diferencia                  Float           @default(0)
-  observaciones               String?
-  estado                      String          @default("abierta") // abierta | cerrada
-  movimientos                 MovimientoCaja[]
-  payments                    Payment[]       // Pagos de membresías asociados
-  product_sales               ProductSale[]   // Ventas de productos asociadas
-  created_at                  DateTime        @default(now())
-  updated_at                  DateTime        @updatedAt
+  id                         String           @id @default(uuid())
+  tenant_id                  String
+  tenant                     Tenant           @relation(fields: [tenant_id], references: [id])
+  cajero_id                  String
+  cajero                     User             @relation("CajeroSessions", fields: [cajero_id], references: [id])
+  fecha_apertura             DateTime         @default(now())
+  fecha_cierre               DateTime?
+  monto_apertura             Float            @default(0)
+  monto_cierre_efectivo      Float?
+  monto_cierre_transferencia Float?
+  monto_cierre_yape          Float?
+  monto_cierre_pos           Float?
+  total_ventas_efectivo      Float            @default(0)
+  total_ventas_transferencia Float            @default(0)
+  total_ventas_yape          Float            @default(0)
+  total_ventas_pos           Float            @default(0)
+  total_ingresos             Float            @default(0)
+  diferencia                 Float            @default(0)
+  observaciones              String?
+  estado                     CajaEstado       @default(abierta)
+  movimientos                MovimientoCaja[]
+  payments                   Payment[] // Pagos de membresías asociados
+  product_sales              ProductSale[] // Ventas de productos asociadas
+  created_at                 DateTime         @default(now())
+  updated_at                 DateTime         @updatedAt
+
+  @@index([cajero_id])
+  @@index([tenant_id])
 }
 
 model MovimientoCaja {
-  id              String   @id @default(uuid())
+  id              String         @id @default(uuid())
   caja_id         String
-  caja            Caja     @relation(fields: [caja_id], references: [id])
-  tipo            String   // ingreso | egreso
+  caja            Caja           @relation(fields: [caja_id], references: [id])
+  tipo            MovimientoTipo
   monto           Float
-  monto_pendiente Float    @default(0)
+  monto_pendiente Float          @default(0)
   descripcion     String
-  created_at      DateTime @default(now())
+  created_at      DateTime       @default(now())
+
+  @@index([caja_id])
 }
 
 // ─── ASISTENCIA BIOMÉTRICA (HUELLA) ──────────────────────────────
 model Fingerprint {
-  id                 String                 @id @default(uuid())
-  usuario_id         String
-  usuario            User                   @relation(fields: [usuario_id], references: [id])
-  dedo               String                 // pulgar_izq, indice_izq, etc.
-  datos_huella       String                 // plantilla biométrica en base64
-  hash_verificacion  String                 // hash SHA256 de integridad
-  token_registro     String                 @unique @default(uuid())
-  fecha_captura      DateTime               @default(now())
-  fecha_actualizacion DateTime              @updatedAt
-  activa             Boolean                @default(true)
-  attendances        FingerprintAttendance[]
+  id                  String                  @id @default(uuid())
+  usuario_id          String
+  usuario             User                    @relation(fields: [usuario_id], references: [id])
+  dedo                String // pulgar_izq, indice_izq, etc.
+  datos_huella        String // plantilla biométrica en base64
+  hash_verificacion   String // hash SHA256 de integridad
+  token_registro      String                  @unique @default(uuid())
+  fecha_captura       DateTime                @default(now())
+  fecha_actualizacion DateTime                @updatedAt
+  activa              Boolean                 @default(true)
+  attendances         FingerprintAttendance[]
 
   @@unique([usuario_id, dedo])
 }
@@ -509,79 +558,85 @@ model FingerprintAttendance {
   huella         Fingerprint? @relation(fields: [huella_id], references: [id])
   fecha_entrada  DateTime     @default(now())
   ip_origen      String?
-  dispositivo_id String?      // ID del lector ZkTeco
+  dispositivo_id String? // ID del lector ZkTeco
 }
 
 // ─── PRODUCTOS E INVENTARIO ──────────────────────────────────────
 model Product {
-  id                String              @id @default(uuid())
-  tenant_id         String
-  tenant            Tenant              @relation(fields: [tenant_id], references: [id])
-  nombre            String
-  descripcion       String?
-  categoria_id      String
-  categoria         ProductCategory     @relation(fields: [categoria_id], references: [id])
-  sku               String              @unique
-  precio_compra     Float
-  precio_venta      Float
-  stock_actual      Int                 @default(0)
-  stock_minimo      Int                 @default(5)
-  imagen_url        String?
-  estado            String              @default("activo") // activo | inactivo | agotado
-  es_visible        Boolean             @default(true)
-  veces_vendido     Int                 @default(0)
-  ultima_venta      DateTime?
-  created_at        DateTime            @default(now())
-  updated_at        DateTime            @updatedAt
-  sales_details     ProductSaleDetail[]
-  stock_movements   InventoryMovement[]
+  id              String              @id @default(uuid())
+  tenant_id       String
+  tenant          Tenant              @relation(fields: [tenant_id], references: [id])
+  nombre          String
+  descripcion     String?
+  categoria_id    String
+  categoria       ProductCategory     @relation(fields: [categoria_id], references: [id])
+  sku             String
+  precio_compra   Float
+  precio_venta    Float
+  stock_actual    Int                 @default(0)
+  stock_minimo    Int                 @default(5)
+  imagen_url      String?
+  estado          ProductEstado       @default(activo)
+  es_visible      Boolean             @default(true)
+  veces_vendido   Int                 @default(0)
+  ultima_venta    DateTime?
+  created_at      DateTime            @default(now())
+  updated_at      DateTime            @updatedAt
+  sales_details   ProductSaleDetail[]
+  stock_movements InventoryMovement[]
+
+  @@unique([tenant_id, sku])
 }
 
 model ProductCategory {
   id          String    @id @default(uuid())
   tenant_id   String
   tenant      Tenant    @relation(fields: [tenant_id], references: [id])
-  nombre      String    @unique
+  nombre      String
   descripcion String?
   color       String    @default("#6c757d")
   activo      Boolean   @default(true)
   products    Product[]
   created_at  DateTime  @default(now())
   updated_at  DateTime  @updatedAt
+
+  @@unique([tenant_id, nombre])
 }
 
 model ProductSale {
-  id              String             @id @default(uuid())
+  id              String                       @id @default(uuid())
   tenant_id       String
-  tenant          Tenant             @relation(fields: [tenant_id], references: [id])
-  referencia      String             @unique
+  tenant          Tenant                       @relation(fields: [tenant_id], references: [id])
+  referencia      String
   cajero_id       String
-  cajero          User               @relation("CajeroSales", fields: [cajero_id], references: [id])
+  cajero          User                         @relation("CajeroSales", fields: [cajero_id], references: [id])
   cliente_id      String?
-  cliente         User?              @relation("ClientPurchases", fields: [cliente_id], references: [id])
+  cliente         User?                        @relation("ClientPurchases", fields: [cliente_id], references: [id])
   caja_id         String?
-  caja            Caja?              @relation(fields: [caja_id], references: [id])
-  subtotal        Float              @default(0)
-  descuento       Float              @default(0)
+  caja            Caja?                        @relation(fields: [caja_id], references: [id])
+  subtotal        Float                        @default(0)
+  descuento       Float                        @default(0)
   total           Float
-  monto_pendiente Float              @default(0)
-  estado          String             @default("completada") // pendiente | completada | cancelada
+  monto_pendiente Float                        @default(0)
+  estado          ProductSaleEstado            @default(completada)
   notas           String?
-  fecha_venta     DateTime           @default(now())
-  created_at      DateTime           @default(now())
+  fecha_venta     DateTime                     @default(now())
+  created_at      DateTime                     @default(now())
   payment_methods ProductPaymentMethodDetail[]
   details         ProductSaleDetail[]
   inventory_moves InventoryMovement[]
+
+  @@unique([tenant_id, referencia])
 }
 
 model ProductPaymentMethodDetail {
-  id          String      @id @default(uuid())
-  sale_id     String
-  sale        ProductSale @relation(fields: [sale_id], references: [id])
-  metodo      String      // efectivo | transferencia | yape | pos
-  monto       Float
-  referencia  String?
-  created_at  DateTime    @default(now())
+  id         String      @id @default(uuid())
+  sale_id    String
+  sale       ProductSale @relation(fields: [sale_id], references: [id])
+  metodo     String // efectivo | transferencia | yape | pos
+  monto      Float
+  referencia String?
+  created_at DateTime    @default(now())
 }
 
 model ProductSaleDetail {
@@ -593,28 +648,37 @@ model ProductSaleDetail {
   cantidad        Int
   precio_unitario Float
   subtotal        Float
+
+  @@index([sale_id])
+  @@index([producto_id])
 }
 
 model InventoryMovement {
-  id               String      @id @default(uuid())
+  id               String       @id @default(uuid())
   producto_id      String
-  producto         Product     @relation(fields: [producto_id], references: [id])
-  tipo             String      // entrada | salida | ajuste | devolucion
+  producto         Product      @relation(fields: [producto_id], references: [id])
+  tipo             String // entrada | salida | ajuste | devolucion
   cantidad         Int
   stock_anterior   Int
   stock_actual     Int
   sale_id          String?
   sale             ProductSale? @relation(fields: [sale_id], references: [id])
   usuario_id       String
-  usuario          User        @relation(fields: [usuario_id], references: [id])
+  usuario          User         @relation(fields: [usuario_id], references: [id])
   motivo           String?
-  fecha_movimiento DateTime    @default(now())
-  created_at       DateTime    @default(now())
+  fecha_movimiento DateTime     @default(now())
+  created_at       DateTime     @default(now())
+
+  @@index([producto_id])
+  @@index([sale_id])
+  @@index([usuario_id])
 }
 
 // ─── PUNTOS Y FIDELIZACIÓN ───────────────────────────────────────
 model PointsConfig {
   id                String   @id @default(uuid())
+  tenant_id         String   @unique
+  tenant            Tenant   @relation(fields: [tenant_id], references: [id])
   puntos_por_sol    Float    @default(1.0)
   minimo_para_canje Int      @default(100)
   puntos_expiran    Boolean  @default(false)
@@ -625,49 +689,59 @@ model PointsConfig {
 }
 
 model PointsBalance {
-  id                      String   @id @default(uuid())
-  usuario_id              String   @unique
-  usuario                 User     @relation(fields: [usuario_id], references: [id])
-  puntos_disponibles      Int      @default(0)
-  puntos_totales_ganados  Int      @default(0)
+  id                       String   @id @default(uuid())
+  usuario_id               String   @unique
+  usuario                  User     @relation(fields: [usuario_id], references: [id])
+  puntos_disponibles       Int      @default(0)
+  puntos_totales_ganados   Int      @default(0)
   puntos_totales_canjeados Int      @default(0)
-  created_at              DateTime @default(now())
-  updated_at              DateTime @updatedAt
+  created_at               DateTime @default(now())
+  updated_at               DateTime @updatedAt
 }
 
 model PointsProduct {
-  id             String           @id @default(uuid())
-  nombre         String
-  descripcion    String
-  precio_puntos  Int
-  stock          Int              @default(0)
-  stock_minimo   Int              @default(5)
-  activo         Boolean          @default(true)
-  destacado      Boolean          @default(false)
-  created_at     DateTime         @default(now())
-  updated_at     DateTime         @updatedAt
-  exchanges      PointsExchange[]
+  id            String           @id @default(uuid())
+  tenant_id     String
+  tenant        Tenant           @relation(fields: [tenant_id], references: [id])
+  nombre        String
+  descripcion   String
+  precio_puntos Int
+  stock         Int              @default(0)
+  stock_minimo  Int              @default(5)
+  activo        Boolean          @default(true)
+  destacado     Boolean          @default(false)
+  created_at    DateTime         @default(now())
+  updated_at    DateTime         @updatedAt
+  exchanges     PointsExchange[]
+
+  @@index([tenant_id])
 }
 
 model PointsMembership {
-  id             String           @id @default(uuid())
-  nombre         String
-  descripcion    String
-  precio_puntos  Int
-  duracion_dias  Int
-  stock          Int              @default(0) // 0 = ilimitado
-  activo         Boolean          @default(true)
-  destacada      Boolean          @default(false)
-  created_at     DateTime         @default(now())
-  updated_at     DateTime         @updatedAt
-  exchanges      PointsExchange[]
+  id            String           @id @default(uuid())
+  tenant_id     String
+  tenant        Tenant           @relation(fields: [tenant_id], references: [id])
+  nombre        String
+  descripcion   String
+  precio_puntos Int
+  duracion_dias Int
+  stock         Int              @default(0) // 0 = ilimitado
+  activo        Boolean          @default(true)
+  destacada     Boolean          @default(false)
+  created_at    DateTime         @default(now())
+  updated_at    DateTime         @updatedAt
+  exchanges     PointsExchange[]
+
+  @@index([tenant_id])
 }
 
 model PointsExchange {
   id                  String            @id @default(uuid())
+  tenant_id           String
+  tenant              Tenant            @relation(fields: [tenant_id], references: [id])
   usuario_id          String
   usuario             User              @relation("UserExchanges", fields: [usuario_id], references: [id])
-  tipo                String            // producto | membresia
+  tipo                String // producto | membresia
   producto_id         String?
   producto            PointsProduct?    @relation(fields: [producto_id], references: [id])
   membresia_puntos_id String?
@@ -682,13 +756,17 @@ model PointsExchange {
   fecha_procesado     DateTime?
   fecha_entregado     DateTime?
   movements           PointsMovement[]
+
+  @@index([tenant_id])
 }
 
 model PointsMovement {
   id             String          @id @default(uuid())
+  tenant_id      String
+  tenant         Tenant          @relation(fields: [tenant_id], references: [id])
   usuario_id     String
   usuario        User            @relation(fields: [usuario_id], references: [id])
-  tipo           String          // ingreso | canje | ajuste | devolucion | expiracion
+  tipo           String // ingreso | canje | ajuste | devolucion | expiracion
   cantidad       Int
   saldo_anterior Int
   saldo_nuevo    Int
@@ -700,4 +778,130 @@ model PointsMovement {
   payment_id     String?
   payment        Payment?        @relation(fields: [payment_id], references: [id])
   created_at     DateTime        @default(now())
+
+  @@index([tenant_id])
+}
+
+enum CajaEstado {
+  abierta
+  cerrada
+}
+
+enum MovimientoTipo {
+  ingreso
+  egreso
+}
+
+enum ProductEstado {
+  activo
+  inactivo
+  agotado
+}
+
+enum ProductSaleEstado {
+  pendiente
+  completada
+  cancelada
+}
+
+// ─── HISTORIAL DE CONGELAMIENTO DE MEMBRESÍAS ─────────────────────
+model MembershipFreeze {
+  id                   String     @id @default(uuid())
+  membership_id        String
+  membership           Membership @relation(fields: [membership_id], references: [id], onDelete: Cascade)
+  fecha_congelacion    DateTime
+  fecha_descongelacion DateTime?
+  razon                String
+  created_at           DateTime   @default(now())
+
+  @@index([membership_id])
+}
+
+// ─── DIETAS Y NUTRICIÓN ──────────────────────────────────────────
+model DietPlan {
+  id                 String   @id @default(uuid())
+  tenant_id          String
+  tenant             Tenant   @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  member_id          String
+  member             User     @relation("MemberDiets", fields: [member_id], references: [id], onDelete: Cascade)
+  trainer_id         String?
+  trainer            User?    @relation("TrainerDiets", fields: [trainer_id], references: [id])
+  peso_objetivo_kg   Float?
+  calorias_objetivo  Int?
+  proteinas_g        Float?
+  carbohidratos_g    Float?
+  grasas_g           Float?
+  comidas            Json     // Listado de comidas del día
+  sugerencias        String?
+  activo             Boolean  @default(true)
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+
+  @@index([tenant_id])
+  @@index([member_id])
+}
+
+
+// ─── CRM (LEADS Y CAMPAÑAS) ───────────────────────────────────────
+model Lead {
+  id              String   @id @default(uuid())
+  tenant_id       String
+  tenant          Tenant   @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  nombre          String
+  email           String?
+  celular         String?
+  origen          String   @default("Recomendado") // Web, Facebook, Instagram, Recomendado, etc.
+  estado          String   @default("Nuevo") // Nuevo, Contactado, Interesado, Cerrado, Descartado
+  notas           String?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  @@index([tenant_id])
+}
+
+model Campaign {
+  id              String   @id @default(uuid())
+  tenant_id       String
+  tenant          Tenant   @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  nombre          String
+  descripcion     String?
+  canal           String   @default("Push") // Email, WhatsApp, Push
+  estado          String   @default("Programada") // Programada, Activa, Finalizada
+  alcance         Int      @default(0) // Alcance estimado
+  fecha_envio     DateTime @default(now())
+  created_at      DateTime @default(now())
+
+  @@index([tenant_id])
+}
+
+// ─── FINANZAS (EGRESOS Y PLANILLAS GENERALES) ──────────────────────
+model Expense {
+  id           String   @id @default(uuid())
+  tenant_id    String
+  tenant       Tenant   @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  monto        Float
+  categoria    String   @default("Gasto") // Sueldo, Servicio, Mantenimiento, Gasto, etc.
+  descripcion  String
+  fecha        DateTime @default(now())
+  metodo_pago  String   @default("efectivo") // efectivo, transferencia, yape, pos
+  created_at   DateTime @default(now())
+
+  @@index([tenant_id])
+}
+
+model Payroll {
+  id           String    @id @default(uuid())
+  tenant_id    String
+  tenant       Tenant    @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  trainer_id   String
+  trainer      User      @relation("TrainerPayrolls", fields: [trainer_id], references: [id], onDelete: Cascade)
+  monto_sueldo Float
+  mes          Int
+  anio         Int
+  estado_pago  String    @default("Pendiente") // Pendiente, Pagado
+  fecha_pago   DateTime?
+  created_at   DateTime  @default(now())
+
+  @@index([tenant_id])
+  @@index([trainer_id])
 }

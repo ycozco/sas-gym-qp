@@ -1,5 +1,5 @@
 /* =========================================================
-   CrossHero · GymSmart — Panel Web de Administración
+   SaasGym Club Ops — Panel Web de Administración
    Design system de escritorio · hermano de sas_Gym_high
    ========================================================= */
 
@@ -245,23 +245,31 @@ button, input, select, textarea { font-family: inherit; }
   display: inline-flex;
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: var(--r-md);
+  border-radius: var(--r-pill);
   padding: 3px;
-  gap: 2px;
+  gap: 4px;
+  flex-shrink: 0;
 }
 .theme-seg button {
   appearance: none;
   border: 0;
   background: transparent;
   color: var(--ink-2);
-  border-radius: 9px;
+  width: 34px;
+  height: 34px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
   cursor: pointer;
-  font: 700 12px var(--font-body);
-  padding: 7px 10px;
+  padding: 0;
 }
 .theme-seg button[aria-pressed="true"] {
   background: var(--ink);
   color: var(--surface);
+}
+.theme-glyph {
+  font: 700 15px var(--font-display);
+  line-height: 1;
 }
 
 .icon-btn {
@@ -291,6 +299,38 @@ button, input, select, textarea { font-family: inherit; }
 }
 .user-chip .un { font: 600 13px var(--font-body); }
 .user-chip .ur { font: 500 11px var(--font-body); color: var(--ink-3); }
+
+.topbar-logout {
+  appearance: none;
+  border: 1px solid color-mix(in srgb, var(--danger) 24%, var(--border));
+  background: color-mix(in srgb, var(--danger) 8%, var(--surface));
+  color: var(--danger);
+  height: 40px;
+  padding: 0 14px 0 12px;
+  border-radius: var(--r-pill);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font: 700 12.5px var(--font-body);
+  transition: background .16s ease, border-color .16s ease, transform .16s ease, color .16s ease;
+}
+.topbar-logout:hover {
+  background: color-mix(in srgb, var(--danger) 14%, var(--surface));
+  border-color: color-mix(in srgb, var(--danger) 38%, var(--border));
+  transform: translateY(-1px);
+}
+.topbar-logout:active { transform: translateY(0); }
+.topbar-logout:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--danger) 45%, transparent);
+  outline-offset: 2px;
+}
+.topbar-logout-ic {
+  width: 18px;
+  height: 18px;
+  display: inline-grid;
+  place-items: center;
+}
 
 .content {
   flex: 1;
@@ -676,6 +716,12 @@ button, input, select, textarea { font-family: inherit; }
 @media (max-width: 900px) {
   .login { grid-template-columns: 1fr; }
   .login-aside { display: none; }
+  .topbar { padding: 0 16px; gap: 10px; }
+  .topbar .t-actions { gap: 8px; }
+  .user-chip { display: none; }
+  .theme-seg { order: 3; }
+  .topbar-logout { padding: 0 12px; }
+  .topbar-logout span:last-child { display: none; }
 }
 
 .drawer-grid { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 16px; align-items: start; }

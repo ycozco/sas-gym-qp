@@ -22,36 +22,36 @@ type MemberStatus = 'ACTIVE' | 'GRACE' | 'EXPIRED' | 'PENDING' | 'SUSPENDED';
 const gyms = [
   {
     code: 'surco',
-    name: 'SAS Gym Surco Prime',
-    address: 'Av. El Polo 123, Santiago de Surco, Lima',
+    name: 'SaasGym Cayma Prime',
+    address: 'Av. Ejercito 1009, Cayma, Arequipa',
     phone: '987654101',
     plan: 'PRO',
   },
   {
     code: 'miraflores',
-    name: 'SAS Gym Miraflores Fit',
-    address: 'Av. Jose Pardo 740, Miraflores, Lima',
+    name: 'SaasGym Yanahuara Fit',
+    address: 'Av. Ejercito 704, Yanahuara, Arequipa',
     phone: '987654102',
     plan: 'PRO',
   },
   {
     code: 'sanborja',
-    name: 'SAS Gym San Borja Performance',
-    address: 'Av. Aviacion 2810, San Borja, Lima',
+    name: 'SaasGym Cercado Performance',
+    address: 'Calle San Francisco 315, Cercado, Arequipa',
     phone: '987654103',
     plan: 'ENTERPRISE',
   },
   {
     code: 'lince',
-    name: 'SAS Gym Lince 24/7',
-    address: 'Av. Arequipa 2100, Lince, Lima',
+    name: 'SaasGym Cerro Colorado 24/7',
+    address: 'Av. Aviacion 602, Cerro Colorado, Arequipa',
     phone: '987654104',
     plan: 'BASIC',
   },
   {
     code: 'callao',
-    name: 'SAS Gym Callao Strong',
-    address: 'Av. Colonial 3880, Callao',
+    name: 'SaasGym Bustamante Strong',
+    address: 'Av. Dolores 121, Jose Luis Bustamante y Rivero, Arequipa',
     phone: '987654105',
     plan: 'PRO',
   },
@@ -170,6 +170,7 @@ async function resetDatabase() {
   await prisma.membershipPlan.deleteMany();
   await prisma.memberProfile.deleteMany();
   await prisma.trainerProfile.deleteMany();
+  await prisma.refreshTokenSession.deleteMany();
   await prisma.user.deleteMany();
   await prisma.tenant.deleteMany();
 }
@@ -227,10 +228,10 @@ async function main() {
 
   const superTenant = await prisma.tenant.create({
     data: {
-      nombre: 'SAS Gym Holding Demo',
+      nombre: 'SaasGym Network',
       plan_saas: 'ENTERPRISE',
       activo: true,
-      direccion: 'Av. Javier Prado 1000, Lima',
+      direccion: 'Av. Ejercito 1030, Cayma, Arequipa',
       telefono: '999000000',
       horario: 'Administracion central',
       descripcion: 'Tenant tecnico para superadmin de pruebas.',
@@ -278,7 +279,7 @@ async function main() {
             email: `admin${i}.${gym.code}@test.sasgym.com`,
             password_hash: passwordHash.admin,
             rol: Role.ADMIN,
-            nombre_completo: `Admin ${i} ${gym.name.replace('SAS Gym ', '')}`,
+            nombre_completo: `Admin ${i} ${gym.name.replace('SaasGym ', '')}`,
             dni: dni(tenantIndex, 100 + i),
             celular: `9${tenantIndex + 1}00${i}1111`,
             estado: UserState.ACTIVE,
@@ -617,6 +618,44 @@ async function main() {
         data: {
           ...totals,
           total_ingresos: { increment: paid },
+        },
+      });
+    }
+
+    const classSchedules = [
+      {
+        nombre_clase: 'Funcional AM',
+        descripcion: 'Clase funcional de alta energia para socios activos.',
+        dia_semana: [1, 3, 5],
+        hora_inicio: '07:00',
+        hora_fin: '08:00',
+        cupo_maximo: 18,
+      },
+      {
+        nombre_clase: 'Spinning Noon',
+        descripcion: 'Sesion de cardio guiada para resistencia y quema calorica.',
+        dia_semana: [2, 4],
+        hora_inicio: '12:30',
+        hora_fin: '13:15',
+        cupo_maximo: 16,
+      },
+      {
+        nombre_clase: 'Yoga Recovery',
+        descripcion: 'Bloque de movilidad y recuperacion con foco post entrenamiento.',
+        dia_semana: [2, 6],
+        hora_inicio: '19:00',
+        hora_fin: '20:00',
+        cupo_maximo: 20,
+      },
+    ];
+
+    for (let i = 0; i < classSchedules.length; i++) {
+      const schedule = classSchedules[i];
+      await prisma.schedule.create({
+        data: {
+          tenant_id: tenant.id,
+          trainer_id: trainers[i % trainers.length].user_id,
+          ...schedule,
         },
       });
     }

@@ -1,7 +1,36 @@
+import { GYM, ROLES, TODAY } from './data.jsx';
+
 // shared.jsx — iconos y componentes reutilizables del panel web.
 // Expone todo en window para que data/dashboards/modules/app lo consuman.
 
-const API_BASE_URL = "http://localhost:3000/api/v1";
+const LOCAL_API_BASE_URL = "http://localhost:3000/api/v1";
+
+function normalizeApiBaseUrl(value) {
+  return String(value || "").trim().replace(/\/+$/, "");
+}
+
+function resolveApiBaseUrl() {
+  const configured = normalizeApiBaseUrl(window.__SASGYM_CONFIG__?.apiBaseUrl);
+  if (configured) return configured;
+
+  const { protocol, hostname } = window.location;
+  if (!hostname || hostname === "localhost" || hostname === "127.0.0.1") {
+    return LOCAL_API_BASE_URL;
+  }
+
+  if (hostname.startsWith("admin.") || hostname.startsWith("app.")) {
+    const suffix = hostname.split(".").slice(1).join(".");
+    return `${protocol}//api.${suffix}/api/v1`;
+  }
+
+  if (hostname.startsWith("api.")) {
+    return `${protocol}//${hostname}/api/v1`;
+  }
+
+  return `${protocol}//${hostname}/api/v1`;
+}
+
+const API_BASE_URL = resolveApiBaseUrl();
 const AUTH_TOKEN_KEY = "sasgym.authToken";
 const TENANT_ID_KEY = "sasgym.tenantId";
 const THEME_MODE_KEY = "sasgym.theme";
@@ -46,7 +75,9 @@ function apiRequest(path, { method = "GET", body, token, tenantId, headers = {},
       try {
         if (refreshed.token) localStorage.setItem(AUTH_TOKEN_KEY, refreshed.token);
         if (refreshed.tenantId) localStorage.setItem(TENANT_ID_KEY, refreshed.tenantId);
-      } catch (_) {}
+      } catch (_) {
+        // Storage can be unavailable in privacy-restricted browsers.
+      }
       return apiRequest(path, {
         method,
         body,
@@ -117,6 +148,20 @@ function normalizeProduct(product) {
   };
 }
 
+function normalizeSaasPlan(plan) {
+  return {
+    id: plan.id || "",
+    code: plan.code || "",
+    name: plan.nombre || plan.name || "",
+    description: plan.descripcion || "",
+    price: Number(plan.precio_mensual ?? plan.price ?? 0),
+    userLimit: Number(plan.limite_usuarios ?? plan.userLimit ?? 0),
+    features: plan.caracteristicas || plan.features || "",
+    active: plan.activo ?? true,
+    raw: plan,
+  };
+}
+
 function productToApiPayload(product) {
   return {
     nombre: product.name.trim(),
@@ -141,6 +186,18 @@ function planToApiPayload(plan) {
     precio: Number(plan.price),
     color: plan.color || "#2F6BFF",
     orden: Number(plan.order || 0),
+    activo: Boolean(plan.active),
+  };
+}
+
+function saasPlanToApiPayload(plan) {
+  return {
+    code: plan.code?.trim() || undefined,
+    nombre: plan.name.trim(),
+    descripcion: plan.description?.trim() || "",
+    precioMensual: Number(plan.price || 0),
+    limiteUsuarios: Number(plan.userLimit || 0),
+    caracteristicas: plan.features?.trim() || "",
     activo: Boolean(plan.active),
   };
 }
@@ -224,6 +281,7 @@ const svg = (paths, fill) => (
        strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths}</svg>
 );
 const I = {
+  clipboard: svg(<><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></>),
   grid:  svg(<><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></>),
   users: svg(<><circle cx="9" cy="8" r="3.5"/><path d="M2 20c0-3.5 3-6 7-6s7 2.5 7 6"/><circle cx="17" cy="7" r="2.5"/><path d="M22 18c0-2.5-2-4-4.5-4"/></>),
   scan:  svg(<><path d="M3 7V5a2 2 0 0 1 2-2h2M3 17v2a2 2 0 0 0 2 2h2M21 7V5a2 2 0 0 0-2-2h-2M21 17v2a2 2 0 0 1-2 2h-2M7 12h10"/></>),
@@ -382,7 +440,7 @@ function Sidebar({ role, section, onNavigate, tenantSettings }) {
     <aside className="sidebar">
       <div className="brand">
         <span className="dot" aria-hidden="true"/>
-        <span className="wm">Gym<em>Smart</em></span>
+        <span className="wm">Saas<em>Gym</em></span>
       </div>
       <nav aria-label="Navegación del panel">
         {r.nav.map(grp => (
@@ -403,8 +461,8 @@ function Sidebar({ role, section, onNavigate, tenantSettings }) {
       <div className="gym-card">
         <span className="logo" aria-hidden="true">{r.platform ? "★" : logoLetter}</span>
         <div style={{ minWidth: 0 }}>
-          <div className="gn">{r.platform ? "GymSmart SaaS" : gymName}</div>
-          <div className="gs">{r.platform ? "Plataforma multi-tenant" : gymCity}</div>
+          <div className="gn">{r.platform ? "SaasGym Network" : gymName}</div>
+          <div className="gs">{r.platform ? "Operacion multi-sede" : gymCity}</div>
         </div>
       </div>
     </aside>
@@ -412,7 +470,23 @@ function Sidebar({ role, section, onNavigate, tenantSettings }) {
 }
 
 // ─── TOPBAR ────────────────────────────────────────────────────
-function Topbar({ title, sub, role, currentUser, onLogout }) {
+function ThemeSwitcher({ themeMode, setThemeMode }) {
+  return (
+    <div className="theme-seg" aria-label="Tema visual">
+      {[
+        ["system", "Sistema", "S"],
+        ["light", "Claro", "L"],
+        ["dark", "Oscuro", "D"],
+      ].map(([id, label, glyph]) => (
+        <button key={id} aria-pressed={themeMode === id} onClick={() => setThemeMode(id)} aria-label={label} title={label}>
+          <span className="theme-glyph" aria-hidden="true">{glyph}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function Topbar({ title, sub, role, currentUser, onLogout, themeMode, setThemeMode }) {
   const r = ROLES[role];
   const displayName = currentUser?.nombre_completo || currentUser?.nombreCompleto || r.who;
   return (
@@ -423,6 +497,7 @@ function Topbar({ title, sub, role, currentUser, onLogout }) {
       </div>
       <span className="spacer"/>
       <div className="t-actions">
+        <ThemeSwitcher themeMode={themeMode} setThemeMode={setThemeMode}/>
         <span className="badge" style={{ font: "500 11.5px var(--font-mono)" }}>{TODAY.short}</span>
         <button className="icon-btn" aria-label="Notificaciones">{I.bell}<span className="dot-r"/></button>
         <div className="user-chip" role="button" tabIndex={0}>
@@ -432,28 +507,31 @@ function Topbar({ title, sub, role, currentUser, onLogout }) {
             <div className="ur">{r.label}</div>
           </div>
         </div>
-        <button className="icon-btn" aria-label="Cerrar sesión" onClick={onLogout} title="Cerrar sesión">{I.logout}</button>
+        <button className="topbar-logout" aria-label="Cerrar sesión" onClick={onLogout} title="Cerrar sesión">
+          <span className="topbar-logout-ic" aria-hidden="true">{I.logout}</span>
+          <span>Cerrar sesión</span>
+        </button>
       </div>
     </header>
   );
 }
 
-Object.assign(window, {
-  API_BASE_URL,
-  AUTH_TOKEN_KEY,
-  TENANT_ID_KEY,
-  apiRequest,
-  roleFromBackend,
-  normalizeTenantSettings,
-  normalizeMembershipPlan,
-  normalizeProduct,
-  planToApiPayload,
-  productToApiPayload,
-  colorInk,
-  colorMix,
-  applyTenantTheme,
-  LoadingBlock,
-  ErrorBlock,
-  Modal,
-  I, icon, Avatar, Btn, Badge, StatusBadge, Kpi, Panel, Bars, Donut, Sidebar, Topbar,
-});
+function MemberSearchBox({ query, setQuery, results, selected, setSelected }) {
+  return (
+    <div>
+      <div className="field"><label>Socio destinatario</label><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Buscar por DNI, nombre, email o celular"/></div>
+      {selected && <div className="state-block ok">Seleccionado: {selected.nombre_completo || selected.name} · DNI {selected.dni} <Btn kind="ghost" size="sm" onClick={() => setSelected(null)}>Quitar</Btn></div>}
+      {!selected && results.length > 0 && <div className="panel" style={{ overflow: "hidden", marginTop: 8 }}>
+        {results.slice(0, 6).map(row => {
+          const user = row.user || row;
+          return <button key={user.id || user.dni} className="lrow" style={{ width: "100%", border: 0, background: "transparent", cursor: "pointer", textAlign: "left" }} onClick={() => setSelected(user)}>
+            <Avatar name={user.nombre_completo || user.name} size={30}/>
+            <div className="l-main"><div className="l-t">{user.nombre_completo || user.name}</div><div className="l-s">DNI {user.dni || "—"} · {user.email || ""}</div></div>
+          </button>;
+        })}
+      </div>}
+    </div>
+  );
+}
+
+export { API_BASE_URL, AUTH_TOKEN_KEY, TENANT_ID_KEY, THEME_MODE_KEY, apiRequest, roleFromBackend, normalizeThemeMode, normalizeTenantSettings, normalizeMembershipPlan, normalizeProduct, normalizeSaasPlan, planToApiPayload, productToApiPayload, saasPlanToApiPayload, colorInk, colorMix, applyTenantTheme, LoadingBlock, ErrorBlock, Modal, I, icon, Avatar, Btn, Badge, StatusBadge, Kpi, Panel, Bars, Donut, Sidebar, Topbar, MemberSearchBox, ThemeSwitcher };

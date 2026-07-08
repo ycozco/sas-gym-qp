@@ -22,12 +22,9 @@ void main() {
   });
 
   test('enqueue creates idempotency metadata', () async {
-    await SyncQueueService.enqueue(
-      '/members/workout-log',
-      'POST',
-      {'sets': 3},
-      idempotencyKey: 'workout-1',
-    );
+    await SyncQueueService.enqueue('/members/workout-log', 'POST', {
+      'sets': 3,
+    }, idempotencyKey: 'workout-1');
 
     final queue = SyncQueueService.getQueue();
     expect(queue, hasLength(1));
@@ -38,23 +35,17 @@ void main() {
 
   test('financial enqueue requires idempotencyKey', () async {
     expect(
-      () => SyncQueueService.enqueue(
-        '/payments/pos-charge',
-        'POST',
-        {'total': 10},
-        financial: true,
-      ),
+      () => SyncQueueService.enqueue('/payments/pos-charge', 'POST', {
+        'total': 10,
+      }, financial: true),
       throwsArgumentError,
     );
   });
 
   test('processQueue increments attempts and keeps failed tx', () async {
-    await SyncQueueService.enqueue(
-      '/members/workout-log',
-      'POST',
-      {'sets': 3},
-      idempotencyKey: 'workout-1',
-    );
+    await SyncQueueService.enqueue('/members/workout-log', 'POST', {
+      'sets': 3,
+    }, idempotencyKey: 'workout-1');
 
     final success = await SyncQueueService.processQueue(
       now: DateTime(2026, 1, 1),
@@ -72,12 +63,9 @@ void main() {
   });
 
   test('processQueue discards expired tx', () async {
-    await SyncQueueService.enqueue(
-      '/members/workout-log',
-      'POST',
-      {'sets': 3},
-      ttl: const Duration(seconds: 1),
-    );
+    await SyncQueueService.enqueue('/members/workout-log', 'POST', {
+      'sets': 3,
+    }, ttl: const Duration(seconds: 1));
 
     final success = await SyncQueueService.processQueue(
       now: DateTime.now().add(const Duration(days: 1)),

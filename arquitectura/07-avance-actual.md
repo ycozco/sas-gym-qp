@@ -71,7 +71,7 @@ Se deben implementar **índices compuestos B-Tree** en PostgreSQL (mediante `sch
 | Integracion API | Parcial | `api_client.dart`, endpoints backend y uso mixto mock/API |
 | Tiempo real | Parcial | `saas.gateway.ts` y `websocket_service.dart` |
 | Offline | Inicial/parcial | `sync_queue_service.dart`, Hive y connectivity |
-| Infra local | Avanzado | `docker-compose.yml` raiz |
+| Infra local | Avanzado | `infra/docker/compose.local.yml` |
 | Documentacion | Mejorada ahora | `README.md` y `arquitectura/` |
 
 ## Criterio de siguiente hito

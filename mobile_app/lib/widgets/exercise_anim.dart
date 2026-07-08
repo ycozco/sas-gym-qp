@@ -21,7 +21,8 @@ class ExerciseAnim extends StatefulWidget {
   State<ExerciseAnim> createState() => _ExerciseAnimState();
 }
 
-class _ExerciseAnimState extends State<ExerciseAnim> with SingleTickerProviderStateMixin {
+class _ExerciseAnimState extends State<ExerciseAnim>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
 
   @override
@@ -54,9 +55,11 @@ class _ExerciseAnimState extends State<ExerciseAnim> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
-    final isSquat = widget.exerciseName.toLowerCase().contains('sentadilla') ||
+    final isSquat =
+        widget.exerciseName.toLowerCase().contains('sentadilla') ||
         widget.exerciseName.toLowerCase().contains('pierna');
-    final isBench = widget.exerciseName.toLowerCase().contains('press') ||
+    final isBench =
+        widget.exerciseName.toLowerCase().contains('press') ||
         widget.exerciseName.toLowerCase().contains('aperturas');
 
     return AnimatedBuilder(
@@ -146,8 +149,20 @@ class _StickFigurePainter extends CustomPainter {
       final barY = neck.dy + 4;
       canvas.drawLine(Offset(w * 0.20, barY), Offset(w * 0.80, barY), barPaint);
 
-      canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(w * 0.15, barY - 10, 10, 20), const Radius.circular(3)), platePaint);
-      canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(w * 0.77, barY - 10, 10, 20), const Radius.circular(3)), platePaint);
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(w * 0.15, barY - 10, 10, 20),
+          const Radius.circular(3),
+        ),
+        platePaint,
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(w * 0.77, barY - 10, 10, 20),
+          const Radius.circular(3),
+        ),
+        platePaint,
+      );
 
       canvas.drawLine(neck, Offset(w * 0.32, barY + 8), strokePaint);
       canvas.drawLine(neck, Offset(w * 0.68, barY + 8), strokePaint);
@@ -158,9 +173,21 @@ class _StickFigurePainter extends CustomPainter {
         ..color = const Color(0xFF424242)
         ..strokeWidth = 5.0
         ..strokeCap = StrokeCap.square;
-      canvas.drawLine(Offset(w * 0.2, h * 0.75), Offset(w * 0.8, h * 0.75), benchPaint);
-      canvas.drawLine(Offset(w * 0.3, h * 0.75), Offset(w * 0.3, h * 0.90), benchPaint);
-      canvas.drawLine(Offset(w * 0.7, h * 0.75), Offset(w * 0.7, h * 0.90), benchPaint);
+      canvas.drawLine(
+        Offset(w * 0.2, h * 0.75),
+        Offset(w * 0.8, h * 0.75),
+        benchPaint,
+      );
+      canvas.drawLine(
+        Offset(w * 0.3, h * 0.75),
+        Offset(w * 0.3, h * 0.90),
+        benchPaint,
+      );
+      canvas.drawLine(
+        Offset(w * 0.7, h * 0.75),
+        Offset(w * 0.7, h * 0.90),
+        benchPaint,
+      );
 
       final hips = Offset(w * 0.35, h * 0.70);
       final neck = Offset(w * 0.60, h * 0.70);
@@ -184,8 +211,20 @@ class _StickFigurePainter extends CustomPainter {
 
       canvas.drawLine(Offset(w * 0.22, barY), Offset(w * 0.78, barY), barPaint);
 
-      canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(w * 0.17, barY - 12, 10, 24), const Radius.circular(3)), platePaint);
-      canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(w * 0.75, barY - 12, 10, 24), const Radius.circular(3)), platePaint);
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(w * 0.17, barY - 12, 10, 24),
+          const Radius.circular(3),
+        ),
+        platePaint,
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(w * 0.75, barY - 12, 10, 24),
+          const Radius.circular(3),
+        ),
+        platePaint,
+      );
     } else {
       final double curlAngle = 0.2 + (animationValue * 1.5);
 

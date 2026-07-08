@@ -1,0 +1,51 @@
+# ─── STAGE 1: BUILDER (Compilación de TypeScript) ──────────────────────
+FROM node:24-alpine@sha256:461d310e527d9bf0d3509d3bdfd8e96bf7b5c305b9b1d9bf5bdf8e98679d63c5 AS builder
+
+# Dependencias nativas necesarias para Prisma/Node en Alpine
+RUN apk add --no-cache libc6-compat openssl
+
+WORKDIR /app
+
+# Copiar configuraciones de dependencias y definición de base de datos
+COPY package*.json ./
+COPY prisma ./prisma/
+
+# Instalar todas las dependencias (producción + desarrollo) para compilar
+RUN npm ci
+
+# Copiar el código fuente y compilar la aplicación
+COPY . .
+RUN npx prisma generate
+RUN npm run build
+
+# ─── STAGE 2: RUNNER (Imagen de Producción Limpia) ──────────────────────
+FROM node:24-alpine@sha256:461d310e527d9bf0d3509d3bdfd8e96bf7b5c305b9b1d9bf5bdf8e98679d63c5 AS runner
+
+# Librería SSL necesaria para la conexión Postgres en Alpine
+RUN apk add --no-cache openssl
+
+WORKDIR /app
+
+# Forzar variable a producción (optimiza frameworks y Node.js)
+ENV NODE_ENV=production
+
+# Copiar manifiesto de dependencias y base de datos
+COPY package*.json ./
+COPY prisma ./prisma/
+
+# Instalar ÚNICAMENTE dependencias productivas (ignora devDependencies pesadas)
+RUN npm ci --omit=dev
+
+# Copiar únicamente la compilación limpia del Stage de compilación
+COPY --from=builder /app/dist ./dist
+
+# Re-generar Prisma Client bajo dependencias productivas
+RUN npx prisma generate
+
+# Correr bajo usuario no privilegiado (Mitiga escalada de privilegios)
+USER node
+
+EXPOSE 3000
+
+# Ejecutar el main nativo directo sin ts-node/nodemon/watchers
+CMD ["node", "dist/main"]

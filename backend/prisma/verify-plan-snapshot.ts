@@ -4,7 +4,7 @@ const prisma = new PrismaClient();
 
 async function main() {
   const tenant = await prisma.tenant.findFirst({
-    where: { nombre: 'SAS Gym Surco Prime' },
+    where: { nombre: 'SaasGym Cayma Prime' },
   });
   if (!tenant) throw new Error('Tenant Surco no encontrado.');
 

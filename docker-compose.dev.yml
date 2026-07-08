@@ -1,0 +1,19 @@
+# ─── DOCKER COMPOSE DEVELOPMENT OVERRIDES ───────────────────────────
+# Este archivo define sobreescrituras específicas para desarrollo local en vivo.
+# Ejecución: docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+
+services:
+  api:
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    command: >
+      sh -c "npx prisma generate && npx prisma migrate deploy && npx prisma db seed && npm run start:dev"
+
+  frontend-web:
+    build:
+      args:
+        APP_ENV: dev
+        APP_MODE: backend

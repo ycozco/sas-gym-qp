@@ -28,6 +28,8 @@ class _CashierScreenState extends State<CashierScreen> {
   double _cashPaid = 0;
   String _paymentMethod = 'Efectivo'; // Efectivo, Yape, Plin, Tarjeta
 
+  // Scanner state
+  String _scanDniInput = '';
   String? _prefilledMemberDni;
   String? _prefilledPlanName;
   double? _prefilledPlanPrice;
@@ -88,6 +90,14 @@ class _CashierScreenState extends State<CashierScreen> {
     });
   }
 
+  void _returnToHome() {
+    setState(() {
+      _historyStack.clear();
+      _currentTab = 0;
+      _scanDniInput = '';
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = GymStateProvider.of(context);
@@ -112,7 +122,7 @@ class _CashierScreenState extends State<CashierScreen> {
           result: scanResult,
           member: member,
           dni: dni,
-          onBack: _back,
+          onBack: scanResult == 'granted' ? _returnToHome : _back,
           membershipPlans: state.membershipPlans,
           onChargeDirect: (memberDni, {planName, price}) {
             _redirectScannerToMembership(
@@ -158,7 +168,12 @@ class _CashierScreenState extends State<CashierScreen> {
             currentIndex: _currentTab,
             accent: palette.accent,
             accentInk: palette.accentInk,
-            onChanged: (index) => setState(() => _currentTab = index),
+            onChanged: (index) {
+              setState(() => _currentTab = index);
+              if (index == 3) {
+                state.loadCajaSalesBackend();
+              }
+            },
             items: const [
               RoleNavItem(icon: Icons.home_rounded, label: 'Inicio'),
               RoleNavItem(

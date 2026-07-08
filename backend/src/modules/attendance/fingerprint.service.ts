@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { MembershipState } from '@prisma/client';
 import * as crypto from 'crypto';
@@ -43,7 +47,7 @@ export class FingerprintService {
     const { userId, dedo, datosHuella, signature } = dto;
 
     const secret = getFingerprintSecret();
-    
+
     // 1. Validar la firma HMAC-SHA256
     const message = `${userId}:${dedo}:${datosHuella}`;
     const calculatedSignature = crypto
@@ -52,7 +56,9 @@ export class FingerprintService {
       .digest('hex');
 
     if (calculatedSignature !== signature) {
-      throw new UnauthorizedException('Firma de plantilla biométrica inválida. Acceso no autorizado.');
+      throw new UnauthorizedException(
+        'Firma de plantilla biométrica inválida. Acceso no autorizado.',
+      );
     }
 
     // 2. Calcular hash de integridad SHA256 para guardar en BD
@@ -167,27 +173,39 @@ export class FingerprintService {
 
     // Buscar si hay alguna membresía activa o en gracia
     const activeOrGrace = memberships.find(
-      m => m.estado === MembershipState.ACTIVE || m.estado === MembershipState.GRACE
+      (m) =>
+        m.estado === MembershipState.ACTIVE ||
+        m.estado === MembershipState.GRACE,
     );
-    
+
     // Si no hay activa/gracia, buscar si hay alguna pendiente
-    const pending = memberships.find(m => m.estado === MembershipState.PENDING);
-    
+    const pending = memberships.find(
+      (m) => m.estado === MembershipState.PENDING,
+    );
+
     // Si no hay pendiente, buscar si hay alguna suspendida
-    const suspended = memberships.find(m => m.estado === MembershipState.SUSPENDED);
-    
+    const suspended = memberships.find(
+      (m) => m.estado === MembershipState.SUSPENDED,
+    );
+
     // De lo contrario, usar la primera (que por el orden desc es la de vencimiento más lejano)
-    const latestMembership = activeOrGrace || pending || suspended || memberships[0];
+    const latestMembership =
+      activeOrGrace || pending || suspended || memberships[0];
 
     const state = latestMembership.estado;
-    if (state === MembershipState.EXPIRED || state === MembershipState.SUSPENDED || state === MembershipState.PENDING) {
+    if (
+      state === MembershipState.EXPIRED ||
+      state === MembershipState.SUSPENDED ||
+      state === MembershipState.PENDING
+    ) {
       return {
         verdict: 'RED',
-        reason: state === MembershipState.EXPIRED
+        reason:
+          state === MembershipState.EXPIRED
             ? 'Membresía vencida.'
-            : (state === MembershipState.PENDING
-                ? 'Membresía pendiente de aprobación de pago.'
-                : 'Membresía suspendida.'),
+            : state === MembershipState.PENDING
+              ? 'Membresía pendiente de aprobación de pago.'
+              : 'Membresía suspendida.',
         member: {
           fullName: user.nombre_completo,
           status: state,
@@ -204,7 +222,8 @@ export class FingerprintService {
     if (state === MembershipState.GRACE) {
       verdict = 'AMBER';
       statusText = 'GRACIA';
-      reason = 'Acceso biométrico concedido en día de gracia (Regularización pendiente).';
+      reason =
+        'Acceso biométrico concedido en día de gracia (Regularización pendiente).';
     }
 
     // 4. Registrar la asistencia biométrica

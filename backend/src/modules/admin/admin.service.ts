@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Role, UserState } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import { randomBytes } from 'crypto';
@@ -23,7 +27,9 @@ export class AdminService {
       where: {
         tenant_id: tenantId,
         rol: Role.MEMBER,
-        ...(state !== 'all' ? { estado: state.toUpperCase() as UserState } : {}),
+        ...(state !== 'all'
+          ? { estado: state.toUpperCase() as UserState }
+          : {}),
         ...(q
           ? {
               OR: [
@@ -56,7 +62,10 @@ export class AdminService {
         celular: dto.celular?.trim() || null,
         rol: Role.MEMBER,
         estado: dto.estado || UserState.ACTIVE,
-        password_hash: await bcrypt.hash(randomBytes(24).toString('base64url'), 10),
+        password_hash: await bcrypt.hash(
+          randomBytes(24).toString('base64url'),
+          10,
+        ),
       },
     });
     await this.prisma.memberProfile.create({
@@ -65,15 +74,23 @@ export class AdminService {
     return this.findUser(tenantId, user.id);
   }
 
-  async updateMember(tenantId: string, id: string, dto: Partial<UpsertUserDto>) {
+  async updateMember(
+    tenantId: string,
+    id: string,
+    dto: Partial<UpsertUserDto>,
+  ) {
     await this.ensureUser(tenantId, id, Role.MEMBER);
     await this.prisma.user.update({
       where: { id },
       data: {
-        ...(dto.nombreCompleto !== undefined ? { nombre_completo: dto.nombreCompleto.trim() } : {}),
+        ...(dto.nombreCompleto !== undefined
+          ? { nombre_completo: dto.nombreCompleto.trim() }
+          : {}),
         ...(dto.email !== undefined ? { email: dto.email.trim() } : {}),
         ...(dto.dni !== undefined ? { dni: dto.dni?.trim() || null } : {}),
-        ...(dto.celular !== undefined ? { celular: dto.celular?.trim() || null } : {}),
+        ...(dto.celular !== undefined
+          ? { celular: dto.celular?.trim() || null }
+          : {}),
         ...(dto.estado !== undefined ? { estado: dto.estado } : {}),
       },
     });
@@ -85,7 +102,10 @@ export class AdminService {
     return this.prisma.user.update({
       where: { id },
       data: {
-        estado: user.estado === UserState.ACTIVE ? UserState.INACTIVE : UserState.ACTIVE,
+        estado:
+          user.estado === UserState.ACTIVE
+            ? UserState.INACTIVE
+            : UserState.ACTIVE,
       },
     });
   }
@@ -116,15 +136,23 @@ export class AdminService {
     });
   }
 
-  async updateCashier(tenantId: string, id: string, dto: Partial<UpsertUserDto>) {
+  async updateCashier(
+    tenantId: string,
+    id: string,
+    dto: Partial<UpsertUserDto>,
+  ) {
     await this.ensureUser(tenantId, id, Role.CAJA);
     return this.prisma.user.update({
       where: { id },
       data: {
-        ...(dto.nombreCompleto !== undefined ? { nombre_completo: dto.nombreCompleto.trim() } : {}),
+        ...(dto.nombreCompleto !== undefined
+          ? { nombre_completo: dto.nombreCompleto.trim() }
+          : {}),
         ...(dto.email !== undefined ? { email: dto.email.trim() } : {}),
         ...(dto.dni !== undefined ? { dni: dto.dni?.trim() || null } : {}),
-        ...(dto.celular !== undefined ? { celular: dto.celular?.trim() || null } : {}),
+        ...(dto.celular !== undefined
+          ? { celular: dto.celular?.trim() || null }
+          : {}),
         ...(dto.estado !== undefined ? { estado: dto.estado } : {}),
       },
     });
@@ -135,12 +163,19 @@ export class AdminService {
     return this.prisma.user.update({
       where: { id },
       data: {
-        estado: user.estado === UserState.ACTIVE ? UserState.INACTIVE : UserState.ACTIVE,
+        estado:
+          user.estado === UserState.ACTIVE
+            ? UserState.INACTIVE
+            : UserState.ACTIVE,
       },
     });
   }
 
-  async updateCashierPermissions(tenantId: string, id: string, permissions: string[]) {
+  async updateCashierPermissions(
+    tenantId: string,
+    id: string,
+    permissions: string[],
+  ) {
     await this.ensureUser(tenantId, id, Role.CAJA);
     return { id, permissions, message: 'Permisos registrados para UI web.' };
   }
@@ -153,7 +188,9 @@ export class AdminService {
   }
 
   private async ensureUser(tenantId: string, id: string, rol: Role) {
-    const user = await this.prisma.user.findFirst({ where: { id, tenant_id: tenantId, rol } });
+    const user = await this.prisma.user.findFirst({
+      where: { id, tenant_id: tenantId, rol },
+    });
     if (!user) throw new NotFoundException('Usuario no encontrado.');
     return user;
   }

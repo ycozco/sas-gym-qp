@@ -25,7 +25,7 @@ Cambios implementados:
 - `gym_cache` y `sync_queue_box` se abren cifradas con llave guardada en secure storage.
 - En desarrollo existe fallback a caja Hive sin cifrar solo si habia datos locales antiguos; en `APP_ENV=prod` el fallo de cifrado corta el arranque.
 - `logout()` limpia `gym_cache` y la cola offline.
-- Se construyo `frontend-web` y se levanto en Docker para validar `http://localhost:8383`.
+- Se construyo `app-web` y se levanto en Docker para validar `http://localhost:8383`.
 - `/auth/me` ahora entrega `qr_secret`/`qrSecret` dentro de `member_profile` para que la app genere QR con secreto emitido por backend.
 - `AttendanceService` ya no acepta fallback TOTP derivado del DNI; si el socio no tiene `qr_secret`, deniega el acceso QR.
 - Los socios creados desde flujo POS reciben `qr_secret` aleatorio.
@@ -39,9 +39,10 @@ cd mobile_app
 flutter analyze
 flutter test
 cd ..
-docker compose build flutter-ci
-docker compose build frontend-web
-docker compose up -d frontend-web
+flutter analyze
+flutter test
+docker compose --env-file .env -f infra/docker/compose.local.yml build app-web
+docker compose --env-file .env -f infra/docker/compose.local.yml up -d app-web
 Invoke-WebRequest -Uri http://localhost:8383 -UseBasicParsing
 npm run build
 npm run test
@@ -51,8 +52,7 @@ Resultados:
 
 - `flutter analyze`: sin issues.
 - `flutter test`: todos los tests pasaron.
-- `docker compose build flutter-ci`: paso; dentro del contenedor corrio analyze y test correctamente.
-- `docker compose build frontend-web`: paso; se emitio advertencia no bloqueante de compatibilidad futura WebAssembly en `socket_io_common`.
+- `docker compose --env-file .env -f infra/docker/compose.local.yml build app-web`: paso; se emitio advertencia no bloqueante de compatibilidad futura WebAssembly en `socket_io_common`.
 - `http://localhost:8383`: respondio `200 OK`.
 - `npm run build` en backend: paso.
 - `npm run test` en backend: 2 suites y 6 tests pasaron.
@@ -66,30 +66,29 @@ Pendientes moviles siguientes:
 
 ## Entorno local disponible
 
-El proyecto ya cuenta con Docker Compose en la raiz:
+El proyecto ya cuenta con Docker Compose local en `infra/docker/compose.local.yml`:
 
 ```powershell
-docker compose up --build
+docker compose --env-file .env -f infra/docker/compose.local.yml up -d --build
 ```
 
 Servicios utiles para movil:
 
 | Servicio | Contenedor | Uso | URL / Puerto |
 |---|---|---|---|
-| `api` | `gymsmart-api` | Backend para integracion | `http://localhost:3000` |
-| `frontend-web` | `sas_gym_flutter_web` | Flutter web compilado | `http://localhost:8383` |
-| `flutter-ci` | `sas_gym_flutter_ci` | Analyze + tests Flutter | Perfil `ci` |
-| `web` | `sas_gym_frontend` | Mockups/docs de referencia | `http://localhost:8282` |
+| `api` | `sasgym_api_local` | Backend para integracion | `http://localhost:3000` |
+| `app-web` | `sasgym_app_web_local` | Flutter web compilado | `http://localhost:8383` |
+| `admin-web` | `sasgym_admin_web_local` | Mockups/docs de referencia | `http://localhost:8282` |
 
 Comandos utiles:
 
 ```powershell
-docker compose build flutter-ci
-docker compose up --build frontend-web
-docker compose logs frontend-web
+docker compose --env-file .env -f infra/docker/compose.local.yml build app-web
+docker compose --env-file .env -f infra/docker/compose.local.yml up -d --build app-web
+docker compose --env-file .env -f infra/docker/compose.local.yml logs app-web
 ```
 
-Nota: para validar integracion real de la app, tambien debe estar levantado `api` y `db`.
+Nota: para validar integracion real de la app, tambien deben estar levantados `api`, `postgres` y `redis`.
 
 ## Builds moviles por ambiente
 
@@ -98,11 +97,27 @@ La app usa `--dart-define` para separar ambiente, API y modo demo:
 ```powershell
 cd mobile_app
 flutter run --flavor dev --dart-define=APP_ENV=dev --dart-define=APP_MODE=backend --dart-define=API_BASE_URL=http://10.0.2.2:3000/api/v1
-flutter build web --release --dart-define=APP_ENV=staging --dart-define=APP_MODE=backend --dart-define=API_BASE_URL=http://localhost:3000/api/v1
-flutter build apk --debug --flavor dev --dart-define=APP_ENV=dev --dart-define=APP_MODE=backend --dart-define=API_BASE_URL=http://10.0.2.2:3000/api/v1
+flutter build web --release --dart-define=APP_ENV=staging --dart-define=APP_MODE=backend --dart-define=API_BASE_URL=https://api.<ip/dominio>/api/v1
+flutter build apk --debug --flavor dev --dart-define=APP_ENV=dev --dart-define=APP_MODE=backend --dart-define=API_BASE_URL=http://<IP_LAN_PC>:3000/api/v1
+flutter build apk --flavor prod --release --build-name 0.1.0 --build-number 1 --dart-define=APP_ENV=production --dart-define=APP_MODE=backend --dart-define=API_BASE_URL=https://api.sas-gym.qpsecure.cloud/api/v1
 ```
 
+Para movil/escritorio en modo backend, `API_BASE_URL` es obligatoria. No hay URL local implicita para evitar APKs que apunten por error a `localhost` o al emulador.
+
+- Emulador Android: `http://10.0.2.2:3000/api/v1`.
+- Celular fisico en la misma WiFi: `http://<IP_LAN_PC>:3000/api/v1`.
+- Produccion: URL publica HTTPS.
+
+Para `APP_ENV=production`, `API_BASE_URL` no puede usar `localhost`, `127.0.0.1` ni `10.0.2.2`.
+
 Para release firmado se debe crear `mobile_app/android/key.properties` a partir de `mobile_app/android/key.properties.example`. No se debe commitear el keystore ni claves reales.
+
+Flujo ADB recomendado para Redmi:
+
+```powershell
+C:\Users\yoset\AppData\Local\Android\Sdk\platform-tools\adb.exe devices -l
+C:\Users\yoset\AppData\Local\Android\Sdk\platform-tools\adb.exe install -r D:\proyectos\sas_gym\release\<fecha>_v0.1\sas-gym-v0.1.0-<fecha>.apk
+```
 
 Flavors Android:
 
@@ -132,17 +147,18 @@ flutter test
 - Ejecutar CI por contenedor:
 
 ```powershell
-docker compose build flutter-ci
+flutter analyze
+flutter test
 ```
 
-- Revisar que `frontend-web` compile y sirva `http://localhost:8383`.
+- Revisar que `app-web` compile y sirva `http://localhost:8383`.
 - Documentar errores reales encontrados durante analyze/test.
 
 Criterio de salida:
 
 - `flutter analyze` sin errores bloqueantes.
 - `flutter test` pasa.
-- `docker compose build flutter-ci` pasa.
+- `flutter analyze` y `flutter test` pasan.
 - `http://localhost:8383` carga la app web.
 
 ## Fase M1 - Seguridad minima movil
@@ -185,7 +201,7 @@ Vertical recomendada:
 Uso de contenedores:
 
 - Levantar `db` + `api`.
-- Levantar `frontend-web`.
+- Levantar `app-web`.
 - Usar `test-client` para requests aislados si se requiere simular cliente externo.
 
 Tareas:
@@ -198,7 +214,7 @@ Tareas:
 
 Criterio de salida:
 
-- La vertical funciona contra `http://localhost:3000/api/v1`.
+- La vertical funciona contra la URL configurada en `API_BASE_URL`.
 - No se mezclan datos demo con datos backend.
 - Auditoria refleja operaciones reales.
 
@@ -246,19 +262,20 @@ Criterio de salida:
 Flutter CI:
 
 ```powershell
-docker compose build flutter-ci
+flutter analyze
+flutter test
 ```
 
 Flutter web:
 
 ```powershell
-docker compose up --build frontend-web
+docker compose --env-file .env -f infra/docker/compose.local.yml up -d --build app-web
 ```
 
 Integracion con backend:
 
 ```powershell
-docker compose up --build db api frontend-web
+docker compose --env-file .env -f infra/docker/compose.local.yml up -d --build postgres redis api app-web
 ```
 
 Validaciones:

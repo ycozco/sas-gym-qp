@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { totp } from 'otplib';
 import { AccessMethod, MembershipState } from '@prisma/client';
@@ -13,11 +17,15 @@ export class AttendanceService {
     totp.options = { step: 30, window: 1 };
   }
 
-  async simulateAccess(dni: string, tenantId: string): Promise<any> {
-    const simulatorEnabled = getOptionalEnv('ENABLE_QR_SIMULATOR', 'false') === 'true';
-    const isProduction = getOptionalEnv('NODE_ENV', 'development') === 'production';
+  async simulateAccess(dni: string, tenantId: string) {
+    const simulatorEnabled =
+      getOptionalEnv('ENABLE_QR_SIMULATOR', 'false') === 'true';
+    const isProduction =
+      getOptionalEnv('NODE_ENV', 'development') === 'production';
     if (!simulatorEnabled || isProduction) {
-      throw new ForbiddenException('El simulador temporal de accesos no esta habilitado.');
+      throw new ForbiddenException(
+        'El simulador temporal de accesos no esta habilitado.',
+      );
     }
 
     const user = await this.prisma.user.findFirst({
@@ -43,14 +51,14 @@ export class AttendanceService {
     };
   }
 
-  async verifyQrToken(dni: string, token: string, tenantId: string): Promise<any> {
+  async verifyQrToken(dni: string, token: string, tenantId: string) {
     if (!dni || !token) {
       throw new BadRequestException('El DNI y el Token OTP son requeridos.');
     }
 
     // 1. Buscar al usuario y su perfil de miembro en la base de datos
     const user = await this.prisma.user.findFirst({
-      where: { 
+      where: {
         dni: dni,
         tenant_id: tenantId,
       },
@@ -89,7 +97,6 @@ export class AttendanceService {
       };
     }
 
-
     if (!user.member_profile) {
       return {
         verdict: 'RED',
@@ -126,7 +133,7 @@ export class AttendanceService {
         },
       };
     }
-    
+
     const isValidToken = totp.check(token, secret);
     if (!isValidToken) {
       return {
@@ -161,31 +168,52 @@ export class AttendanceService {
 
     // Buscar si hay alguna membresía activa o en gracia
     const activeOrGrace = memberships.find(
-      m => m.estado === MembershipState.ACTIVE || m.estado === MembershipState.GRACE
+      (m) =>
+        m.estado === MembershipState.ACTIVE ||
+        m.estado === MembershipState.GRACE,
     );
-    
+
     // Si no hay activa/gracia, buscar si hay alguna pendiente
-    const pending = memberships.find(m => m.estado === MembershipState.PENDING);
-    
+    const pending = memberships.find(
+      (m) => m.estado === MembershipState.PENDING,
+    );
+
     // Si no hay pendiente, buscar si hay alguna suspendida
-    const suspended = memberships.find(m => m.estado === MembershipState.SUSPENDED);
-    
+    const suspended = memberships.find(
+      (m) => m.estado === MembershipState.SUSPENDED,
+    );
+
     // De lo contrario, usar la primera (que por el orden desc es la de vencimiento más lejano)
-    const latestMembership = activeOrGrace || pending || suspended || memberships[0];
+    const latestMembership =
+      activeOrGrace || pending || suspended || memberships[0];
 
     const state = latestMembership.estado;
 
     const today = new Date();
-    const todayClean = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const expiresAt = latestMembership.fecha_vencimiento ? new Date(latestMembership.fecha_vencimiento) : null;
+    const todayClean = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
+    );
+    const expiresAt = latestMembership.fecha_vencimiento
+      ? new Date(latestMembership.fecha_vencimiento)
+      : null;
     let daysLeft = 0;
     if (expiresAt) {
-      const expiresClean = new Date(expiresAt.getFullYear(), expiresAt.getMonth(), expiresAt.getDate());
+      const expiresClean = new Date(
+        expiresAt.getFullYear(),
+        expiresAt.getMonth(),
+        expiresAt.getDate(),
+      );
       const diffTime = expiresClean.getTime() - todayClean.getTime();
       daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     }
 
-    if (state === MembershipState.EXPIRED || state === MembershipState.SUSPENDED || state === MembershipState.PENDING) {
+    if (
+      state === MembershipState.EXPIRED ||
+      state === MembershipState.SUSPENDED ||
+      state === MembershipState.PENDING
+    ) {
       let reason = 'Membresía vencida.';
       if (state === MembershipState.SUSPENDED) {
         reason = 'Membresía suspendida.';

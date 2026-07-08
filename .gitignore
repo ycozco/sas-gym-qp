@@ -1,0 +1,88 @@
+# ─── ENV ──────────────────────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+!.env.local.example
+!.env.production.example
+!.env.production.local.example
+!backend/.env.example
+
+# ─── Node / NPM ───────────────────────────────────────────────────────────────
+node_modules/
+dist/
+coverage/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ─── TypeScript Build Artifacts ───────────────────────────────────────────────
+backend/tsconfig.tsbuildinfo
+
+# ─── Flutter / Dart ───────────────────────────────────────────────────────────
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub/
+build/
+*.iml
+
+# ─── Android / Gradle ─────────────────────────────────────────────────────────
+.gradle/
+local.properties
+
+# ─── Android Signing (NUNCA versionar) ────────────────────────────────────────
+mobile_app/android/key.properties
+*.keystore
+*.jks
+
+# ─── Production compiled output ───────────────────────────────────────────────
+bin/
+obj/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# ─── Logs y Artefactos de Verificación ────────────────────────────────────────
+*.log
+.artifacts/
+
+# ─── Database dumps / backups ─────────────────────────────────────────────────
+*.sql
+*.dump
+*.tar
+*.gz
+backups/
+
+# ─── Graphify / Graph analysis (archivos generados — hasta 2.5MB c/u) ─────────
+graphify/graphify-out/
+graphify-out/
+graphs/
+/graph.json
+/graph.html
+/GRAPH_REPORT.md
+
+# ─── Archivos grandes generados ───────────────────────────────────────────────
+/arch.txt
+/help.txt
+
+# ─── Archivos temporales de desarrollo ────────────────────────────────────────
+backend/scratch/
+backend/stress-test.js
+
+# ─── Obsidian ─────────────────────────────────────────────────────────────────
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/cache/
+
+# ─── IDEs and Editors ─────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store
+Thumbs.db

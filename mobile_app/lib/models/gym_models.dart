@@ -10,20 +10,20 @@ enum GymRole { member, trainer, cashier, admin, superadmin }
 
 extension GymRoleX on GymRole {
   String get label => switch (this) {
-        GymRole.member => 'Usuario',
-        GymRole.trainer => 'Entrenador',
-        GymRole.cashier => 'Caja',
-        GymRole.admin => 'Admin',
-        GymRole.superadmin => 'SuperAdmin',
-      };
+    GymRole.member => 'Usuario',
+    GymRole.trainer => 'Entrenador',
+    GymRole.cashier => 'Caja',
+    GymRole.admin => 'Admin',
+    GymRole.superadmin => 'SuperAdmin',
+  };
 
   String get subtitle => switch (this) {
-        GymRole.member => 'Experiencia del socio',
-        GymRole.trainer => 'Planificación y progreso',
-        GymRole.cashier => 'Operación limitada',
-        GymRole.admin => 'Gestión total y auditoría',
-        GymRole.superadmin => 'Métricas de la red y control',
-      };
+    GymRole.member => 'Experiencia del socio',
+    GymRole.trainer => 'Planificación y progreso',
+    GymRole.cashier => 'Operación limitada',
+    GymRole.admin => 'Gestión total y auditoría',
+    GymRole.superadmin => 'Métricas de la red y control',
+  };
 }
 
 class RolePalette {
@@ -82,7 +82,8 @@ class MembershipPlan {
       id: json['id']?.toString() ?? '',
       name: json['nombre']?.toString() ?? '',
       description: json['descripcion']?.toString(),
-      durationDays: (json['duracion_dias'] ?? json['duracionDias'] ?? 30) as int,
+      durationDays:
+          (json['duracion_dias'] ?? json['duracionDias'] ?? 30) as int,
       price: (json['precio'] as num?)?.toDouble() ?? 0,
       color: json['color']?.toString(),
       order: (json['orden'] ?? 0) as int,
@@ -307,7 +308,8 @@ class MemberRecord {
   final String state; // active, expired, grace, baja_logica
   final String assignedTrainer;
   final List<PaymentRecord> paymentHistory;
-  final Map<String, double> physicalMeasurements; // weight, height, chest, waist, hips
+  final Map<String, double>
+  physicalMeasurements; // weight, height, chest, waist, hips
   final List<String> progressImages; // Simulated images
   final bool todayCheckIn;
   final bool isActiveInGym;
@@ -372,6 +374,7 @@ class MemberRecord {
 }
 
 class ProductItem {
+  final String? id;
   final String name;
   final String category;
   final double price;
@@ -380,6 +383,7 @@ class ProductItem {
   final bool readOnlyLogs;
 
   ProductItem({
+    this.id,
     required this.name,
     required this.category,
     required this.price,
@@ -389,6 +393,7 @@ class ProductItem {
   });
 
   ProductItem copyWith({
+    String? id,
     String? name,
     String? category,
     double? price,
@@ -397,6 +402,7 @@ class ProductItem {
     bool? readOnlyLogs,
   }) {
     return ProductItem(
+      id: id ?? this.id,
       name: name ?? this.name,
       category: category ?? this.category,
       price: price ?? this.price,
@@ -424,31 +430,53 @@ class AuditEntry {
 }
 
 class CashierAccount {
+  final String? id;
   final String name;
   final String shift;
   final List<String> permissions;
   final bool active;
+  final List<CashierSession> sessionHistory;
 
   CashierAccount({
+    this.id,
     required this.name,
     required this.shift,
     required this.permissions,
     required this.active,
+    this.sessionHistory = const [],
   });
 
   CashierAccount copyWith({
+    String? id,
     String? name,
     String? shift,
     List<String>? permissions,
     bool? active,
+    List<CashierSession>? sessionHistory,
   }) {
     return CashierAccount(
+      id: id ?? this.id,
       name: name ?? this.name,
       shift: shift ?? this.shift,
       permissions: permissions ?? this.permissions,
       active: active ?? this.active,
+      sessionHistory: sessionHistory ?? this.sessionHistory,
     );
   }
+}
+
+class ScannerPreset {
+  final String label;
+  final String dni;
+  final String? state;
+  final bool isSynthetic;
+
+  const ScannerPreset({
+    required this.label,
+    required this.dni,
+    this.state,
+    this.isSynthetic = false,
+  });
 }
 
 class ShiftWindow {
@@ -560,15 +588,56 @@ class LoggedInUser {
       celular: json['celular'] as String?,
       fotoUrl: json['foto_url'] as String?,
       estado: json['estado'] as String,
-      trainerProfile: json['trainer_profile'] as Map<String, dynamic>?,
-      memberProfile: json['member_profile'] as Map<String, dynamic>?,
-      memberships: json['memberships'] as List<dynamic>?,
-      themePreference: (json['theme_preference'] ?? json['themePreference'] ?? 'system').toString().toLowerCase(),
+      trainerProfile: _jsonMap(json['trainer_profile']),
+      memberProfile: _jsonMap(json['member_profile']),
+      memberships: _jsonList(json['memberships']),
+      themePreference:
+          (json['theme_preference'] ?? json['themePreference'] ?? 'system')
+              .toString()
+              .toLowerCase(),
     );
   }
+
+  LoggedInUser copyWith({
+    String? id,
+    String? email,
+    GymRole? rol,
+    String? nombreCompleto,
+    String? dni,
+    String? celular,
+    String? fotoUrl,
+    String? estado,
+    Map<String, dynamic>? trainerProfile,
+    Map<String, dynamic>? memberProfile,
+    List<dynamic>? memberships,
+    String? themePreference,
+  }) {
+    return LoggedInUser(
+      id: id ?? this.id,
+      email: email ?? this.email,
+      rol: rol ?? this.rol,
+      nombreCompleto: nombreCompleto ?? this.nombreCompleto,
+      dni: dni ?? this.dni,
+      celular: celular ?? this.celular,
+      fotoUrl: fotoUrl ?? this.fotoUrl,
+      estado: estado ?? this.estado,
+      trainerProfile: trainerProfile ?? this.trainerProfile,
+      memberProfile: memberProfile ?? this.memberProfile,
+      memberships: memberships ?? this.memberships,
+      themePreference: themePreference ?? this.themePreference,
+    );
+  }
+
+  static Map<String, dynamic>? _jsonMap(dynamic value) {
+    if (value is Map) return Map<String, dynamic>.from(value);
+    return null;
+  }
+
+  static List<dynamic>? _jsonList(dynamic value) {
+    if (value is List) return List<dynamic>.from(value);
+    return null;
+  }
 }
-
-
 GymRole parseRole(String roleStr) {
   return switch (roleStr.toUpperCase()) {
     'SUPER_ADMIN' => GymRole.superadmin,
@@ -618,6 +687,48 @@ class CashierSession {
     this.fechaCierre,
   });
 
+  CashierSession copyWith({
+    String? id,
+    String? cajeroId,
+    double? montoApertura,
+    double? montoCierreEfectivo,
+    double? montoCierreTransferencia,
+    double? montoCierreYape,
+    double? montoCierrePOS,
+    double? totalVentasEfectivo,
+    double? totalVentasTransferencia,
+    double? totalVentasYape,
+    double? totalVentasPOS,
+    double? totalIngresos,
+    double? diferencia,
+    String? observaciones,
+    String? estado,
+    String? fechaApertura,
+    String? fechaCierre,
+  }) {
+    return CashierSession(
+      id: id ?? this.id,
+      cajeroId: cajeroId ?? this.cajeroId,
+      montoApertura: montoApertura ?? this.montoApertura,
+      montoCierreEfectivo: montoCierreEfectivo ?? this.montoCierreEfectivo,
+      montoCierreTransferencia:
+          montoCierreTransferencia ?? this.montoCierreTransferencia,
+      montoCierreYape: montoCierreYape ?? this.montoCierreYape,
+      montoCierrePOS: montoCierrePOS ?? this.montoCierrePOS,
+      totalVentasEfectivo: totalVentasEfectivo ?? this.totalVentasEfectivo,
+      totalVentasTransferencia:
+          totalVentasTransferencia ?? this.totalVentasTransferencia,
+      totalVentasYape: totalVentasYape ?? this.totalVentasYape,
+      totalVentasPOS: totalVentasPOS ?? this.totalVentasPOS,
+      totalIngresos: totalIngresos ?? this.totalIngresos,
+      diferencia: diferencia ?? this.diferencia,
+      observaciones: observaciones ?? this.observaciones,
+      estado: estado ?? this.estado,
+      fechaApertura: fechaApertura ?? this.fechaApertura,
+      fechaCierre: fechaCierre ?? this.fechaCierre,
+    );
+  }
+
   factory CashierSession.fromJson(Map<String, dynamic> json) {
     return CashierSession(
       id: json['id'] as String,
@@ -635,8 +746,10 @@ class CashierSession {
       montoCierrePOS: json['monto_cierre_pos'] != null
           ? (json['monto_cierre_pos'] as num).toDouble()
           : null,
-      totalVentasEfectivo: (json['total_ventas_efectivo'] as num? ?? 0).toDouble(),
-      totalVentasTransferencia: (json['total_ventas_transferencia'] as num? ?? 0).toDouble(),
+      totalVentasEfectivo: (json['total_ventas_efectivo'] as num? ?? 0)
+          .toDouble(),
+      totalVentasTransferencia:
+          (json['total_ventas_transferencia'] as num? ?? 0).toDouble(),
       totalVentasYape: (json['total_ventas_yape'] as num? ?? 0).toDouble(),
       totalVentasPOS: (json['total_ventas_pos'] as num? ?? 0).toDouble(),
       totalIngresos: (json['total_ingresos'] as num? ?? 0).toDouble(),
@@ -727,11 +840,92 @@ class PointsMovement {
       id: json['id'] as String,
       usuarioId: json['usuario_id'] as String,
       tipo: json['tipo'] as String,
-      cantidad: json['cantidad'] as int,
-      saldoAnterior: json['saldo_anterior'] as int,
-      saldoNuevo: json['saldo_nuevo'] as int,
-      descripcion: json['descripcion'] as String,
-      createdAt: json['created_at'] as String,
+      cantidad: (json['cantidad'] ?? json['amount'] ?? 0) as int,
+      saldoAnterior: json['saldo_anterior'] as int? ?? 0,
+      saldoNuevo: json['saldo_nuevo'] as int? ?? 0,
+      descripcion: json['descripcion'] as String? ?? '',
+      createdAt: json['created_at'] as String? ?? '',
+    );
+  }
+}
+
+class CajaStats {
+  final double efectivoIngreso;
+  final double efectivoEgreso;
+  final double transferenciaIngreso;
+  final double transferenciaEgreso;
+  final double yapeIngreso;
+  final double yapeEgreso;
+  final double posIngreso;
+  final double posEgreso;
+  final double totalVentasEfectivo;
+  final double totalVentasTransferencia;
+  final double totalVentasYape;
+  final double totalVentasPOS;
+  final double efectivoEsperado;
+  final double totalEsperado;
+
+  CajaStats({
+    required this.efectivoIngreso,
+    required this.efectivoEgreso,
+    required this.transferenciaIngreso,
+    required this.transferenciaEgreso,
+    required this.yapeIngreso,
+    required this.yapeEgreso,
+    required this.posIngreso,
+    required this.posEgreso,
+    required this.totalVentasEfectivo,
+    required this.totalVentasTransferencia,
+    required this.totalVentasYape,
+    required this.totalVentasPOS,
+    required this.efectivoEsperado,
+    required this.totalEsperado,
+  });
+
+  factory CajaStats.fromJson(Map<String, dynamic> json) {
+    return CajaStats(
+      efectivoIngreso:
+          (json['efivo_ingreso'] ?? json['efectivo_ingreso'] as num? ?? 0)
+              .toDouble(),
+      efectivoEgreso: (json['efectivo_egreso'] as num? ?? 0).toDouble(),
+      transferenciaIngreso: (json['transferencia_ingreso'] as num? ?? 0)
+          .toDouble(),
+      transferenciaEgreso: (json['transferencia_egreso'] as num? ?? 0)
+          .toDouble(),
+      yapeIngreso: (json['yape_ingreso'] as num? ?? 0).toDouble(),
+      yapeEgreso: (json['yape_egreso'] as num? ?? 0).toDouble(),
+      posIngreso: (json['pos_ingreso'] as num? ?? 0).toDouble(),
+      posEgreso: (json['pos_egreso'] as num? ?? 0).toDouble(),
+      totalVentasEfectivo: (json['total_ventas_efectivo'] as num? ?? 0)
+          .toDouble(),
+      totalVentasTransferencia:
+          (json['total_ventas_transferencia'] as num? ?? 0).toDouble(),
+      totalVentasYape: (json['total_ventas_yape'] as num? ?? 0).toDouble(),
+      totalVentasPOS: (json['total_ventas_pos'] as num? ?? 0).toDouble(),
+      efectivoEsperado: (json['efectivo_esperado'] as num? ?? 0).toDouble(),
+      totalEsperado: (json['total_esperado'] as num? ?? 0).toDouble(),
+    );
+  }
+}
+
+class CajaDetails {
+  final CashierSession caja;
+  final List<MovimientoCaja> movements;
+  final CajaStats stats;
+
+  CajaDetails({
+    required this.caja,
+    required this.movements,
+    required this.stats,
+  });
+
+  factory CajaDetails.fromJson(Map<String, dynamic> json) {
+    return CajaDetails(
+      caja: CashierSession.fromJson(json['caja'] as Map<String, dynamic>),
+      movements: (json['movements'] as List<dynamic>? ?? [])
+          .map((m) => MovimientoCaja.fromJson(m as Map<String, dynamic>))
+          .toList(),
+      stats: CajaStats.fromJson(json['stats'] as Map<String, dynamic>),
     );
   }
 }

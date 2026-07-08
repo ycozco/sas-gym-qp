@@ -2,6 +2,7 @@
 // global y entrega el control a `SasGymApp`. No debe conocer
 // pantallas concretas — eso vive en `app.dart` y las features.
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'app.dart';
 import 'data/gym_state.dart';
@@ -15,9 +16,8 @@ void main() async {
   await Hive.openBox('ui_settings_box');
   await SyncQueueService.init();
   runApp(
-    GymStateProvider(
-      notifier: GymState(),
-      child: const SasGymApp(),
+    ProviderScope(
+      child: GymStateProvider(notifier: GymState(), child: const SasGymApp()),
     ),
   );
 }

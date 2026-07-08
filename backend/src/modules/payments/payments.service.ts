@@ -21,12 +21,28 @@ import {
 import { randomBytes } from 'crypto';
 import * as bcrypt from 'bcryptjs';
 
+export interface PosCartItem {
+  id?: string;
+  productId?: string;
+  planId?: string;
+  name: string;
+  type?: string;
+  price: number;
+  unitPrice?: number;
+  qty: number;
+}
+
+export interface PosPaymentInput {
+  metodo: string;
+  monto: number;
+}
+
 export class ChargePosDto {
   @IsString()
   memberDni: string;
 
   @IsArray()
-  cartItems: any[];
+  cartItems: PosCartItem[];
 
   @IsNumber()
   @IsPositive()
@@ -37,7 +53,7 @@ export class ChargePosDto {
 
   @IsOptional()
   @IsArray()
-  payments?: any[];
+  payments?: PosPaymentInput[];
 }
 
 @Injectable()
@@ -59,7 +75,7 @@ export class PaymentsService {
     metodoStr: string,
     planNombre: string,
     filename: string,
-  ): Promise<any> {
+  ) {
     // 1. Determinar duración en días según el plan
     let duracionDias = 30;
     if (planNombre.toLowerCase().includes('trimestral')) {
@@ -109,7 +125,7 @@ export class PaymentsService {
     };
   }
 
-  async getPendingPayments(tenantId: string): Promise<any[]> {
+  async getPendingPayments(tenantId: string) {
     return this.prisma.payment.findMany({
       where: {
         tenant_id: tenantId,
@@ -128,7 +144,7 @@ export class PaymentsService {
     });
   }
 
-  async getMemberPayments(userId: string, tenantId: string): Promise<any[]> {
+  async getMemberPayments(userId: string, tenantId: string) {
     return this.prisma.payment.findMany({
       where: {
         tenant_id: tenantId,
@@ -147,7 +163,7 @@ export class PaymentsService {
     tenantId: string,
     status: 'APPROVED' | 'REJECTED',
     comments?: string,
-  ): Promise<any> {
+  ) {
     const payment = await this.prisma.payment.findFirst({
       where: {
         id: paymentId,
@@ -206,6 +222,7 @@ export class PaymentsService {
     return {
       payment: updatedPayment,
       membership: updatedMembership,
+      resolutionComments: comments?.trim() || null,
     };
   }
 
@@ -221,29 +238,22 @@ export class PaymentsService {
       return true;
     }
 
-    // Para cajero, validamos el turno (06:00 - 14:00 es el turno activo simulado)
-    const localTime = new Date();
-    const hourStr = new Intl.DateTimeFormat('es-PE', {
-      timeZone: 'America/Lima',
-      hour: 'numeric',
-      hour12: false,
-    }).format(localTime);
+    const activeCaja = await this.prisma.caja.findFirst({
+      where: {
+        cajero_id: cashierId,
+        tenant_id: user.tenant_id,
+        estado: 'abierta',
+      },
+    });
 
-    const currentHour = parseInt(hourStr, 10);
-
-    // Verificamos si la hora actual está dentro del turno 06:00 a 14:00 (6 a 13 inclusive)
-    if (currentHour >= 6 && currentHour < 14) {
-      return true;
-    }
-
-    return false;
+    return Boolean(activeCaja);
   }
 
   async processPOSCharge(
     cashierId: string,
     tenantId: string,
     dto: ChargePosDto,
-  ): Promise<any> {
+  ) {
     const isShiftActive = await this.checkShiftSession(cashierId);
     if (!isShiftActive) {
       throw new BadRequestException(
@@ -322,7 +332,7 @@ export class PaymentsService {
 
     if (membershipItem) {
       // Registrar membresía directamente activa
-      let planId: string | null = membershipItem.planId ?? null;
+      const planId: string | null = membershipItem.planId ?? null;
       let planNombre = membershipItem.name;
       let duracionDias = 30;
       let monto = membershipItem.price * membershipItem.qty;
@@ -495,7 +505,7 @@ export class PaymentsService {
 
       // Registrar movimiento de ingreso en la caja (siempre se registra para que la caja cuadre)
       const descItems = dto.cartItems
-        .map((c) => `${c['qty']}x ${c['name']}`)
+        .map((c) => `${c.qty}x ${c.name}`)
         .join(', ');
       await this.prisma.movimientoCaja.create({
         data: {

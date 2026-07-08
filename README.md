@@ -1,237 +1,91 @@
-# SaaaS GYM
+# SAS Gym
 
-SaaaS GYM es una plataforma SaaS multi-tenant para operar gimnasios. El sistema combina una app Flutter, un sistema web completo y una API NestJS con PostgreSQL para cubrir administracion, caja, asistencia, pagos, rutinas, auditoria y gestion de tenants.
+SAS Gym es una plataforma SaaS para gestion de gimnasios. El producto incluye backend NestJS, app Flutter Web/PWA, panel web/admin, PostgreSQL, Redis y Docker.
 
-Este README es la entrada general del proyecto. La documentacion tecnica detallada esta en `arquitectura/`.
+El repositorio esta en fase de preparacion local: debe poder levantarse sin Nginx Proxy Manager y quedar listo para clonarse despues en un VPS donde NPM ya exista como infraestructura externa.
 
-## Vision del producto
+## Stack
 
-El producto permite administrar varios gimnasios desde una misma plataforma. Cada gimnasio se modela como un tenant, y sus datos operativos se separan por `tenant_id`.
+- Backend: NestJS, Node.js, TypeScript.
+- ORM: Prisma.
+- Base de datos: PostgreSQL.
+- Cache/pub-sub: Redis.
+- App: Flutter Web/PWA.
+- Admin web: React estatico en `web_admin/`.
+- Contenedores: Docker Compose.
 
-Roles funcionales:
-
-- Super Administrador: gestiona clientes SaaS, activacion y suspension de gimnasios.
-- Administrador: controla miembros, pagos, caja, productos, anuncios, auditoria y configuracion.
-- Caja: registra cobros, ventas, asistencia, turnos y operaciones limitadas.
-- Entrenador: gestiona miembros asignados, ejercicios, rutinas y progreso.
-- Miembro: consulta QR de acceso, membresia, pagos, rutinas, clases y observaciones.
-
-## Arquitectura actual
+## Estructura principal
 
 ```text
-App Flutter / Flutter Web / Panel Web Admin
-              |
-              | HTTP + WebSocket
-              v
-        Backend NestJS API
-              |
-              | Prisma ORM
-              v
-        PostgreSQL multi-tenant
+backend/        API NestJS y Prisma
+mobile_app/     Flutter Web/PWA
+web_admin/      Panel web/admin estatico
+docs/           Documentacion operativa y tecnica
+arquitectura/   Documentacion tecnica historica/arquitectonica
+infra/docker/   Compose local, productivo y herramientas
+infra/scripts/  Scripts auxiliares
+AGENTS.md       Guia operativa para Codex
 ```
 
-### App Flutter
+## Desarrollo local
 
-La app principal vive en `mobile_app/`. Esta organizada por roles y puede correr como app local, app Windows, app web Flutter o contenedor Nginx.
-
-Componentes principales:
-
-- `mobile_app/lib/main.dart`: inicializacion.
-- `mobile_app/lib/app.dart`: login, seleccion por rol y barrera SaaS.
-- `mobile_app/lib/features/*`: pantallas por rol.
-- `mobile_app/lib/data/gym_state.dart`: estado de sesion y datos demo.
-- `mobile_app/lib/core/network/api_client.dart`: cliente HTTP.
-- `mobile_app/lib/core/services/websocket_service.dart`: canal de eventos.
-- `mobile_app/lib/widgets/app_shell.dart`: componentes compartidos.
-
-Tecnologias:
-
-- Flutter / Dart.
-- Material 3.
-- Dio.
-- Flutter Secure Storage.
-- Socket.io client.
-- Hive y Connectivity Plus.
-- QR Flutter y OTP.
-
-### Sistema web completo
-
-En este proyecto, "sistema web" incluye todos los elementos web y de servidor:
-
-- Backend/API NestJS en `backend/`.
-- Flutter web compilado desde `mobile_app/` y servido por Nginx.
-- Panel web admin real en `web_admin/`, servido por Nginx en `/web/`.
-- Hub estatico en `index.html`.
-- Mockups web en `mockups/web/` como referencia/fallback, no como entrada principal.
-- Mockups mobile en `mockups/mobile/`.
-- Servicios Docker definidos en `docker-compose.yml`.
-
-El hub estatico corre en `http://localhost:8282`, el panel web admin real en `http://localhost:8282/web/index.html`, la app Flutter web en `http://localhost:8383` y la API en `http://localhost:3000`.
-
-### Backend/API
-
-El backend vive en `backend/` y usa:
-
-- NestJS 11.
-- TypeScript.
-- Prisma ORM 6.
-- PostgreSQL 15.
-- JWT y bcrypt.
-- Guards de autenticacion, roles y tenant.
-- Interceptor global de auditoria.
-- WebSockets con Socket.io.
-
-Modulos principales:
-
-- `auth`: login, recuperacion y perfil.
-- `tenants`: gestion de gimnasios SaaS.
-- `members`: busqueda y logs de entrenamiento.
-- `payments`: comprobantes, POS, caja y membresias.
-- `attendance`: QR/TOTP, huella y asistencia.
-- `routines`: rutina activa.
-- `observations`: incidencias.
-- `announcements`: anuncios.
-- `reports`: auditoria.
-
-### Base de datos
-
-El modelo central esta en `backend/prisma/schema.prisma`.
-
-Dominios modelados:
-
-- Tenants y usuarios.
-- Perfiles de entrenador y miembro.
-- Membresias y pagos.
-- Caja y movimientos.
-- Asistencia y biometria.
-- Rutinas, ejercicios y sesiones.
-- Observaciones y anuncios.
-- Productos, inventario y puntos.
-- Auditoria.
-
-## Estructura del repositorio
-
-```text
-sas_gym/
-|-- README.md
-|-- docker-compose.yml
-|-- index.html
-|-- arquitectura/
-|-- docs/
-|-- backend/
-|   |-- src/
-|   |-- prisma/
-|   |-- test/
-|   |-- Dockerfile
-|   |-- package.json
-|-- mobile_app/
-|   |-- lib/
-|   |-- test/
-|   |-- Dockerfile
-|   |-- pubspec.yaml
-|-- web_admin/
-|-- mockups/
-|   |-- mobile/
-|   |-- web/
-|-- proyecto_antiguo/
+```bash
+cp .env.local.example .env
+docker compose --env-file .env -f infra/docker/compose.local.yml up -d --build postgres redis api
 ```
 
-`proyecto_antiguo/` contiene el sistema heredado Django/CrossHero, backups y artefactos historicos. No debe publicarse ni servirse como estatico.
+Para levantar tambien web/admin:
 
-## Estado actual del avance
-
-Avanzado:
-
-- Backend modular con dominios principales.
-- Esquema Prisma amplio para operacion SaaS de gimnasios.
-- App Flutter con pantallas por rol.
-- Separacion funcional entre Admin y Caja.
-- Login, tenant suspendido y estado compartido en Flutter.
-- Docker Compose raiz con PostgreSQL, API, Flutter web, hub estatico y cliente de pruebas.
-
-Parcial o pendiente de consolidacion:
-
-- Integracion completa entre Flutter y API real.
-- Pruebas unitarias especificas por dominio.
-- Pruebas E2E de flujos de negocio.
-- Validacion completa de WebSocket, QR/TOTP, offline y biometria.
-- Endurecimiento de secretos y migraciones para produccion.
-
-Lee el detalle en `arquitectura/07-avance-actual.md`.
-
-## Comandos rapidos
-
-### App movil por ambiente
-
-```powershell
-cd mobile_app
-flutter run --flavor dev --dart-define=APP_ENV=dev --dart-define=APP_MODE=backend --dart-define=API_BASE_URL=http://10.0.2.2:3000/api/v1
-flutter build web --release --dart-define=APP_ENV=staging --dart-define=APP_MODE=backend --dart-define=API_BASE_URL=http://localhost:3000/api/v1
-flutter build apk --debug --flavor dev --dart-define=APP_ENV=dev --dart-define=APP_MODE=backend --dart-define=API_BASE_URL=http://10.0.2.2:3000/api/v1
+```bash
+docker compose --env-file .env -f infra/docker/compose.local.yml up -d --build
 ```
 
-Para builds release Android, copiar `mobile_app/android/key.properties.example` a `mobile_app/android/key.properties` y completar valores locales. No commitear keystore ni claves reales.
+Endpoints locales previstos:
 
-### Despliegue local completo
+- API: `http://localhost:3000/api/v1`
+- Flutter Web/PWA: `http://localhost:8383`
+- Admin web/hub: `http://localhost:8282`
 
-```powershell
-docker compose up --build
+Guia completa: [docs/despliegue/local.md](docs/despliegue/local.md).
+
+## Produccion preparada, sin proxy propio
+
+El compose productivo no incluye Nginx Proxy Manager, Certbot ni certificados. API, WS, app web y admin web se conectan a una red Docker externa configurable para que un NPM ya existente haga el routing publico.
+
+```bash
+docker compose --env-file .env.production.example -f infra/docker/compose.prod.yml config
 ```
 
-Servicios esperados:
+Guia completa: [docs/despliegue/servidor-con-npm-externo.md](docs/despliegue/servidor-con-npm-externo.md).
 
-- API NestJS: `http://localhost:3000`
-- Panel web admin real: `http://localhost:8282/web/index.html`
-- Flutter web: `http://localhost:8383`
-- Hub/mockups/docs: `http://localhost:8282`
-- PostgreSQL: `127.0.0.1:5432`
+Linea base productiva: [guia-despliegue.produccion.md](guia-despliegue.produccion.md). En servidor no se instala Prisma, Node, Flutter ni dependencias de aplicacion; todo corre desde contenedores.
 
-### Backend
+## Variables de entorno
 
-```powershell
-cd backend
-npm install
-npm run build
-npm run test
-npm run test:e2e
-npm run start:dev
+Plantillas versionables:
+
+- `.env.local.example`
+- `.env.production.example`
+
+Los `.env` reales estan ignorados por Git. Ver [docs/despliegue/variables-entorno.md](docs/despliegue/variables-entorno.md).
+
+## Codex
+
+Codex debe trabajar por tareas pequenas, validar antes de cambiar infraestructura y no tocar VPS, DNS, SSL ni Nginx Proxy Manager real en esta fase.
+
+Guia: [AGENTS.md](AGENTS.md) y [docs/herramientas/codex.md](docs/herramientas/codex.md).
+
+## Herramientas opcionales
+
+Graphify y Obsidian son auxiliares locales. No forman parte del MVP funcional ni del compose productivo.
+
+- [docs/herramientas/graphify.md](docs/herramientas/graphify.md)
+- [docs/herramientas/obsidian.md](docs/herramientas/obsidian.md)
+
+## Validacion rapida
+
+```bash
+docker compose --env-file .env.local.example -f infra/docker/compose.local.yml config
+docker compose --env-file .env.production.example -f infra/docker/compose.prod.yml config
+git diff --check
 ```
-
-### Flutter
-
-```powershell
-cd mobile_app
-flutter pub get
-flutter analyze
-flutter test
-flutter run -d chrome
-```
-
-### Integracion y logs
-
-```powershell
-docker compose ps
-docker compose logs api
-docker compose logs frontend-web
-docker compose logs web
-```
-
-## Documentacion principal
-
-- `arquitectura/README.md`: indice tecnico.
-- `arquitectura/01-vision-general.md`: vision y roles.
-- `arquitectura/02-backend-nestjs.md`: backend/API.
-- `arquitectura/03-app-flutter.md`: app Flutter.
-- `arquitectura/04-modelo-datos.md`: modelo Prisma.
-- `arquitectura/05-apis-y-flujos.md`: endpoints y flujos.
-- `arquitectura/06-infraestructura.md`: Docker, redes y puertos.
-- `arquitectura/07-avance-actual.md`: estado actual.
-- `arquitectura/08-plan-verificacion-pruebas.md`: plan de pruebas.
-- `arquitectura/09-guia-despliegue.md`: guia de despliegue.
-
-## Notas importantes
-
-- La carpeta real del proyecto es `sas_gym`, no `saas_gym`.
-- `backend/README.md` conserva el README generico de NestJS; este README raiz es el README general del proyecto.
-- El Compose raiz ejecuta `npx prisma db push --force-reset`; esto puede recrear datos de desarrollo.
-- Los secretos actuales son de desarrollo y deben reemplazarse antes de produccion.

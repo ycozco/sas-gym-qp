@@ -1,4 +1,5 @@
-import { Controller, Get, Req, UseGuards } from '@nestjs/common';
+import type { AuthenticatedRequest } from '../../core/types/authenticated-request';
+import { Controller, Get, Req, Query, UseGuards } from '@nestjs/common';
 import { ReportsService } from './reports.service';
 import { AuthGuard } from '../../core/guards/auth.guard';
 import { TenantGuard } from '../../core/guards/tenant.guard';
@@ -13,14 +14,19 @@ export class ReportsController {
 
   @Get('audit-logs')
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
-  async getAuditLogs(@Req() req: any) {
+  async getAuditLogs(
+    @Req() req: AuthenticatedRequest,
+    @Query('limit') limit?: string,
+    @Query('cursor') cursor?: string,
+  ) {
     const tenantId = req.user.tenantId;
-    return this.reportsService.getAuditLogs(tenantId);
+    const parsedLimit = limit ? parseInt(limit, 10) : 20;
+    return this.reportsService.getAuditLogs(tenantId, parsedLimit, cursor);
   }
 
   @Get('dashboard')
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
-  async getDashboard(@Req() req: any) {
+  async getDashboard(@Req() req: AuthenticatedRequest) {
     return this.reportsService.getDashboard(req.user.tenantId);
   }
 }

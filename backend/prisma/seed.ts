@@ -3,6 +3,7 @@ import {
   PaymentMethod,
   PaymentState,
   PrismaClient,
+  ProductSaleEstado,
   Role,
   ThemePreference,
   UserState,
@@ -23,36 +24,36 @@ type MemberStatus = 'ACTIVE' | 'GRACE' | 'EXPIRED' | 'PENDING' | 'SUSPENDED';
 const gyms = [
   {
     code: 'surco',
-    name: 'SAS Gym Surco Prime',
-    address: 'Av. El Polo 123, Santiago de Surco, Lima',
+    name: 'SaasGym Cayma Prime',
+    address: 'Av. Ejercito 1009, Cayma, Arequipa',
     phone: '987654101',
     plan: 'PRO',
   },
   {
     code: 'miraflores',
-    name: 'SAS Gym Miraflores Fit',
-    address: 'Av. Jose Pardo 740, Miraflores, Lima',
+    name: 'SaasGym Yanahuara Fit',
+    address: 'Av. Ejercito 704, Yanahuara, Arequipa',
     phone: '987654102',
     plan: 'PRO',
   },
   {
     code: 'sanborja',
-    name: 'SAS Gym San Borja Performance',
-    address: 'Av. Aviacion 2810, San Borja, Lima',
+    name: 'SaasGym Cercado Performance',
+    address: 'Calle San Francisco 315, Cercado, Arequipa',
     phone: '987654103',
     plan: 'ENTERPRISE',
   },
   {
     code: 'lince',
-    name: 'SAS Gym Lince 24/7',
-    address: 'Av. Arequipa 2100, Lince, Lima',
+    name: 'SaasGym Cerro Colorado 24/7',
+    address: 'Av. Aviacion 602, Cerro Colorado, Arequipa',
     phone: '987654104',
     plan: 'BASIC',
   },
   {
     code: 'callao',
-    name: 'SAS Gym Callao Strong',
-    address: 'Av. Colonial 3880, Callao',
+    name: 'SaasGym Bustamante Strong',
+    address: 'Av. Dolores 121, Jose Luis Bustamante y Rivero, Arequipa',
     phone: '987654105',
     plan: 'PRO',
   },
@@ -171,8 +172,10 @@ async function resetDatabase() {
   await prisma.membershipPlan.deleteMany();
   await prisma.memberProfile.deleteMany();
   await prisma.trainerProfile.deleteMany();
+  await prisma.refreshTokenSession.deleteMany();
   await prisma.user.deleteMany();
   await prisma.tenant.deleteMany();
+  await prisma.saasPlan.deleteMany();
 }
 
 function membershipDates(status: MemberStatus, plan: PlanDef, now: Date) {
@@ -205,52 +208,25 @@ function membershipDates(status: MemberStatus, plan: PlanDef, now: Date) {
 
 async function main() {
   const isProduction = process.env.NODE_ENV === 'production';
+  const existingTenants = await prisma.tenant.count();
+  const existingUsers = await prisma.user.count();
+
   if (isProduction) {
-    console.log('Ejecutando sembrado de producción (solo inicialización esencial, no reset)...');
-    
-    const existingSuperAdmin = await prisma.user.findFirst({
-      where: { rol: Role.SUPER_ADMIN },
-    });
-
-    if (!existingSuperAdmin) {
-      let superTenant = await prisma.tenant.findFirst({
-        where: { plan_saas: 'ENTERPRISE' },
-      });
-      if (!superTenant) {
-        superTenant = await prisma.tenant.create({
-          data: {
-            nombre: 'SAS Gym Holding',
-            plan_saas: 'ENTERPRISE',
-            activo: true,
-            direccion: 'Av. Javier Prado 1000, Lima',
-            telefono: '999000000',
-            horario: 'Administracion central',
-            descripcion: 'Tenant de administracion global.',
-          },
-        });
-      }
-
-      const superPasswordHash = await bcrypt.hash('super_secure_pass', 10);
-      await prisma.user.create({
-        data: {
-          tenant_id: superTenant.id,
-          email: 'superadmin@test.sasgym.com',
-          password_hash: superPasswordHash,
-          rol: Role.SUPER_ADMIN,
-          nombre_completo: 'Super Admin',
-          dni: '90000000',
-          estado: UserState.ACTIVE,
-        },
-      });
-      console.log('Super Admin inicial creado exitosamente para producción.');
-    } else {
-      console.log('El Super Admin ya existe en la base de datos de producción. Omitiendo creación.');
+    if (existingTenants > 0 || existingUsers > 0) {
+      console.log(
+        `Seed de producción omitido para evitar duplicados. Tenants existentes: ${existingTenants}, usuarios existentes: ${existingUsers}.`,
+      );
+      return;
     }
-    return;
+    console.log(
+      'Ejecutando seed productivo inicial con dataset operativo de SaasGym...',
+    );
   }
 
-  console.log('Iniciando el sembrado de datos (Seed Realista)...');
-  await resetDatabase();
+  if (!isProduction) {
+    console.log('Iniciando el sembrado de datos (Seed Realista)...');
+    await resetDatabase();
+  }
 
   const passwordHash = {
     admin: await bcrypt.hash('admin_secure_pass', 10),
@@ -265,15 +241,54 @@ async function main() {
   let totalMemberships = 0;
   let totalCajas = 0;
 
+  // Sembrar los planes SaaS para evitar conflictos de llave foránea
+  console.log('Sembrando planes SaaS...');
+  await prisma.saasPlan.upsert({
+    where: { code: 'BASIC' },
+    update: {},
+    create: {
+      code: 'BASIC',
+      nombre: 'Plan Básico',
+      precio_mensual: 29.0,
+      limite_usuarios: 500,
+      caracteristicas: 'Acceso QR, control de caja simple, reporte básico',
+    },
+  });
+
+  await prisma.saasPlan.upsert({
+    where: { code: 'PRO' },
+    update: {},
+    create: {
+      code: 'PRO',
+      nombre: 'Plan Profesional',
+      precio_mensual: 59.0,
+      limite_usuarios: 1500,
+      caracteristicas: 'Acceso biométrico, caja móvil, soporte premium, reporte avanzado',
+    },
+  });
+
+  await prisma.saasPlan.upsert({
+    where: { code: 'ENTERPRISE' },
+    update: {},
+    create: {
+      code: 'ENTERPRISE',
+      nombre: 'Plan Enterprise',
+      precio_mensual: 119.0,
+      limite_usuarios: 9999,
+      caracteristicas: 'Soporte 24/7, multitenant central, integraciones custom, reportes analytics',
+    },
+  });
+
   const superTenant = await prisma.tenant.create({
     data: {
-      nombre: 'SAS Gym Holding Demo',
+      nombre: 'SaasGym Network',
       plan_saas: 'ENTERPRISE',
       activo: true,
-      direccion: 'Av. Javier Prado 1000, Lima',
+      direccion: 'Av. Ejercito 1030, Cayma, Arequipa',
       telefono: '999000000',
       horario: 'Administracion central',
-      descripcion: 'Tenant tecnico para superadmin de pruebas.',
+      descripcion:
+        'Tenant central para superadmin y operacion de la red SaasGym.',
     },
   });
 
@@ -318,7 +333,7 @@ async function main() {
             email: `admin${i}.${gym.code}@test.sasgym.com`,
             password_hash: passwordHash.admin,
             rol: Role.ADMIN,
-            nombre_completo: `Admin ${i} ${gym.name.replace('SAS Gym ', '')}`,
+            nombre_completo: `Admin ${i} ${gym.name.replace('SaasGym ', '')}`,
             dni: dni(tenantIndex, 100 + i),
             celular: `9${tenantIndex + 1}00${i}1111`,
             estado: UserState.ACTIVE,
@@ -530,6 +545,7 @@ async function main() {
     // Configuración de Puntos
     await prisma.pointsConfig.create({
       data: {
+        tenant_id: tenant.id,
         puntos_por_sol: 1.0,
         minimo_para_canje: 100,
         puntos_expiran: false,
@@ -542,7 +558,7 @@ async function main() {
       const tenantPlan = tenantPlans[(i + tenantIndex) % tenantPlans.length];
       const first = firstNames[(i + tenantIndex * 2) % firstNames.length];
       const last = lastNames[(i + tenantIndex * 3) % lastNames.length];
-      
+
       const memberUser = await prisma.user.create({
         data: {
           tenant_id: tenant.id,
@@ -583,6 +599,50 @@ async function main() {
         },
       });
 
+      if (status !== 'SUSPENDED') {
+        await prisma.dietPlan.create({
+          data: {
+            tenant_id: tenant.id,
+            member_id: memberUser.id,
+            trainer_id: trainers[i % trainers.length].user_id,
+            peso_objetivo_kg: 58 + ((i * 2) % 32),
+            calorias_objetivo: 1900 + (i % 6) * 120,
+            proteinas_g: 110 + (i % 5) * 8,
+            carbohidratos_g: 190 + (i % 6) * 18,
+            grasas_g: 55 + (i % 4) * 6,
+            comidas: [
+              {
+                hora: '07:30',
+                nombre: 'Desayuno',
+                alimentos: 'Avena, huevos y fruta de temporada',
+                calorias: 520,
+              },
+              {
+                hora: '12:45',
+                nombre: 'Almuerzo',
+                alimentos: 'Pollo, arroz integral y ensalada',
+                calorias: 720,
+              },
+              {
+                hora: '17:30',
+                nombre: 'Pre entrenamiento',
+                alimentos: 'Yogurt griego con granola',
+                calorias: 330,
+              },
+              {
+                hora: '21:00',
+                nombre: 'Cena',
+                alimentos: 'Pescado, camote y vegetales',
+                calorias: 560,
+              },
+            ],
+            sugerencias:
+              'Plan base cargado desde la BD. Ajustar por progreso semanal y tolerancia alimentaria.',
+            activo: true,
+          },
+        });
+      }
+
       const dates = membershipDates(status, plan, now);
       const discount = i % 6 === 0 ? 10 : 0;
       const paid =
@@ -592,7 +652,7 @@ async function main() {
             ? plan.price
             : Math.round(plan.price * (1 - discount / 100));
       const pending = Math.max(0, plan.price - paid);
-      
+
       const membership = await prisma.membership.create({
         data: {
           tenant_id: tenant.id,
@@ -610,8 +670,6 @@ async function main() {
           monto_pendiente: pending,
           pago_completo: pending === 0,
           congelada: status === 'SUSPENDED',
-          razon_congelacion:
-            status === 'SUSPENDED' ? 'Suspension administrativa demo' : null,
         },
       });
       totalMemberships++;
@@ -619,10 +677,8 @@ async function main() {
       // Vincular caja activa
       const caja = cajas[i % cajas.length];
       const paymentState =
-        status === 'PENDING'
-          ? PaymentState.PENDING
-          : PaymentState.APPROVED;
-          
+        status === 'PENDING' ? PaymentState.PENDING : PaymentState.APPROVED;
+
       const method = [
         PaymentMethod.CASH,
         PaymentMethod.MANUAL_YAPE,
@@ -734,7 +790,7 @@ async function main() {
             subtotal: totalVenta,
             descuento: 0,
             total: totalVenta,
-            estado: 'completada',
+            estado: ProductSaleEstado.completada,
             fecha_venta: now,
           },
         });
@@ -800,6 +856,46 @@ async function main() {
       }
     }
 
+    const classSchedules = [
+      {
+        nombre_clase: 'Funcional AM',
+        descripcion: 'Clase funcional de alta energia para socios activos.',
+        dia_semana: [1, 3, 5],
+        hora_inicio: '07:00',
+        hora_fin: '08:00',
+        cupo_maximo: 18,
+      },
+      {
+        nombre_clase: 'Spinning Noon',
+        descripcion:
+          'Sesion de cardio guiada para resistencia y quema calorica.',
+        dia_semana: [2, 4],
+        hora_inicio: '12:30',
+        hora_fin: '13:15',
+        cupo_maximo: 16,
+      },
+      {
+        nombre_clase: 'Yoga Recovery',
+        descripcion:
+          'Bloque de movilidad y recuperacion con foco post entrenamiento.',
+        dia_semana: [2, 6],
+        hora_inicio: '19:00',
+        hora_fin: '20:00',
+        cupo_maximo: 20,
+      },
+    ];
+
+    for (let i = 0; i < classSchedules.length; i++) {
+      const schedule = classSchedules[i];
+      await prisma.schedule.create({
+        data: {
+          tenant_id: tenant.id,
+          trainer_id: trainers[i % trainers.length].user_id,
+          ...schedule,
+        },
+      });
+    }
+
     for (let i = 0; i < 3; i++) {
       await prisma.announcement.create({
         data: {
@@ -841,7 +937,7 @@ async function main() {
   }
 
   console.log(
-    `Sembrado finalizado: tenants=${gyms.length + 1}, gyms=${gyms.length}, users=${totalUsers}, memberships=${totalMemberships}, cajas=${totalCajas}`
+    `Sembrado finalizado: tenants=${gyms.length + 1}, gyms=${gyms.length}, users=${totalUsers}, memberships=${totalMemberships}, cajas=${totalCajas}`,
   );
 }
 

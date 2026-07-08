@@ -1,0 +1,26 @@
+# Normalizar line endings a LF en todo el repo
+# Esto previene los warnings CRLF<->LF de Git en Windows
+
+* text=auto eol=lf
+
+# Archivos binarios explícitos — nunca convertir
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.pdf binary
+*.zip binary
+*.apk binary
+*.aab binary
+*.keystore binary
+*.jks binary
+*.ttf binary
+*.otf binary
+*.woff binary
+*.woff2 binary
+
+# Archivos que deben ser CRLF en Windows (scripts batch)
+*.bat text eol=crlf
+*.cmd text eol=crlf

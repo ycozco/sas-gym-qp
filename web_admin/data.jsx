@@ -41,6 +41,7 @@ const ROLES = {
       ]},
       { group: "Servicio", items: [
         { id: "entrenamientos", label: "Entrenamientos", icon: "dumbbell" },
+        { id: "dietas",         label: "Planes de Dieta", icon: "clipboard" },
         { id: "crm",            label: "CRM",            icon: "mega" },
         { id: "finanzas",       label: "Finanzas",       icon: "wallet" },
       ]},
@@ -75,6 +76,7 @@ const ROLES = {
         { id: "dashboard",      label: "Dashboard",      icon: "grid" },
         { id: "usuarios",       label: "Mis alumnos",    icon: "users" },
         { id: "entrenamientos", label: "Entrenamientos", icon: "dumbbell" },
+        { id: "dietas",         label: "Dietas Alumnos", icon: "clipboard" },
         { id: "clases",         label: "Clases",         icon: "calendar" },
       ]},
     ],
@@ -328,15 +330,4 @@ const SAAS_PLANS = [
   { n: "Enterprise", price: "S/ 899", limite: "Usuarios ilimitados", gimnasios: 1, feats: "+ multi-sede, API y soporte" },
 ];
 
-Object.assign(window, {
-  GYM, TODAY, ROLES,
-  ADMIN_KPIS, WEEK_ATTENDANCE, PENDING_PAYMENTS,
-  USERS, USER_PAYMENTS, PENDING_ACCRED, PAYMENTS_TODAY,
-  ATTENDANCE_LOG, PRODUCTS, REVENUE_6M, PAY_METHODS, REPORT_LIST,
-  CASHIER_SHIFT, COACH_MEMBERS,
-  MEMBERSHIP_PLANS, MEMB_KPIS, CAJA_STATE, CAJA_MOV,
-  FIN_KPIS, FIN_MOV, PTS_KPIS, PTS_CATALOG, PTS_CANJES,
-  CLASSES, TRAIN_KPIS, ROUTINES, MUSCLE_GROUPS,
-  CRM_KPIS, CAMPAIGNS, CRM_CONTACTS,
-  SAAS_KPIS, GYMS, SAAS_PLANS,
-});
+export { GYM, TODAY, ROLES, ADMIN_KPIS, WEEK_ATTENDANCE, PENDING_PAYMENTS, USERS, USER_PAYMENTS, PENDING_ACCRED, PAYMENTS_TODAY, ATTENDANCE_LOG, PRODUCTS, REVENUE_6M, PAY_METHODS, REPORT_LIST, CASHIER_SHIFT, COACH_MEMBERS, MEMBERSHIP_PLANS, MEMB_KPIS, CAJA_STATE, CAJA_MOV, FIN_KPIS, FIN_MOV, PTS_KPIS, PTS_CATALOG, PTS_CANJES, CLASSES, TRAIN_KPIS, ROUTINES, MUSCLE_GROUPS, CRM_KPIS, CAMPAIGNS, CRM_CONTACTS, SAAS_KPIS, GYMS, SAAS_PLANS };

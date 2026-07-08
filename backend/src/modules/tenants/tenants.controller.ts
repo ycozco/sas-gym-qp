@@ -1,3 +1,4 @@
+import type { AuthenticatedRequest } from '../../core/types/authenticated-request';
 import {
   Body,
   Controller,
@@ -23,14 +24,14 @@ export class TenantsController {
 
   @Get('me')
   @Roles(Role.ADMIN, Role.CAJA, Role.TRAINER, Role.MEMBER, Role.SUPER_ADMIN)
-  async getCurrentTenant(@Req() req: any) {
+  async getCurrentTenant(@Req() req: AuthenticatedRequest) {
     return this.tenantsService.getTenantSettings(req.user.tenantId);
   }
 
   @Patch('me/settings')
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   async updateCurrentTenant(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Body() dto: UpdateTenantSettingsDto,
   ) {
     return this.tenantsService.updateTenantSettings(req.user.tenantId, dto);

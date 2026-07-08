@@ -5,6 +5,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'dart:async';
 import '../models/gym_models.dart';
 import '../core/network/api_client.dart';
+import '../core/network/api_error_message.dart';
 import '../core/config/app_config.dart';
 import '../core/storage/secure_storage.dart';
 import '../core/services/websocket_service.dart';
@@ -66,6 +67,108 @@ class GymState extends ChangeNotifier {
     }
   }
 
+  bool get memberTrainingVisible {
+    final profile = _currentUser?.memberProfile;
+    final raw = profile?['modo_activo'] ?? profile?['modoActivo'];
+    return raw == true;
+  }
+
+  Future<bool> updateMemberTrainingVisibility(bool visible) async {
+    if (_currentUser == null) return false;
+
+    final previousProfile = Map<String, dynamic>.from(
+      _currentUser!.memberProfile ?? const <String, dynamic>{},
+    );
+    final nextProfile = Map<String, dynamic>.from(previousProfile)
+      ..['modo_activo'] = visible;
+
+    _currentUser = _currentUser!.copyWith(memberProfile: nextProfile);
+    _setLocalMemberTrainingVisibility(visible);
+    notifyListeners();
+
+    if (!isBackendMode) return true;
+
+    try {
+      await ApiClient().dio.patch(
+        '/auth/me/preferences',
+        data: {'trainingVisible': visible},
+      );
+      final profileResponse = await ApiClient().dio.get('/auth/me');
+      _currentUser = LoggedInUser.fromJson(
+        profileResponse.data as Map<String, dynamic>,
+      );
+      _setLocalMemberTrainingVisibility(visible);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _currentUser = _currentUser!.copyWith(memberProfile: previousProfile);
+      _setLocalMemberTrainingVisibility(previousProfile['modo_activo'] == true);
+      notifyListeners();
+      AppLogger.debug('Error updating training visibility', e);
+      return false;
+    }
+  }
+
+  Future<bool> updateMemberProfile({
+    String? nombreCompleto,
+    String? celular,
+    String? nickname,
+    double? pesoKg,
+    double? alturaCm,
+    String? objetivo,
+    String? lesiones,
+    Map<String, double>? medidasJson,
+  }) async {
+    if (_currentUser == null || !isBackendMode) return false;
+
+    try {
+      final data = <String, dynamic>{};
+      if (nombreCompleto != null) data['nombreCompleto'] = nombreCompleto;
+      if (celular != null) data['celular'] = celular;
+      if (nickname != null) data['nickname'] = nickname;
+      if (pesoKg != null) data['pesoKg'] = pesoKg;
+      if (alturaCm != null) data['alturaCm'] = alturaCm;
+      if (objetivo != null) data['objetivo'] = objetivo;
+      if (lesiones != null) data['lesiones'] = lesiones;
+      if (medidasJson != null) data['medidasJson'] = medidasJson;
+
+      final response = await ApiClient().dio.patch(
+        '/auth/me/profile',
+        data: data,
+      );
+      _currentUser = LoggedInUser.fromJson(
+        response.data as Map<String, dynamic>,
+      );
+      notifyListeners();
+      return true;
+    } catch (e) {
+      AppLogger.debug('Error updating member profile', e);
+      return false;
+    }
+  }
+
+  void _setLocalMemberTrainingVisibility(bool visible) {
+    final dni = _currentUser?.dni;
+    if (dni == null || dni.isEmpty) return;
+    final index = _members.indexWhere((m) => m.dni == dni);
+    if (index != -1) {
+      _members[index] = _members[index].copyWith(
+        isActiveInGym: visible,
+        todayCheckIn: visible,
+      );
+    }
+    final assignedIndex = _assignedTrainerMembers.indexWhere(
+      (m) => m.dni == dni,
+    );
+    if (assignedIndex != -1) {
+      _assignedTrainerMembers[assignedIndex] =
+          _assignedTrainerMembers[assignedIndex].copyWith(
+            isActiveInGym: visible,
+            todayCheckIn: visible,
+          );
+    }
+  }
+
   @visibleForTesting
   void setCurrentUserForTest(LoggedInUser? user) {
     _currentUser = user;
@@ -103,11 +206,13 @@ class GymState extends ChangeNotifier {
   bool get authLoading => _authLoading;
   String? get authError => _authError;
 
+  // --- Caja / Turno State ---
+  CashierSession? _activeCaja;
+  CashierSession? get activeCaja => _activeCaja;
+
   void _initAuthListener() {
     ApiClient.onUnauthorized = () {
-      _currentUser = null;
-      _authError = 'Sesión expirada. Inicia sesión nuevamente.';
-      notifyListeners();
+      handleUnauthorizedSession();
     };
 
     ApiClient.onTenantSuspended = () {
@@ -124,6 +229,16 @@ class GymState extends ChangeNotifier {
         notifyListeners();
       }
     };
+  }
+
+  @visibleForTesting
+  void handleUnauthorizedSession() {
+    _closeSocket();
+    _clearLocalDemoData();
+    _currentUser = null;
+    _authLoading = false;
+    _authError = 'Sesión expirada. Inicia sesión nuevamente.';
+    notifyListeners();
   }
 
   Future<void> checkAuth() async {
@@ -153,25 +268,7 @@ class GymState extends ChangeNotifier {
       if (!hadPendingThemeSync) {
         await uiPreferences.applyBackendTheme(_currentUser!.themePreference);
       }
-      _connectSocket();
-      loadAnnouncements();
-      if (_currentUser?.rol == GymRole.superadmin) {
-        loadSaaSClients();
-      } else if (_currentUser?.rol == GymRole.admin) {
-        loadAdminMembers();
-        loadProducts();
-        loadCashiers();
-        loadObservations();
-        loadAuditLogs();
-      } else if (_currentUser?.rol == GymRole.cashier) {
-        loadProducts();
-      } else if (_currentUser?.rol == GymRole.trainer) {
-        loadAssignedTrainerMembers();
-      } else if (_currentUser?.rol == GymRole.member) {
-        loadMemberPayments();
-      }
-      loadTenantSettings();
-      loadMembershipPlans(includeInactive: _currentUser?.rol == GymRole.admin);
+      _loadBackendSessionData();
     } catch (e) {
       await SecureStorage.clearAll();
       _currentUser = null;
@@ -190,9 +287,15 @@ class GymState extends ChangeNotifier {
     notifyListeners();
 
     try {
+      final rememberedTenantId = await SecureStorage.getTenantId();
       final response = await ApiClient().dio.post(
         '/auth/login',
-        data: {'emailOrDni': emailOrDni, 'password': password},
+        data: {
+          'emailOrDni': emailOrDni,
+          'password': password,
+          if (rememberedTenantId != null && rememberedTenantId.isNotEmpty)
+            'tenantId': rememberedTenantId,
+        },
       );
 
       final token = response.data['token'] as String;
@@ -214,39 +317,11 @@ class GymState extends ChangeNotifier {
       if (!hadPendingThemeSync) {
         await uiPreferences.applyBackendTheme(_currentUser!.themePreference);
       }
-      _connectSocket();
-      loadAnnouncements();
-      if (_currentUser?.rol == GymRole.superadmin) {
-        loadSaaSClients();
-      } else if (_currentUser?.rol == GymRole.admin) {
-        loadAdminMembers();
-        loadProducts();
-        loadCashiers();
-        loadObservations();
-        loadAuditLogs();
-      } else if (_currentUser?.rol == GymRole.cashier) {
-        loadProducts();
-      } else if (_currentUser?.rol == GymRole.trainer) {
-        loadAssignedTrainerMembers();
-      } else if (_currentUser?.rol == GymRole.member) {
-        loadMemberPayments();
-      }
-      loadTenantSettings();
-      loadMembershipPlans(includeInactive: _currentUser?.rol == GymRole.admin);
+      _loadBackendSessionData();
       notifyListeners();
       return true;
     } on DioException catch (e) {
-      String message = 'Error de conexión con el servidor.';
-      if (e.response != null && e.response!.data != null) {
-        final data = e.response!.data;
-        if (data is Map && data.containsKey('message')) {
-          final errMessage = data['message'];
-          message = errMessage is List
-              ? errMessage.join('\n')
-              : errMessage.toString();
-        }
-      }
-      _authError = message;
+      _authError = ApiErrorMessage.fromDio(e);
       _currentUser = null;
       _authLoading = false;
       notifyListeners();
@@ -295,6 +370,50 @@ class GymState extends ChangeNotifier {
     }
   }
 
+  void _loadBackendSessionData() {
+    final role = _currentUser?.rol;
+    if (role == null) return;
+
+    _connectSocket();
+    loadAnnouncements();
+
+    switch (role) {
+      case GymRole.superadmin:
+        loadSaaSClients();
+        break;
+      case GymRole.admin:
+        loadAdminMembers();
+        loadProducts();
+        loadCashiers();
+        loadObservations();
+        loadAuditLogs();
+        checkActiveCaja();
+        break;
+      case GymRole.cashier:
+        loadAdminMembers();
+        loadProducts();
+        loadCajaSalesBackend();
+        checkActiveCaja();
+        break;
+      case GymRole.trainer:
+        loadAssignedTrainerMembers();
+        loadTrainerExercises();
+        loadTrainerTemplates();
+        loadTrainerProgress();
+        break;
+      case GymRole.member:
+        loadMemberPayments();
+        loadSchedules();
+        loadMemberPoints();
+        loadPointsCatalog();
+        loadActiveRoutine();
+        break;
+    }
+
+    loadTenantSettings();
+    loadMembershipPlans(includeInactive: role == GymRole.admin);
+  }
+
   // Active SaaS Client (instance)
   String _selectedClientId = 'gym_santiago';
   String get selectedClientId => _selectedClientId;
@@ -321,11 +440,70 @@ class GymState extends ChangeNotifier {
   final List<SaaSClient> _saClients = [];
   final List<MemberRecord> _assignedTrainerMembers = [];
   final List<PaymentRecord> _memberPayments = [];
+  final List<Map<String, dynamic>> _cashierSales = [];
+  final Map<String, String> _memberUserIdsByDni = {};
+  final List<Map<String, dynamic>> _schedules = [];
+  Map<String, dynamic>? _memberPointsSummary;
+  Map<String, dynamic>? _pointsCatalog;
+  Map<String, dynamic>? _activeRoutine;
+  final List<Map<String, dynamic>> _trainerExercises = [];
+  final List<Map<String, dynamic>> _trainerTemplates = [];
+  Map<String, dynamic>? _trainerProgress;
 
   // Getters
   List<MemberRecord> get members =>
       _members.where((m) => m.state != 'baja_logica').toList();
   List<MemberRecord> get allMembersIncludingSoftDeleted => _members;
+  List<ScannerPreset> get scannerPresets {
+    const stateOrder = <String>[
+      'active',
+      'grace',
+      'expired',
+      'inactive',
+      'suspended',
+    ];
+    const stateLabels = <String, String>{
+      'active': 'Activo',
+      'grace': 'En gracia',
+      'expired': 'Vencido',
+      'inactive': 'Inactivo',
+      'suspended': 'Suspendido',
+    };
+    final presets = <ScannerPreset>[];
+
+    for (final stateName in stateOrder) {
+      MemberRecord? match;
+      for (final member in allMembersIncludingSoftDeleted) {
+        if (member.dni.isEmpty || member.state == 'baja_logica') {
+          continue;
+        }
+        if (member.state == stateName) {
+          match = member;
+          break;
+        }
+      }
+      if (match == null) {
+        continue;
+      }
+      presets.add(
+        ScannerPreset(
+          label: '${match.name} (${stateLabels[stateName] ?? stateName})',
+          dni: match.dni,
+          state: stateName,
+        ),
+      );
+    }
+
+    presets.add(
+      const ScannerPreset(
+        label: 'DNI inválido',
+        dni: '99999999',
+        isSynthetic: true,
+      ),
+    );
+    return presets;
+  }
+
   List<ProductItem> get products => _products;
   List<CashierAccount> get cashiers => _cashiers;
   List<AuditEntry> get auditLogs => _auditLogs;
@@ -335,6 +513,18 @@ class GymState extends ChangeNotifier {
   List<MemberRecord> get assignedTrainerMembers =>
       List.unmodifiable(_assignedTrainerMembers);
   List<PaymentRecord> get memberPayments => List.unmodifiable(_memberPayments);
+  List<Map<String, dynamic>> get cashierSales =>
+      List.unmodifiable(_cashierSales);
+  List<Map<String, dynamic>> get schedules => List.unmodifiable(_schedules);
+  Map<String, dynamic>? get memberPointsSummary => _memberPointsSummary;
+  Map<String, dynamic>? get pointsCatalog => _pointsCatalog;
+  Map<String, dynamic>? get activeRoutine => _activeRoutine;
+  List<Map<String, dynamic>> get trainerExercises =>
+      List.unmodifiable(_trainerExercises);
+  List<Map<String, dynamic>> get trainerTemplates =>
+      List.unmodifiable(_trainerTemplates);
+  Map<String, dynamic>? get trainerProgress => _trainerProgress;
+  String? findMemberUserIdByDni(String dni) => _memberUserIdsByDni[dni];
 
   // Verification: is current gym blocked?
   bool get isCurrentGymActive {
@@ -367,6 +557,16 @@ class GymState extends ChangeNotifier {
     _saClients.clear();
     _assignedTrainerMembers.clear();
     _memberPayments.clear();
+    _cashierSales.clear();
+    _memberUserIdsByDni.clear();
+    _schedules.clear();
+    _memberPointsSummary = null;
+    _pointsCatalog = null;
+    _activeRoutine = null;
+    _trainerExercises.clear();
+    _trainerTemplates.clear();
+    _trainerProgress = null;
+    _activeCaja = null;
   }
 
   bool get isBackendMode => _currentUser != null;
@@ -408,7 +608,6 @@ class GymState extends ChangeNotifier {
             isActiveInGym: true,
           );
         }
-        await loadAdminMembers();
       }
 
       notifyListeners();
@@ -452,15 +651,10 @@ class GymState extends ChangeNotifier {
 
       return {'verdict': verdict, 'reason': reason, 'member': tempRecord};
     } on DioException catch (e) {
-      String reason = 'Error de conexión o token inválido.';
-      if (e.response != null && e.response!.data != null) {
-        final data = e.response!.data;
-        if (data is Map && data.containsKey('reason')) {
-          reason = data['reason'].toString();
-        } else if (data is Map && data.containsKey('message')) {
-          reason = data['message'].toString();
-        }
-      }
+      final reason = ApiErrorMessage.fromDio(
+        e,
+        fallback: 'Error de conexión o token inválido.',
+      );
       _addLog(
         'Escáner',
         'Error API',
@@ -855,11 +1049,96 @@ class GymState extends ChangeNotifier {
         'Cobró S/ $total a DNI $memberDni via $paymentMethod',
         const Color(0xFF00B85C),
       );
+      await loadProducts();
+      await loadCajaSalesBackend();
       notifyListeners();
       return true;
     } catch (e) {
       AppLogger.debug('Error processing POS charge backend', e);
       rethrow;
+    }
+  }
+
+  Future<void> loadCajaSalesBackend() async {
+    if (!isBackendMode ||
+        !(_currentUser?.rol == GymRole.cashier ||
+            _currentUser?.rol == GymRole.admin)) {
+      return;
+    }
+    try {
+      final response = await ApiClient().dio.get('/payments/caja/sales');
+      final data = response.data as Map<String, dynamic>;
+      final productSales = data['productSales'] as List<dynamic>? ?? const [];
+      final membershipPayments =
+          data['membershipPayments'] as List<dynamic>? ?? const [];
+
+      _cashierSales
+        ..clear()
+        ..addAll([
+          ...productSales.map((item) {
+            final sale = Map<String, dynamic>.from(item as Map);
+            return {
+              'id': sale['id']?.toString() ?? '',
+              'type': 'product',
+              'title': 'Venta POS',
+              'detail': _formatProductSaleDetail(sale),
+              'amount': (sale['total'] as num?)?.toDouble() ?? 0,
+              'time': _formatBackendTime(sale['fecha_venta']),
+              'raw': sale,
+            };
+          }),
+          ...membershipPayments.map((item) {
+            final payment = Map<String, dynamic>.from(item as Map);
+            final membership = payment['membership'] is Map
+                ? Map<String, dynamic>.from(payment['membership'] as Map)
+                : const <String, dynamic>{};
+            final user = membership['user'] is Map
+                ? Map<String, dynamic>.from(membership['user'] as Map)
+                : const <String, dynamic>{};
+            final amount = (payment['monto'] as num?)?.toDouble() ?? 0;
+            return {
+              'id': payment['id']?.toString() ?? '',
+              'type': 'membership',
+              'title': 'Venta membresía',
+              'detail':
+                  '${membership['plan_nombre'] ?? 'Membresía'} - ${user['nombre_completo'] ?? 'Socio'}',
+              'amount': amount,
+              'time': _formatBackendTime(payment['timestamp']),
+              'raw': payment,
+            };
+          }),
+        ]);
+      notifyListeners();
+    } catch (e) {
+      AppLogger.debug('Error loading caja sales', e);
+    }
+  }
+
+  String _formatProductSaleDetail(Map<String, dynamic> sale) {
+    final details = sale['details'] as List<dynamic>? ?? const [];
+    final items = details
+        .map((detail) {
+          final item = Map<String, dynamic>.from(detail as Map);
+          final product = item['producto'] is Map
+              ? Map<String, dynamic>.from(item['producto'] as Map)
+              : const <String, dynamic>{};
+          return '${item['cantidad'] ?? 1}x ${product['nombre'] ?? 'Producto'}';
+        })
+        .join(', ');
+    final cliente = sale['cliente'] is Map
+        ? Map<String, dynamic>.from(sale['cliente'] as Map)
+        : const <String, dynamic>{};
+    final name = cliente['nombre_completo'] ?? 'Cliente';
+    return items.isEmpty ? name.toString() : '$items - $name';
+  }
+
+  String _formatBackendTime(dynamic value) {
+    if (value == null) return 'Ahora';
+    try {
+      final date = DateTime.parse(value.toString()).toLocal();
+      return '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+    } catch (_) {
+      return value.toString();
     }
   }
 
@@ -970,6 +1249,333 @@ class GymState extends ChangeNotifier {
       return response.data as Map<String, dynamic>?;
     } catch (e) {
       AppLogger.debug('Error al cerrar caja', e);
+      rethrow;
+    }
+  }
+
+  // --- High-level Unified Caja State Methods ---
+
+  Future<CashierSession?> checkActiveCaja() async {
+    if (!isBackendMode) {
+      return _activeCaja;
+    }
+    try {
+      final data = await getActiveCajaBackend();
+      if (data != null && data['id'] != null) {
+        _activeCaja = CashierSession.fromJson(data);
+      } else {
+        _activeCaja = null;
+      }
+      notifyListeners();
+      return _activeCaja;
+    } catch (e) {
+      _activeCaja = null;
+      notifyListeners();
+      return null;
+    }
+  }
+
+  Future<CashierSession> openCaja(double initialCash, {String? obs}) async {
+    if (!isBackendMode) {
+      final newCaja = CashierSession(
+        id: 'demo-caja-${DateTime.now().millisecondsSinceEpoch}',
+        cajeroId: _currentUser?.id ?? 'demo-cajero',
+        montoApertura: initialCash,
+        totalVentasEfectivo: 0.0,
+        totalVentasTransferencia: 0.0,
+        totalVentasYape: 0.0,
+        totalVentasPOS: 0.0,
+        totalIngresos: initialCash,
+        diferencia: 0.0,
+        estado: 'abierta',
+        fechaApertura: DateTime.now().toIso8601String(),
+        observaciones: obs,
+      );
+      _activeCaja = newCaja;
+      _addLog(
+        'Caja',
+        'Apertura de Caja',
+        'Abrió caja con saldo S/ $initialCash',
+        const Color(0xFF00B85C),
+      );
+      notifyListeners();
+      return newCaja;
+    }
+
+    final data = await openCajaBackend(initialCash, obs);
+    if (data == null) throw Exception('Fallo al abrir caja en el servidor');
+    final session = CashierSession.fromJson(data);
+    _activeCaja = session;
+    notifyListeners();
+    return session;
+  }
+
+  Future<bool> registerEgreso(
+    double amount,
+    String motive, {
+    String? paymentMethod,
+    String? extraDesc,
+  }) async {
+    if (!isBackendMode) {
+      _addLog(
+        'Caja',
+        'Egreso de Caja',
+        'Registró egreso de S/ $amount por: $motive [metodo:${paymentMethod ?? 'efectivo'}]',
+        Colors.redAccent,
+      );
+      notifyListeners();
+      return true;
+    }
+
+    final res = await createEgressBackend(
+      monto: amount,
+      motivo: motive,
+      metodoPago: paymentMethod,
+      descripcionAdicional: extraDesc,
+    );
+    return res != null;
+  }
+
+  Future<CajaDetails?> getCajaDetails() async {
+    if (!isBackendMode) {
+      double revenueCash = 0;
+      double revenueCard = 0;
+      double revenueTransfer = 0;
+      double revenueYape = 0;
+
+      final reg = RegExp(r'S/\s*([0-9.]+)');
+      final logs = _auditLogs.where((l) => l.actor.contains('Caja')).toList();
+      for (var l in logs) {
+        if (l.action.contains('Cobró') || l.action.contains('Venta')) {
+          final match = reg.firstMatch(l.detail);
+          if (match != null) {
+            final double val = double.tryParse(match.group(1)!) ?? 0.0;
+            if (l.detail.toLowerCase().contains('yape') ||
+                l.detail.toLowerCase().contains('plin')) {
+              revenueYape += val;
+            } else if (l.detail.toLowerCase().contains('tarjeta') ||
+                l.detail.toLowerCase().contains('pos')) {
+              revenueCard += val;
+            } else if (l.detail.toLowerCase().contains('transferencia')) {
+              revenueTransfer += val;
+            } else {
+              revenueCash += val;
+            }
+          }
+        }
+      }
+
+      final double opening = _activeCaja?.montoApertura ?? 150.0;
+      final double expectedCash = opening + revenueCash;
+      final double expectedTotal =
+          revenueCash + revenueCard + revenueTransfer + revenueYape;
+
+      return CajaDetails(
+        caja: _activeCaja!,
+        movements: [],
+        stats: CajaStats(
+          efectivoIngreso: revenueCash,
+          efectivoEgreso: 0,
+          transferenciaIngreso: revenueTransfer,
+          transferenciaEgreso: 0,
+          yapeIngreso: revenueYape,
+          yapeEgreso: 0,
+          posIngreso: revenueCard,
+          posEgreso: 0,
+          totalVentasEfectivo: revenueCash,
+          totalVentasTransferencia: revenueTransfer,
+          totalVentasYape: revenueYape,
+          totalVentasPOS: revenueCard,
+          efectivoEsperado: expectedCash,
+          totalEsperado: expectedTotal,
+        ),
+      );
+    }
+
+    final data = await getCajaDetailsBackend();
+    if (data == null) return null;
+    return CajaDetails.fromJson(data);
+  }
+
+  Future<CashierSession> closeCaja({
+    required double cash,
+    required double transfer,
+    required double yape,
+    required double pos,
+    String? observations,
+  }) async {
+    if (!isBackendMode) {
+      final details = await getCajaDetails();
+      final double opening = _activeCaja?.montoApertura ?? 150.0;
+      final double expectedTotal = details?.stats.totalEsperado ?? 0;
+      final double totalCierre = cash + transfer + yape + pos;
+      final double diff = totalCierre - (opening + expectedTotal);
+
+      final closedCaja = CashierSession(
+        id: _activeCaja?.id ?? 'demo-caja',
+        cajeroId: _activeCaja?.cajeroId ?? 'demo-cajero',
+        montoApertura: opening,
+        montoCierreEfectivo: cash,
+        montoCierreTransferencia: transfer,
+        montoCierreYape: yape,
+        montoCierrePOS: pos,
+        totalVentasEfectivo: details?.stats.totalVentasEfectivo ?? 0.0,
+        totalVentasTransferencia:
+            details?.stats.totalVentasTransferencia ?? 0.0,
+        totalVentasYape: details?.stats.totalVentasYape ?? 0.0,
+        totalVentasPOS: details?.stats.totalVentasPOS ?? 0.0,
+        totalIngresos: opening + expectedTotal,
+        diferencia: diff,
+        estado: 'cerrada',
+        fechaApertura:
+            _activeCaja?.fechaApertura ?? DateTime.now().toIso8601String(),
+        fechaCierre: DateTime.now().toIso8601String(),
+        observaciones: observations,
+      );
+      _activeCaja = null;
+      _addLog(
+        'Caja',
+        'Cierre de Caja',
+        'Cerró caja. Diferencia: S/ $diff',
+        const Color(0xFF5C5C5C),
+      );
+      notifyListeners();
+      return closedCaja;
+    }
+
+    final data = await closeCajaBackend(
+      cash: cash,
+      transfer: transfer,
+      yape: yape,
+      pos: pos,
+      observations: observations,
+    );
+    if (data == null) throw Exception('Fallo al cerrar caja en el servidor');
+    final session = CashierSession.fromJson(data);
+    _activeCaja = null;
+    notifyListeners();
+    return session;
+  }
+
+  Future<bool> editCajaOpeningAmount(double newAmount) async {
+    if (!isBackendMode) {
+      if (_activeCaja != null) {
+        _activeCaja = _activeCaja!.copyWith(
+          montoApertura: newAmount,
+          totalIngresos: newAmount,
+        );
+        _addLog(
+          'Caja',
+          'Ajuste de Caja',
+          'Cajero actualizó saldo inicial a S/ $newAmount',
+          Colors.orange,
+        );
+        notifyListeners();
+      }
+      return true;
+    }
+
+    try {
+      final response = await ApiClient().dio.patch(
+        '/payments/caja/edit-opening-amount',
+        data: {'montoApertura': newAmount},
+      );
+      if (response.data != null) {
+        _activeCaja = CashierSession.fromJson(response.data);
+        _addLog(
+          'Caja',
+          'Ajuste de Caja (API)',
+          'Actualizó saldo inicial a S/ $newAmount',
+          Colors.orange,
+        );
+        notifyListeners();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      AppLogger.debug('Error al editar monto inicial', e);
+      rethrow;
+    }
+  }
+
+  Future<bool> adminEditCaja(
+    String id, {
+    double? montoApertura,
+    String? fechaApertura,
+    String? fechaCierre,
+    String? estado,
+    double? montoCierreEfectivo,
+    double? montoCierreTransferencia,
+    double? montoCierreYape,
+    double? montoCierrePOS,
+    String? observaciones,
+  }) async {
+    if (!isBackendMode) {
+      final idx = _cashiers.indexWhere(
+        (c) => c.sessionHistory.any((s) => s.id == id),
+      );
+      if (idx != -1) {
+        final c = _cashiers[idx];
+        final sessionIdx = c.sessionHistory.indexWhere((s) => s.id == id);
+        if (sessionIdx != -1) {
+          final original = c.sessionHistory[sessionIdx];
+          final updated = original.copyWith(
+            montoApertura: montoApertura,
+            fechaApertura: fechaApertura,
+            fechaCierre: fechaCierre,
+            estado: estado,
+            montoCierreEfectivo: montoCierreEfectivo,
+            montoCierreTransferencia: montoCierreTransferencia,
+            montoCierreYape: montoCierreYape,
+            montoCierrePOS: montoCierrePOS,
+            observaciones: observaciones,
+          );
+          c.sessionHistory[sessionIdx] = updated;
+          _addLog(
+            'Auditoría',
+            'Modificación de Caja',
+            'Admin editó caja de cajero ${c.name}',
+            Colors.purple,
+          );
+          notifyListeners();
+        }
+      }
+      return true;
+    }
+
+    try {
+      final payload = <String, dynamic>{};
+      if (montoApertura != null) payload['montoApertura'] = montoApertura;
+      if (fechaApertura != null) payload['fechaApertura'] = fechaApertura;
+      if (fechaCierre != null) payload['fechaCierre'] = fechaCierre;
+      if (estado != null) payload['estado'] = estado;
+      if (montoCierreEfectivo != null) {
+        payload['montoCierreEfectivo'] = montoCierreEfectivo;
+      }
+      if (montoCierreTransferencia != null) {
+        payload['montoCierreTransferencia'] = montoCierreTransferencia;
+      }
+      if (montoCierreYape != null) payload['montoCierreYape'] = montoCierreYape;
+      if (montoCierrePOS != null) payload['montoCierrePOS'] = montoCierrePOS;
+      if (observaciones != null) payload['observaciones'] = observaciones;
+
+      await ApiClient().dio.patch(
+        '/payments/caja/$id/admin-edit',
+        data: payload,
+      );
+
+      _addLog(
+        'Auditoría',
+        'Modificación de Caja (API)',
+        'Admin editó caja ID: $id',
+        Colors.purple,
+      );
+
+      await loadCashiers();
+      notifyListeners();
+      return true;
+    } catch (e) {
+      AppLogger.debug('Error al editar caja administrativamente', e);
       rethrow;
     }
   }
@@ -1352,14 +1958,14 @@ class GymState extends ChangeNotifier {
   MemberRecord _memberRecordFromBackend(Map<String, dynamic> json) {
     final memberships = (json['memberships'] as List<dynamic>? ?? []);
     final latestMembership = memberships.isNotEmpty
-        ? memberships.first as Map<String, dynamic>
+        ? _jsonMap(memberships.first)
         : const <String, dynamic>{};
-    final memberProfile =
-        json['member_profile'] as Map<String, dynamic>? ?? const {};
-    final trainer = memberProfile['trainer'] as Map<String, dynamic>?;
-    final trainerUser = trainer?['user'] as Map<String, dynamic>?;
+    final memberProfile = _jsonMap(json['member_profile']);
+    final trainer = _jsonMap(memberProfile['trainer']);
+    final trainerUser = _jsonMap(trainer['user']);
+    final medidasJson = _jsonMap(memberProfile['medidas_json']);
     final paymentHistory = memberships.map((membership) {
-      final item = membership as Map<String, dynamic>;
+      final item = _jsonMap(membership);
       return PaymentRecord(
         id: item['id']?.toString() ?? '',
         planName: item['plan_nombre']?.toString() ?? 'Membresía',
@@ -1373,8 +1979,13 @@ class GymState extends ChangeNotifier {
       );
     }).toList();
 
+    final dni = json['dni']?.toString() ?? '';
+    if (dni.isNotEmpty && json['id'] != null) {
+      _memberUserIdsByDni[dni] = json['id'].toString();
+    }
+
     return MemberRecord(
-      dni: json['dni']?.toString() ?? '',
+      dni: dni,
       name: json['nombre_completo']?.toString() ?? 'Socio',
       phone: json['celular']?.toString() ?? '',
       email: json['email']?.toString() ?? '',
@@ -1392,10 +2003,27 @@ class GymState extends ChangeNotifier {
           'peso': (memberProfile['peso_kg'] as num).toDouble(),
         if (memberProfile['altura_cm'] != null)
           'altura': (memberProfile['altura_cm'] as num).toDouble(),
+        if (medidasJson['cintura'] is num)
+          'cintura': (medidasJson['cintura'] as num).toDouble(),
+        if (medidasJson['pecho'] is num)
+          'pecho': (medidasJson['pecho'] as num).toDouble(),
+        if (medidasJson['cadera'] is num)
+          'cadera': (medidasJson['cadera'] as num).toDouble(),
       },
-      progressImages: const [],
+      progressImages:
+          (memberProfile['fotos_comparativas'] as List<dynamic>?)
+              ?.map((item) => item.toString())
+              .toList() ??
+          const [],
+      todayCheckIn: memberProfile['modo_activo'] == true,
+      isActiveInGym: memberProfile['modo_activo'] == true,
       daysLeft: (latestMembership['dias_restantes'] as num?)?.toInt(),
     );
+  }
+
+  Map<String, dynamic> _jsonMap(dynamic value) {
+    if (value is Map) return Map<String, dynamic>.from(value);
+    return const <String, dynamic>{};
   }
 
   ProductItem _productFromBackend(Map<String, dynamic> json) {
@@ -1411,6 +2039,7 @@ class GymState extends ChangeNotifier {
     }
 
     return ProductItem(
+      id: json['id']?.toString(),
       name: json['nombre']?.toString() ?? 'Producto',
       category: categoryName,
       price: (json['precio_venta'] as num?)?.toDouble() ?? 0,
@@ -1425,11 +2054,16 @@ class GymState extends ChangeNotifier {
     final lastCaja = cajas.isNotEmpty
         ? cajas.first as Map<String, dynamic>
         : const <String, dynamic>{};
+    final List<CashierSession> sessionList = cajas
+        .map((c) => CashierSession.fromJson(c as Map<String, dynamic>))
+        .toList();
     return CashierAccount(
+      id: json['id']?.toString(),
       name: json['nombre_completo']?.toString() ?? 'Cajero',
       shift: lastCaja['estado']?.toString() ?? 'Sin turno',
       permissions: const ['POS', 'Caja', 'Ventas'],
       active: (json['estado']?.toString() ?? '').toUpperCase() == 'ACTIVE',
+      sessionHistory: sessionList,
     );
   }
 
@@ -1450,7 +2084,11 @@ class GymState extends ChangeNotifier {
   }
 
   Future<void> loadAdminMembers() async {
-    if (!isBackendMode || _currentUser?.rol != GymRole.admin) return;
+    if (!isBackendMode ||
+        !(_currentUser?.rol == GymRole.admin ||
+            _currentUser?.rol == GymRole.cashier)) {
+      return;
+    }
     try {
       final response = await ApiClient().dio.get('/admin/members');
       final rows = (response.data as List)
@@ -1462,7 +2100,7 @@ class GymState extends ChangeNotifier {
         ..addAll(rows);
       notifyListeners();
     } catch (e) {
-      AppLogger.debug('Error loading admin members', e);
+      AppLogger.debug('Error loading shared members for admin/cashier', e);
     }
   }
 
@@ -1541,6 +2179,224 @@ class GymState extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       AppLogger.debug('Error loading member payments', e);
+    }
+  }
+
+  Future<void> loadSchedules() async {
+    if (!isBackendMode) return;
+    try {
+      final response = await ApiClient().dio.get('/schedules');
+      final rows = (response.data as List)
+          .map((item) => Map<String, dynamic>.from(item as Map))
+          .toList();
+      _schedules
+        ..clear()
+        ..addAll(rows);
+      notifyListeners();
+    } catch (e) {
+      AppLogger.debug('Error loading schedules', e);
+    }
+  }
+
+  Future<void> loadMemberPoints() async {
+    if (!isBackendMode || _currentUser?.rol != GymRole.member) return;
+    try {
+      final response = await ApiClient().dio.get('/points/me');
+      _memberPointsSummary = Map<String, dynamic>.from(response.data as Map);
+      notifyListeners();
+    } catch (e) {
+      AppLogger.debug('Error loading member points', e);
+    }
+  }
+
+  Future<void> loadPointsCatalog() async {
+    if (!isBackendMode || _currentUser?.rol != GymRole.member) return;
+    try {
+      final response = await ApiClient().dio.get('/points/catalog');
+      _pointsCatalog = Map<String, dynamic>.from(response.data as Map);
+      notifyListeners();
+    } catch (e) {
+      AppLogger.debug('Error loading points catalog', e);
+    }
+  }
+
+  Future<Map<String, dynamic>?> redeemPoints({
+    required String tipo,
+    required String itemId,
+    int cantidad = 1,
+    String? notas,
+  }) async {
+    if (!isBackendMode || _currentUser?.rol != GymRole.member) return null;
+    try {
+      final response = await ApiClient().dio.post(
+        '/points/redeem',
+        data: {
+          'tipo': tipo,
+          'itemId': itemId,
+          'cantidad': cantidad,
+          'notas': notas ?? '',
+        },
+      );
+      await loadMemberPoints();
+      await loadPointsCatalog();
+      return Map<String, dynamic>.from(response.data as Map);
+    } catch (e) {
+      AppLogger.debug('Error redeeming points', e);
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>?> bookSchedule(
+    String scheduleId, {
+    DateTime? fecha,
+  }) async {
+    if (!isBackendMode || _currentUser?.rol != GymRole.member) return null;
+    try {
+      final response = await ApiClient().dio.post(
+        '/schedules/$scheduleId/book',
+        data: {if (fecha != null) 'fecha': fecha.toIso8601String()},
+      );
+      await loadSchedules();
+      return Map<String, dynamic>.from(response.data as Map);
+    } catch (e) {
+      AppLogger.debug('Error booking schedule', e);
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>?> cancelSchedule(
+    String scheduleId, {
+    DateTime? fecha,
+  }) async {
+    if (!isBackendMode || _currentUser?.rol != GymRole.member) return null;
+    try {
+      final response = await ApiClient().dio.post(
+        '/schedules/$scheduleId/cancel',
+        data: {if (fecha != null) 'fecha': fecha.toIso8601String()},
+      );
+      await loadSchedules();
+      return Map<String, dynamic>.from(response.data as Map);
+    } catch (e) {
+      AppLogger.debug('Error canceling schedule', e);
+      rethrow;
+    }
+  }
+
+  Future<void> loadTrainerExercises() async {
+    if (!isBackendMode || _currentUser?.rol != GymRole.trainer) return;
+    try {
+      final response = await ApiClient().dio.get('/routines/trainer/exercises');
+      final rows = (response.data as List)
+          .map((item) => Map<String, dynamic>.from(item as Map))
+          .toList();
+      _trainerExercises
+        ..clear()
+        ..addAll(rows);
+      notifyListeners();
+    } catch (e) {
+      AppLogger.debug('Error loading trainer exercises', e);
+    }
+  }
+
+  Future<Map<String, dynamic>?> createTrainerExercise({
+    required String nombre,
+    required String grupoMuscular,
+    String? descripcion,
+    String? imagenUrl,
+    String? animacionUrl,
+  }) async {
+    if (!isBackendMode || _currentUser?.rol != GymRole.trainer) return null;
+    try {
+      final response = await ApiClient().dio.post(
+        '/routines/trainer/exercises',
+        data: {
+          'nombre': nombre,
+          'grupoMuscular': grupoMuscular,
+          'descripcion': descripcion ?? '',
+          'imagenUrl': imagenUrl ?? '',
+          'animacionUrl': animacionUrl ?? '',
+        },
+      );
+      await loadTrainerExercises();
+      return Map<String, dynamic>.from(response.data as Map);
+    } catch (e) {
+      AppLogger.debug('Error creating trainer exercise', e);
+      rethrow;
+    }
+  }
+
+  Future<void> loadTrainerTemplates() async {
+    if (!isBackendMode || _currentUser?.rol != GymRole.trainer) return;
+    try {
+      final response = await ApiClient().dio.get('/routines/trainer/templates');
+      final rows = (response.data as List)
+          .map((item) => Map<String, dynamic>.from(item as Map))
+          .toList();
+      _trainerTemplates
+        ..clear()
+        ..addAll(rows);
+      notifyListeners();
+    } catch (e) {
+      AppLogger.debug('Error loading trainer templates', e);
+    }
+  }
+
+  Future<Map<String, dynamic>?> createTrainerTemplate({
+    required String nombre,
+    String? descripcion,
+    required List<Map<String, dynamic>> ejercicios,
+  }) async {
+    if (!isBackendMode || _currentUser?.rol != GymRole.trainer) return null;
+    try {
+      final response = await ApiClient().dio.post(
+        '/routines/trainer/templates',
+        data: {
+          'nombre': nombre,
+          'descripcion': descripcion ?? '',
+          'ejercicios': ejercicios,
+        },
+      );
+      await loadTrainerTemplates();
+      return Map<String, dynamic>.from(response.data as Map);
+    } catch (e) {
+      AppLogger.debug('Error creating trainer template', e);
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>?> assignRoutineTemplate({
+    required String memberUserId,
+    required String templateId,
+    required Map<String, String> agendaSemanal,
+  }) async {
+    if (!isBackendMode || _currentUser?.rol != GymRole.trainer) return null;
+    try {
+      final response = await ApiClient().dio.post(
+        '/routines/trainer/assign',
+        data: {
+          'memberUserId': memberUserId,
+          'templateId': templateId,
+          'agendaSemanal': agendaSemanal,
+          'publicada': true,
+        },
+      );
+      await loadAssignedTrainerMembers();
+      await loadTrainerProgress();
+      return Map<String, dynamic>.from(response.data as Map);
+    } catch (e) {
+      AppLogger.debug('Error assigning routine template', e);
+      rethrow;
+    }
+  }
+
+  Future<void> loadTrainerProgress() async {
+    if (!isBackendMode || _currentUser?.rol != GymRole.trainer) return;
+    try {
+      final response = await ApiClient().dio.get('/routines/trainer/progress');
+      _trainerProgress = Map<String, dynamic>.from(response.data as Map);
+      notifyListeners();
+    } catch (e) {
+      AppLogger.debug('Error loading trainer progress', e);
     }
   }
 
@@ -1817,7 +2673,7 @@ class GymState extends ChangeNotifier {
     _saClients.addAll([
       SaaSClient(
         id: 'gym_santiago',
-        name: 'SAS Gym Santiago',
+        name: 'SaasGym Santiago',
         logo: '🏋️',
         location: 'Av. Providencia, Santiago',
         membersCount: '154',
@@ -1825,7 +2681,7 @@ class GymState extends ChangeNotifier {
       ),
       SaaSClient(
         id: 'gym_lima',
-        name: 'SAS Gym Lima Centro',
+        name: 'SaasGym Lima Centro',
         logo: '💪',
         location: 'Jr. Carabaya, Lima',
         membersCount: '89',
@@ -1833,7 +2689,7 @@ class GymState extends ChangeNotifier {
       ),
       SaaSClient(
         id: 'gym_bogota',
-        name: 'SAS Gym Bogotá Norte',
+        name: 'SaasGym Bogotá Norte',
         logo: '⚡',
         location: 'Cl. 85, Bogotá',
         membersCount: '124',
@@ -2211,6 +3067,20 @@ class GymState extends ChangeNotifier {
         paymentHistory: [],
       ),
     ]);
+
+    _activeCaja = CashierSession(
+      id: 'demo-caja-id',
+      cajeroId: 'demo-cajero-id',
+      montoApertura: 150.0,
+      totalVentasEfectivo: 0.0,
+      totalVentasTransferencia: 0.0,
+      totalVentasYape: 0.0,
+      totalVentasPOS: 0.0,
+      totalIngresos: 150.0,
+      diferencia: 0.0,
+      estado: 'abierta',
+      fechaApertura: DateTime.now().toIso8601String(),
+    );
   }
 
   // --- FASE 5 & 6: Connectivity, Hive & WebSockets ---
@@ -2291,16 +3161,64 @@ class GymState extends ChangeNotifier {
     _webSocketService.disconnect();
   }
 
+  String? _activeRoutineCacheKey() {
+    final userId = _currentUser?.id;
+    if (_selectedClientId.isEmpty || userId == null || userId.isEmpty) {
+      return null;
+    }
+    return 'training:$_selectedClientId:$userId:active-routine';
+  }
+
+  String? _offlineWorkoutQueueKey() {
+    final userId = _currentUser?.id;
+    if (_selectedClientId.isEmpty || userId == null || userId.isEmpty) {
+      return null;
+    }
+    return 'training:$_selectedClientId:$userId:offline-workout-queue';
+  }
+
   // Carga de Rutinas
   Future<Map<String, dynamic>?> loadActiveRoutine() async {
     final box = Hive.box('gym_cache');
+    final cacheKey = _activeRoutineCacheKey();
 
     if (isBackendMode && _isOnline) {
       try {
         final response = await ApiClient().dio.get('/routines/active');
         if (response.data != null) {
-          await box.put('active_routine', response.data);
-          return response.data as Map<String, dynamic>;
+          if (cacheKey != null) {
+            await box.put(cacheKey, {
+              'savedAt': DateTime.now().toIso8601String(),
+              'data': response.data,
+            });
+          }
+          _activeRoutine = Map<String, dynamic>.from(response.data as Map);
+          notifyListeners();
+          return _activeRoutine;
+        }
+        if (cacheKey != null) {
+          await box.delete(cacheKey);
+        }
+        _activeRoutine = null;
+        notifyListeners();
+        return null;
+      } on DioException catch (e) {
+        final statusCode = e.response?.statusCode;
+        final isNetworkError =
+            e.type == DioExceptionType.connectionError ||
+            e.type == DioExceptionType.connectionTimeout ||
+            e.type == DioExceptionType.receiveTimeout ||
+            e.type == DioExceptionType.sendTimeout;
+        if ((statusCode == 401 || statusCode == 403) && cacheKey != null) {
+          await box.delete(cacheKey);
+          _activeRoutine = null;
+          notifyListeners();
+          return null;
+        }
+        if (!isNetworkError) {
+          _activeRoutine = null;
+          notifyListeners();
+          return null;
         }
       } catch (e) {
         AppLogger.debug('Error loading active routine from backend', e);
@@ -2308,13 +3226,27 @@ class GymState extends ChangeNotifier {
     }
 
     // Fallback de caché local en Hive
-    final cached = box.get('active_routine');
-    if (cached != null) {
+    if (cacheKey != null) {
+      final cached = box.get(cacheKey);
       if (cached is Map) {
-        return Map<String, dynamic>.from(cached);
+        final rawSavedAt = cached['savedAt']?.toString();
+        final savedAt = rawSavedAt == null
+            ? null
+            : DateTime.tryParse(rawSavedAt);
+        final rawData = cached['data'];
+        final isFresh =
+            savedAt != null &&
+            DateTime.now().difference(savedAt) <= const Duration(days: 7);
+        if (isFresh && rawData is Map) {
+          _activeRoutine = Map<String, dynamic>.from(rawData);
+          notifyListeners();
+          return _activeRoutine;
+        }
+        await box.delete(cacheKey);
       }
     }
 
+    _activeRoutine = null;
     return null;
   }
 
@@ -2336,11 +3268,13 @@ class GymState extends ChangeNotifier {
         }
       }
 
-      // Guardar en cola offline de Hive
-      final box = Hive.box('gym_cache');
-      final List<dynamic> queue = box.get('offline_workout_queue') ?? [];
-      queue.add(session);
-      await box.put('offline_workout_queue', queue);
+      final queueKey = _offlineWorkoutQueueKey();
+      if (queueKey != null) {
+        final box = Hive.box('gym_cache');
+        final List<dynamic> queue = box.get(queueKey) ?? [];
+        queue.add(session);
+        await box.put(queueKey, queue);
+      }
       _addLog(
         'Entrenamiento',
         'Log de esfuerzo (Offline)',
@@ -2363,7 +3297,9 @@ class GymState extends ChangeNotifier {
 
   Future<void> syncOfflineLogs() async {
     final box = Hive.box('gym_cache');
-    final List<dynamic>? queue = box.get('offline_workout_queue');
+    final queueKey = _offlineWorkoutQueueKey();
+    if (queueKey == null) return;
+    final List<dynamic>? queue = box.get(queueKey);
     if (queue == null || queue.isEmpty) return;
 
     AppLogger.debug(
@@ -2381,7 +3317,7 @@ class GymState extends ChangeNotifier {
       }
     }
 
-    await box.put('offline_workout_queue', remaining);
+    await box.put(queueKey, remaining);
     if (remaining.isEmpty) {
       _addLog(
         'Sincronización',
@@ -2597,6 +3533,14 @@ class GymStateProvider extends InheritedNotifier<GymState> {
   static GymState of(BuildContext context) {
     final provider = context
         .dependOnInheritedWidgetOfExactType<GymStateProvider>();
+    assert(provider != null, 'No GymStateProvider found in context');
+    return provider!.notifier!;
+  }
+
+  static GymState read(BuildContext context) {
+    final element = context
+        .getElementForInheritedWidgetOfExactType<GymStateProvider>();
+    final provider = element?.widget as GymStateProvider?;
     assert(provider != null, 'No GymStateProvider found in context');
     return provider!.notifier!;
   }

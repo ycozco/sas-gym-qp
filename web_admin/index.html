@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>GymSmart — Panel Web Admin Real</title>
+<title>SaasGym Club Ops</title>
 
 <!-- Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -21,18 +21,6 @@
 </head>
 <body>
 <div id="root"></div>
-
-<!-- React + Babel -->
-<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
-
-<!-- App: el orden importa (shared y data exponen globals que el resto consume) -->
-<script type="text/babel" src="shared.jsx"></script>
-<script type="text/babel" src="data.jsx"></script>
-<script type="text/babel" src="dashboards.jsx"></script>
-<script type="text/babel" src="modules.jsx"></script>
-<script type="text/babel" src="modules2.jsx"></script>
-<script type="text/babel" src="app.jsx"></script>
+<script type="module" src="/src/main.jsx"></script>
 </body>
 </html>

@@ -1,3 +1,4 @@
+import type { AuthenticatedRequest } from '../../core/types/authenticated-request';
 import {
   Body,
   Controller,
@@ -31,7 +32,7 @@ export class MembershipPlansController {
   @Get()
   @Roles(Role.ADMIN, Role.CAJA, Role.TRAINER, Role.MEMBER, Role.SUPER_ADMIN)
   async list(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Query('includeInactive') includeInactive?: string,
   ) {
     return this.membershipPlansService.list(
@@ -43,7 +44,10 @@ export class MembershipPlansController {
 
   @Post()
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
-  async create(@Req() req: any, @Body() dto: CreateMembershipPlanDto) {
+  async create(
+    @Req() req: AuthenticatedRequest,
+    @Body() dto: CreateMembershipPlanDto,
+  ) {
     return this.membershipPlansService.create(
       req.user.tenantId,
       req.user.sub,
@@ -54,7 +58,7 @@ export class MembershipPlansController {
   @Patch(':id')
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   async update(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Param('id') id: string,
     @Body() dto: UpdateMembershipPlanDto,
   ) {
@@ -63,7 +67,7 @@ export class MembershipPlansController {
 
   @Delete(':id')
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
-  async deactivate(@Req() req: any, @Param('id') id: string) {
+  async deactivate(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
     return this.membershipPlansService.deactivate(req.user.tenantId, id);
   }
 }

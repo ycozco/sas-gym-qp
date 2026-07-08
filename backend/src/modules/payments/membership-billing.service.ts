@@ -286,7 +286,7 @@ export class MembershipBillingService {
       else if (mLower === 'POS') metodoEnum = PaymentMethod.POS;
       else if (mLower === 'GATEWAY') metodoEnum = PaymentMethod.GATEWAY;
 
-      const payment = await this.prisma.payment.create({
+      await this.prisma.payment.create({
         data: {
           tenant_id: tenantId,
           membership_id: membership.id,
@@ -305,7 +305,7 @@ export class MembershipBillingService {
           caja_id: activeCaja.id,
           tipo: 'ingreso',
           monto: p.monto,
-          descripcion: `Venta membresía (${p.metodo.toLowerCase()}): ${planNombre} - ${member.nombre_completo}`,
+          descripcion: `Venta membresía (${p.metodo.toLowerCase()}): ${planNombre} - ${member.nombre_completo}${observaciones ? ` - ${observaciones}` : ''}`,
         },
       });
     }
@@ -321,6 +321,7 @@ export class MembershipBillingService {
     try {
       puntosGanados = await this.accumulatePoints(
         userId,
+        tenantId,
         totalPagado,
         `Compra de membresía: ${planNombre}`,
       );
@@ -340,6 +341,7 @@ export class MembershipBillingService {
 
   private async accumulatePoints(
     userId: string,
+    tenantId: string,
     totalPagado: number,
     descripcion: string,
   ): Promise<number> {
@@ -383,6 +385,7 @@ export class MembershipBillingService {
     // Registrar movimiento de puntos
     await this.prisma.pointsMovement.create({
       data: {
+        tenant_id: tenantId,
         usuario_id: userId,
         tipo: 'ingreso',
         cantidad: puntos,

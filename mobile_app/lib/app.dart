@@ -50,7 +50,7 @@ class _SasGymAppState extends State<SasGymApp> {
     if (user == null) {
       return MaterialApp(
         debugShowCheckedModeBanner: false,
-        title: 'SaaaS GYM',
+        title: 'SaasGym',
         theme: AppTheme.light(),
         darkTheme: AppTheme.dark(),
         themeMode: state.themeMode,
@@ -66,7 +66,7 @@ class _SasGymAppState extends State<SasGymApp> {
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'SaaaS GYM',
+      title: 'SaasGym',
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
       themeMode: state.themeMode,
@@ -122,7 +122,7 @@ class _AuthLoadingScreen extends StatelessWidget {
             CircularProgressIndicator(color: colors.accent),
             const SizedBox(height: 20),
             Text(
-              'SaaaS GYM',
+              'SaasGym',
               style: GoogleFonts.bricolageGrotesque(
                 color: colors.textPrimary,
                 fontSize: 18,
@@ -183,7 +183,7 @@ class _TopBar extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'SaaaS GYM',
+                  'SaasGym',
                   style: GoogleFonts.bricolageGrotesque(
                     fontSize: 22,
                     fontWeight: FontWeight.w800,

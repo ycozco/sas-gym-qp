@@ -1,6 +1,18 @@
-import { Controller, Get, Post, Put, Patch, Param, Body, UseGuards, Request } from '@nestjs/common';
+import type { AuthenticatedRequest } from '../../core/types/authenticated-request';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Patch,
+  Param,
+  Body,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { AnnouncementsService } from './announcements.service';
 import { AuthGuard } from '../../core/guards/auth.guard';
+import { TenantGuard } from '../../core/guards/tenant.guard';
 import { RolesGuard } from '../../core/guards/roles.guard';
 import { Roles } from '../../core/decorators/roles.decorator';
 import { TenantId } from '../../core/decorators/tenant-id.decorator';
@@ -9,7 +21,7 @@ import { CreateAnnouncementDto } from './dto/create-announcement.dto';
 import { UpdateAnnouncementDto } from './dto/update-announcement.dto';
 
 @Controller('announcements')
-@UseGuards(AuthGuard, RolesGuard)
+@UseGuards(AuthGuard, TenantGuard, RolesGuard)
 export class AnnouncementsController {
   constructor(private readonly service: AnnouncementsService) {}
 
@@ -29,8 +41,8 @@ export class AnnouncementsController {
   @Roles(Role.ADMIN)
   async createBanner(
     @TenantId() tenantId: string,
-    @Request() req: any,
-    @Body() dto: CreateAnnouncementDto
+    @Request() req: AuthenticatedRequest,
+    @Body() dto: CreateAnnouncementDto,
   ) {
     const authorId = req.user.sub;
     return this.service.create(tenantId, authorId, dto);
@@ -41,17 +53,14 @@ export class AnnouncementsController {
   async updateBanner(
     @Param('id') id: string,
     @TenantId() tenantId: string,
-    @Body() dto: UpdateAnnouncementDto
+    @Body() dto: UpdateAnnouncementDto,
   ) {
     return this.service.update(id, tenantId, dto);
   }
 
   @Patch(':id/toggle')
   @Roles(Role.ADMIN)
-  async toggleActive(
-    @Param('id') id: string,
-    @TenantId() tenantId: string
-  ) {
+  async toggleActive(@Param('id') id: string, @TenantId() tenantId: string) {
     return this.service.toggle(id, tenantId);
   }
 }

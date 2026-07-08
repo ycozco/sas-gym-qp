@@ -8,6 +8,10 @@ import '../../../models/gym_models.dart';
 
 MemberRecord _getLoggedMember(GymState state) {
   final user = state.currentUser;
+  final profile = user?.memberProfile;
+  final trainer = profile?['trainer'] as Map<String, dynamic>?;
+  final trainerUser = trainer?['user'] as Map<String, dynamic>?;
+  final medidasJson = profile?['medidas_json'] as Map<String, dynamic>?;
   return state.allMembersIncludingSoftDeleted.firstWhere(
     (m) => m.dni == user?.dni,
     orElse: () {
@@ -18,32 +22,60 @@ MemberRecord _getLoggedMember(GymState state) {
           phone: user.celular ?? '',
           email: user.email,
           startDate: 'Hoy',
-          goal: user.memberProfile?['objetivo'] ?? 'Hipertrofia',
+          goal: profile?['objetivo']?.toString() ?? 'Sin objetivo registrado',
           sessions: 0,
-          lastSeen: 'Hoy',
+          lastSeen: 'Sin registro',
           state: (user.memberships != null && user.memberships!.isNotEmpty)
-              ? user.memberships!.first['estado']?.toString().toLowerCase() ?? 'expired'
+              ? user.memberships!.first['estado']?.toString().toLowerCase() ??
+                    'expired'
               : (user.estado == 'ACTIVE' ? 'active' : 'expired'),
-          assignedTrainer: 'Carlos Mendoza',
+          assignedTrainer:
+              trainerUser?['nombre_completo']?.toString() ??
+              profile?['trainer_name']?.toString() ??
+              'Sin entrenador asignado',
           paymentHistory: [],
           physicalMeasurements: {
-            'peso': (user.memberProfile?['peso_kg'] as num?)?.toDouble() ?? 70.0,
-            'altura': (user.memberProfile?['altura_cm'] as num?)?.toDouble() ?? 170.0,
+            if (profile?['peso_kg'] != null)
+              'peso': (profile?['peso_kg'] as num).toDouble(),
+            if (profile?['altura_cm'] != null)
+              'altura': (profile?['altura_cm'] as num).toDouble(),
+            if (medidasJson?['cintura'] != null)
+              'cintura': (medidasJson!['cintura'] as num).toDouble(),
+            if (medidasJson?['pecho'] != null)
+              'pecho': (medidasJson!['pecho'] as num).toDouble(),
+            if (medidasJson?['cadera'] != null)
+              'cadera': (medidasJson!['cadera'] as num).toDouble(),
           },
-          progressImages: [],
+          progressImages:
+              (profile?['fotos_comparativas'] as List<dynamic>?)
+                  ?.map((item) => item.toString())
+                  .toList() ??
+              const [],
+          todayCheckIn: profile?['modo_activo'] == true,
+          isActiveInGym: profile?['modo_activo'] == true,
         );
       }
-      return state.allMembersIncludingSoftDeleted.first;
+      return MemberRecord(
+        dni: '',
+        name: 'Socio',
+        phone: '',
+        email: '',
+        startDate: '',
+        goal: 'Sin objetivo registrado',
+        sessions: 0,
+        lastSeen: 'Sin registro',
+        state: 'expired',
+        assignedTrainer: 'Sin entrenador asignado',
+        paymentHistory: const [],
+        physicalMeasurements: const {},
+        progressImages: const [],
+      );
     },
   );
 }
 
 class FullQRView extends StatefulWidget {
-  const FullQRView({
-    super.key,
-    required this.palette,
-    required this.onBack,
-  });
+  const FullQRView({super.key, required this.palette, required this.onBack});
 
   final RolePalette palette;
   final VoidCallback onBack;
@@ -85,13 +117,15 @@ class _FullQRViewState extends State<FullQRView> {
     final state = GymStateProvider.of(context);
     final userDni = state.currentUser?.dni ?? '11111111';
     final profile = state.currentUser?.memberProfile;
-    final secret = profile?['qr_secret']?.toString() ??
+    final secret =
+        profile?['qr_secret']?.toString() ??
         profile?['qrSecret']?.toString() ??
         AppConfig.demoTotpSecretForDni(userDni);
     if (secret == null || secret.isEmpty) {
       setState(() {
         _qrData = '';
-        _qrError = 'QR no disponible. Solicita al backend emitir un secreto de acceso.';
+        _qrError =
+            'QR no disponible. Solicita al backend emitir un secreto de acceso.';
       });
       return;
     }
@@ -134,7 +168,14 @@ class _FullQRViewState extends State<FullQRView> {
           icon: const Icon(Icons.close_rounded, color: Colors.white, size: 28),
           onPressed: widget.onBack,
         ),
-        title: const Text('CÓDIGO DE ACCESO QR', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+        title: const Text(
+          'CÓDIGO DE ACCESO QR',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         centerTitle: true,
       ),
       body: Center(
@@ -151,7 +192,10 @@ class _FullQRViewState extends State<FullQRView> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE2DDD5), width: 1.5),
+                  border: Border.all(
+                    color: const Color(0xFFE2DDD5),
+                    width: 1.5,
+                  ),
                 ),
                 child: _qrData.isEmpty
                     ? Center(
@@ -162,7 +206,10 @@ class _FullQRViewState extends State<FullQRView> {
                                 child: Text(
                                   _qrError!,
                                   textAlign: TextAlign.center,
-                                  style: const TextStyle(color: Colors.black, fontSize: 12),
+                                  style: const TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 12,
+                                  ),
                                 ),
                               ),
                       )
@@ -196,19 +243,22 @@ class _FullQRViewState extends State<FullQRView> {
 
               // Status indicator
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: isGranted
                       ? (member.state == 'grace'
-                          ? const Color(0xFFFFB300).withValues(alpha: 0.15)
-                          : const Color(0xFF00B85C).withValues(alpha: 0.15))
+                            ? const Color(0xFFFFB300).withValues(alpha: 0.15)
+                            : const Color(0xFF00B85C).withValues(alpha: 0.15))
                       : Colors.red.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: isGranted
                         ? (member.state == 'grace'
-                            ? const Color(0xFFFFB300)
-                            : const Color(0xFF00B85C))
+                              ? const Color(0xFFFFB300)
+                              : const Color(0xFF00B85C))
                         : Colors.red,
                   ),
                 ),
@@ -219,8 +269,8 @@ class _FullQRViewState extends State<FullQRView> {
                       isGranted ? Icons.check_circle : Icons.cancel,
                       color: isGranted
                           ? (member.state == 'grace'
-                              ? const Color(0xFFFFB300)
-                              : const Color(0xFF00B85C))
+                                ? const Color(0xFFFFB300)
+                                : const Color(0xFF00B85C))
                           : Colors.red,
                       size: 20,
                     ),
@@ -228,14 +278,14 @@ class _FullQRViewState extends State<FullQRView> {
                     Text(
                       isGranted
                           ? (member.state == 'grace'
-                              ? 'ACCESO EN GRACIA'
-                              : 'ACCESO CONCEDIDO')
+                                ? 'ACCESO EN GRACIA'
+                                : 'ACCESO CONCEDIDO')
                           : 'ACCESO DENEGADO',
                       style: TextStyle(
                         color: isGranted
                             ? (member.state == 'grace'
-                                ? const Color(0xFFFFB300)
-                                : const Color(0xFF00B85C))
+                                  ? const Color(0xFFFFB300)
+                                  : const Color(0xFF00B85C))
                             : Colors.red,
                         fontSize: 13,
                         fontWeight: FontWeight.w900,
@@ -254,7 +304,11 @@ class _FullQRViewState extends State<FullQRView> {
               Text(
                 'Acerca esta pantalla al lector óptico en la entrada del establecimiento para registrar tu ingreso.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 12, height: 1.4),
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.4),
+                  fontSize: 12,
+                  height: 1.4,
+                ),
               ),
             ],
           ),

@@ -1,0 +1,47 @@
+# ─── DOCKER COMPOSE PRODUCTION MANIFEST ──────────────────────────────
+# Este archivo define los límites de hardware, variables de producción y
+# deshabilita los montajes locales de volumen para producción limpia.
+# Ejecución: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+services:
+  db:
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    # Sobreescribir montajes locales de desarrollo para usar solo el COPY limpio de la imagen compilada
+    volumes: []
+    environment:
+      - NODE_ENV=production
+      - NODE_OPTIONS=--max-old-space-size=400
+    deploy:
+      resources:
+        limits:
+          cpus: '0.75'
+          memory: 512M
+    command: >
+      sh -c "npx prisma generate && npx prisma migrate deploy && node dist/main.js"
+
+  redis:
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 128M
+
+  frontend-web:
+    build:
+      args:
+        APP_ENV: prod
+        APP_MODE: backend
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 128M

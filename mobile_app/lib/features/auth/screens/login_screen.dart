@@ -17,7 +17,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
 
   bool _obscurePassword = true;
-  bool _showDemoPanel = false;
 
   @override
   void dispose() {
@@ -38,32 +37,6 @@ class _LoginScreenState extends State<LoginScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('¡Bienvenido, ${state.currentUser?.nombreCompleto}!'),
-          backgroundColor: const Color(0xFF00B85C),
-        ),
-      );
-    }
-  }
-
-  void _selectDemoAccount(
-    GymState state, {
-    required String email,
-    required String password,
-    required String roleLabel,
-  }) async {
-    setState(() {
-      _emailController.text = email;
-      _passwordController.text = password;
-      _showDemoPanel = false;
-    });
-
-    final success = await state.login(emailOrDni: email, password: password);
-
-    if (success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Acceso Demo como $roleLabel: ¡Bienvenido, ${state.currentUser?.nombreCompleto}!',
-          ),
           backgroundColor: const Color(0xFF00B85C),
         ),
       );
@@ -197,7 +170,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'SaaaS GYM',
+                      'SaasGym',
                       style: TextStyle(
                         color: colors.textPrimary,
                         fontSize: 32,
@@ -207,7 +180,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      'Plataforma Inteligente de Entrenamiento',
+                      'Plataforma inteligente para gimnasios',
                       style: TextStyle(
                         color: colors.textSecondary,
                         fontSize: 14,
@@ -399,170 +372,18 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
               ),
+              if (!AppConfig.isProduction) ...[
+                const SizedBox(height: 16),
+                Text(
+                  'API ${AppConfig.diagnosticApiBaseUrlLabel()}',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: colors.textMuted, fontSize: 11),
+                ),
+              ],
               const SizedBox(height: 40),
-
-              // BOTONERA MODO DEMO
-              if (AppConfig.enableDemoLogin) _buildDemoBypassSection(state),
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildDemoBypassSection(GymState state) {
-    final colors = context.sasColors;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        InkWell(
-          onTap: () => setState(() => _showDemoPanel = !_showDemoPanel),
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.vpn_key, size: 16, color: colors.textMuted),
-                const SizedBox(width: 8),
-                Text(
-                  'Modo Demo / Cuentas Semilla',
-                  style: TextStyle(
-                    color: colors.textMuted,
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Icon(
-                  _showDemoPanel ? Icons.arrow_drop_up : Icons.arrow_drop_down,
-                  color: colors.textMuted,
-                ),
-              ],
-            ),
-          ),
-        ),
-        if (_showDemoPanel) ...[
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: themedCardDecoration(
-              context,
-              radius: 12,
-              color: colors.surfaceAlt,
-            ),
-            child: GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 2,
-              mainAxisSpacing: 8,
-              crossAxisSpacing: 8,
-              childAspectRatio: 2.2,
-              children: [
-                _buildDemoButton(
-                  roleLabel: 'SuperAdmin',
-                  color: const Color(0xFFD2FF3A),
-                  onPressed: () => _selectDemoAccount(
-                    state,
-                    email: 'superadmin@test.sasgym.com',
-                    password: 'super_secure_pass',
-                    roleLabel: 'SuperAdmin',
-                  ),
-                ),
-                _buildDemoButton(
-                  roleLabel: 'Administrador',
-                  color: const Color(0xFFFF7A1A),
-                  onPressed: () => _selectDemoAccount(
-                    state,
-                    email: 'admin1.surco@test.sasgym.com',
-                    password: 'admin_secure_pass',
-                    roleLabel: 'Administrador',
-                  ),
-                ),
-                _buildDemoButton(
-                  roleLabel: 'Caja',
-                  color: const Color(0xFF0066FF),
-                  onPressed: () => _selectDemoAccount(
-                    state,
-                    email: 'caja1.surco@test.sasgym.com',
-                    password: 'caja_secure_pass',
-                    roleLabel: 'Caja',
-                  ),
-                ),
-                _buildDemoButton(
-                  roleLabel: 'Entrenador',
-                  color: const Color(0xFF7A5AE0),
-                  onPressed: () => _selectDemoAccount(
-                    state,
-                    email: 'trainer1.surco@test.sasgym.com',
-                    password: 'trainer_secure_pass',
-                    roleLabel: 'Entrenador',
-                  ),
-                ),
-                _buildDemoButton(
-                  roleLabel: 'Socio (Activo)',
-                  color: const Color(0xFF00B85C),
-                  onPressed: () => _selectDemoAccount(
-                    state,
-                    email: 'socio01.surco@test.sasgym.com',
-                    password: 'member_secure_pass',
-                    roleLabel: 'Socio Activo',
-                  ),
-                ),
-                _buildDemoButton(
-                  roleLabel: 'Gym Suspendido',
-                  color: Colors.redAccent,
-                  onPressed: () => _selectDemoAccount(
-                    state,
-                    email: 'admin_suspendido@test.sasgym.com',
-                    password: 'admin_secure_pass',
-                    roleLabel: 'Gym Suspendido',
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildDemoButton({
-    required String roleLabel,
-    required Color color,
-    required VoidCallback onPressed,
-  }) {
-    final colors = context.sasColors;
-    return ElevatedButton(
-      onPressed: onPressed,
-      style: roleFilledPillButtonStyle(
-        backgroundColor: colors.surfaceElevated,
-        foregroundColor: colors.textPrimary,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        minimumHeight: 44,
-        side: BorderSide(color: color.withValues(alpha: 0.18)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-          ),
-          const SizedBox(width: 8),
-          Flexible(
-            child: Text(
-              roleLabel,
-              style: TextStyle(
-                color: colors.textPrimary,
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-              ),
-              textAlign: TextAlign.center,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
       ),
     );
   }

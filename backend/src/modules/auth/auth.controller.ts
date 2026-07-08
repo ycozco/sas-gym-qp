@@ -1,3 +1,4 @@
+import type { AuthenticatedRequest } from '../../core/types/authenticated-request';
 import {
   Controller,
   Post,
@@ -15,6 +16,7 @@ import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { UpdatePreferencesDto } from './dto/update-preferences.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { Public } from '../../core/decorators/public.decorator';
 import { AuthGuard } from '../../core/guards/auth.guard';
 import { TenantGuard } from '../../core/guards/tenant.guard';
@@ -36,10 +38,12 @@ export class AuthController {
     const user = await this.authService.validateUser(
       loginDto.emailOrDni,
       loginDto.password,
+      loginDto.tenantId,
     );
     const result = await this.authService.login(user, this.requestMeta(req));
     this.setRefreshCookie(res, result.refreshToken);
     const { refreshToken, ...publicResult } = result;
+    void refreshToken;
     return publicResult;
   }
 
@@ -51,19 +55,20 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const refreshToken = this.readRefreshCookie(req);
-    const result = await this.authService.refresh(refreshToken, this.requestMeta(req));
+    const result = await this.authService.refresh(
+      refreshToken,
+      this.requestMeta(req),
+    );
     this.setRefreshCookie(res, result.refreshToken);
     const { refreshToken: _refreshToken, ...publicResult } = result;
+    void _refreshToken;
     return publicResult;
   }
 
   @Public()
   @HttpCode(HttpStatus.OK)
   @Post('logout')
-  async logout(
-    @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
-  ) {
+  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const refreshToken = this.readRefreshCookie(req);
     await this.authService.revokeRefreshToken(refreshToken);
     this.clearRefreshCookie(res);
@@ -73,7 +78,7 @@ export class AuthController {
   @Public()
   @HttpCode(HttpStatus.OK)
   @Post('forgot-password')
-  async forgotPassword(@Body('email') email: string) {
+  forgotPassword(@Body('email') email: string) {
     if (!email) {
       throw new BadRequestException('El correo electrónico es requerido.');
     }
@@ -83,18 +88,27 @@ export class AuthController {
   }
 
   @Get('me')
-  async getProfile(@Req() req: any) {
+  async getProfile(@Req() req: AuthenticatedRequest) {
     const userId = req.user.sub;
     return this.authService.getUserProfile(userId);
   }
 
   @Patch('me/preferences')
   async updatePreferences(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Body() preferencesDto: UpdatePreferencesDto,
   ) {
     const userId = req.user.sub;
     return this.authService.updatePreferences(userId, preferencesDto);
+  }
+
+  @Patch('me/profile')
+  async updateProfile(
+    @Req() req: AuthenticatedRequest,
+    @Body() profileDto: UpdateProfileDto,
+  ) {
+    const userId = req.user.sub;
+    return this.authService.updateProfile(userId, profileDto);
   }
 
   private requestMeta(req: Request) {
@@ -126,7 +140,9 @@ export class AuthController {
   private readRefreshCookie(req: Request): string {
     const cookieHeader = req.headers.cookie || '';
     const cookies = cookieHeader.split(';').map((cookie) => cookie.trim());
-    const match = cookies.find((cookie) => cookie.startsWith('sasgym_refresh='));
+    const match = cookies.find((cookie) =>
+      cookie.startsWith('sasgym_refresh='),
+    );
     return match ? decodeURIComponent(match.split('=').slice(1).join('=')) : '';
   }
 

@@ -5,11 +5,14 @@ import { PrismaService } from '../../prisma/prisma.service';
 export class ReportsService {
   constructor(private prisma: PrismaService) {}
 
-  async getAuditLogs(tenantId: string) {
+  async getAuditLogs(tenantId: string, limit = 20, cursor?: string) {
+    const take = Math.min(limit, 100);
     return this.prisma.auditLog.findMany({
+      take,
+      skip: cursor ? 1 : 0,
+      cursor: cursor ? { id: cursor } : undefined,
       where: { tenant_id: tenantId },
       orderBy: { timestamp: 'desc' },
-      take: 100,
     });
   }
 
@@ -38,10 +41,18 @@ export class ReportsService {
       }),
       this.prisma.membership.count({ where: { tenant_id: tenantId } }),
       this.prisma.payment.findMany({
-        where: { tenant_id: tenantId, timestamp: { gte: today }, estado: 'APPROVED' },
+        where: {
+          tenant_id: tenantId,
+          timestamp: { gte: today },
+          estado: 'APPROVED',
+        },
       }),
       this.prisma.productSale.findMany({
-        where: { tenant_id: tenantId, fecha_venta: { gte: today }, estado: 'completada' },
+        where: {
+          tenant_id: tenantId,
+          fecha_venta: { gte: today },
+          estado: 'completada',
+        },
       }),
       this.prisma.caja.findFirst({
         where: { tenant_id: tenantId, estado: 'abierta' },
@@ -50,7 +61,10 @@ export class ReportsService {
     ]);
 
     const paymentsTotal = paymentsToday.reduce((sum, p) => sum + p.monto, 0);
-    const productsTotal = productSalesToday.reduce((sum, s) => sum + s.total, 0);
+    const productsTotal = productSalesToday.reduce(
+      (sum, s) => sum + s.total,
+      0,
+    );
     return {
       activeMembers,
       expiredSoon,

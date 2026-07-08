@@ -16,6 +16,7 @@ import '../widgets/admin_more_page.dart';
 import '../widgets/admin_product_pages.dart';
 import '../widgets/admin_ops_pages.dart';
 import '../widgets/admin_verdict_view.dart';
+import '../widgets/admin_caja_audit_page.dart';
 
 class AdminScreen extends StatefulWidget {
   const AdminScreen({super.key});
@@ -129,7 +130,8 @@ class _AdminScreenState extends State<AdminScreen> {
           palette: palette,
           state: state,
           productSearchQuery: _productSearchQuery,
-          onProductSearchChanged: (val) => setState(() => _productSearchQuery = val),
+          onProductSearchChanged: (val) =>
+              setState(() => _productSearchQuery = val),
           onBack: _back,
           onAddProduct: () => _go('product_form'),
           onEditProduct: (p) => _go('product_form', {'product': p}),
@@ -170,6 +172,12 @@ class _AdminScreenState extends State<AdminScreen> {
           state: state,
           onBack: _back,
         );
+      } else if (screen == 'caja_audit') {
+        activeView = AdminCajaAuditPage(
+          palette: palette,
+          state: state,
+          onBack: _back,
+        );
       }
     }
 
@@ -177,11 +185,7 @@ class _AdminScreenState extends State<AdminScreen> {
       if (hideNav) {
         return activeView;
       }
-      return Column(
-        children: [
-          Expanded(child: activeView),
-        ],
-      );
+      return Column(children: [Expanded(child: activeView)]);
     }
 
     return Column(
@@ -189,7 +193,12 @@ class _AdminScreenState extends State<AdminScreen> {
         Expanded(
           child: AnimatedSwitcher(
             duration: const Duration(milliseconds: 220),
-            child: _buildTab(_currentTab, state, palette, key: ValueKey<int>(_currentTab)),
+            child: _buildTab(
+              _currentTab,
+              state,
+              palette,
+              key: ValueKey<int>(_currentTab),
+            ),
           ),
         ),
         RoleNavBar(
@@ -220,6 +229,7 @@ class _AdminScreenState extends State<AdminScreen> {
           onGoCreateMember: () => _go('member_form'),
           onGoSettings: () => _go('settings'),
           onGoAuditLogs: () => _go('audit_logs'),
+          onGoCajaAudit: () => _go('caja_audit'),
         );
       case 1:
         return AdminMembersPage(
@@ -246,11 +256,7 @@ class _AdminScreenState extends State<AdminScreen> {
           },
         );
       case 3:
-        return AdminCashiersPage(
-          key: key,
-          palette: palette,
-          state: state,
-        );
+        return AdminCashiersPage(key: key, palette: palette, state: state);
       default:
         return AdminMorePage(
           key: key,

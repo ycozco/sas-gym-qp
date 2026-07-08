@@ -71,12 +71,14 @@ class _AdminVerdictViewState extends State<AdminVerdictView> {
       bg = colors.success;
       icon = Icons.check_circle_outline_rounded;
       statusTitle = 'ACCESO CONCEDIDO';
-      statusSubtitle = 'Socio activo. El registro de asistencia fue grabado exitosamente.';
+      statusSubtitle =
+          'Socio activo. El registro de asistencia fue grabado exitosamente.';
     } else if (widget.result == 'grace') {
       bg = colors.warning;
       icon = Icons.warning_amber_rounded;
       statusTitle = 'INGRESO EN GRACIA';
-      statusSubtitle = 'Check-in autorizado temporalmente en periodo de gracia. Se requiere renovación del plan.';
+      statusSubtitle =
+          'Check-in autorizado temporalmente en periodo de gracia. Se requiere renovación del plan.';
       showDirectPlans = widget.member != null;
     } else if (widget.result == 'denied') {
       bg = colors.danger;
@@ -86,9 +88,11 @@ class _AdminVerdictViewState extends State<AdminVerdictView> {
         if (widget.member!.state == 'suspended') {
           statusSubtitle = 'Cuenta de socio suspendida administrativamente.';
         } else if (widget.member!.state == 'inactive') {
-          statusSubtitle = 'Membresía en espera de verificación o cuenta inactiva.';
+          statusSubtitle =
+              'Membresía en espera de verificación o cuenta inactiva.';
         } else {
-          statusSubtitle = 'Membresía vencida. Solicitar regularización o renovación de plan.';
+          statusSubtitle =
+              'Membresía vencida. Solicitar regularización o renovación de plan.';
           showDirectPlans = true;
         }
       } else {
@@ -109,7 +113,10 @@ class _AdminVerdictViewState extends State<AdminVerdictView> {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 24.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 32.0,
+              vertical: 24.0,
+            ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -117,13 +124,22 @@ class _AdminVerdictViewState extends State<AdminVerdictView> {
                 const SizedBox(height: 20),
                 Text(
                   statusTitle,
-                  style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: -0.5),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.5,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 10),
                 Text(
                   statusSubtitle,
-                  style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 14, height: 1.3),
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.9),
+                    fontSize: 14,
+                    height: 1.3,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 28),
@@ -148,10 +164,22 @@ class _AdminVerdictViewState extends State<AdminVerdictView> {
                         Row(
                           children: [
                             CircleAvatar(
-                              backgroundColor: widget.palette.accent.withValues(alpha: 0.15),
+                              backgroundColor: widget.palette.accent.withValues(
+                                alpha: 0.15,
+                              ),
                               child: Text(
-                                widget.member!.name.substring(0, widget.member!.name.length >= 2 ? 2 : widget.member!.name.length).toUpperCase(),
-                                style: TextStyle(color: widget.palette.accentInk, fontWeight: FontWeight.bold),
+                                widget.member!.name
+                                    .substring(
+                                      0,
+                                      widget.member!.name.length >= 2
+                                          ? 2
+                                          : widget.member!.name.length,
+                                    )
+                                    .toUpperCase(),
+                                style: TextStyle(
+                                  color: widget.palette.accentInk,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -161,12 +189,20 @@ class _AdminVerdictViewState extends State<AdminVerdictView> {
                                 children: [
                                   Text(
                                     widget.member!.name,
-                                    style: TextStyle(color: colors.textPrimary, fontWeight: FontWeight.w900, fontSize: 15.5),
+                                    style: TextStyle(
+                                      color: colors.textPrimary,
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 15.5,
+                                    ),
                                   ),
                                   const SizedBox(height: 3),
                                   Text(
                                     'DNI: ${widget.member!.dni}',
-                                    style: TextStyle(color: colors.textSecondary, fontSize: 12.5, fontWeight: FontWeight.w600),
+                                    style: TextStyle(
+                                      color: colors.textSecondary,
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -182,15 +218,23 @@ class _AdminVerdictViewState extends State<AdminVerdictView> {
                           children: [
                             Text(
                               'Estado:',
-                              style: TextStyle(color: colors.textSecondary, fontSize: 13, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                color: colors.textSecondary,
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                             StatusPill(
                               label: widget.member!.state == 'active'
                                   ? 'ACTIVO'
-                                  : (widget.member!.state == 'grace' ? 'DÍAS DE GRACIA' : 'VENCIDO'),
+                                  : (widget.member!.state == 'grace'
+                                        ? 'DÍAS DE GRACIA'
+                                        : 'VENCIDO'),
                               color: widget.member!.state == 'active'
                                   ? colors.success
-                                  : (widget.member!.state == 'grace' ? colors.warning : colors.danger),
+                                  : (widget.member!.state == 'grace'
+                                        ? colors.warning
+                                        : colors.danger),
                               solid: true,
                             ),
                           ],
@@ -201,11 +245,21 @@ class _AdminVerdictViewState extends State<AdminVerdictView> {
                           children: [
                             Text(
                               'Plan Actual/Último:',
-                              style: TextStyle(color: colors.textSecondary, fontSize: 13, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                color: colors.textSecondary,
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                             Text(
-                              widget.member!.goal.isNotEmpty ? widget.member!.goal : 'Sin Plan',
-                              style: TextStyle(color: colors.textPrimary, fontWeight: FontWeight.bold, fontSize: 13.5),
+                              widget.member!.goal.isNotEmpty
+                                  ? widget.member!.goal
+                                  : 'Sin Plan',
+                              style: TextStyle(
+                                color: colors.textPrimary,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13.5,
+                              ),
                             ),
                           ],
                         ),
@@ -215,17 +269,25 @@ class _AdminVerdictViewState extends State<AdminVerdictView> {
                           children: [
                             Text(
                               'Vigencia:',
-                              style: TextStyle(color: colors.textSecondary, fontSize: 13, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                color: colors.textSecondary,
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                             if (widget.member!.daysLeft != null)
                               Text(
                                 widget.member!.daysLeft! > 0
                                     ? '${widget.member!.daysLeft} días restantes'
-                                    : (widget.member!.daysLeft! == 0 ? 'Vence hoy' : 'Vencido hace ${widget.member!.daysLeft!.abs()} días'),
+                                    : (widget.member!.daysLeft! == 0
+                                          ? 'Vence hoy'
+                                          : 'Vencido hace ${widget.member!.daysLeft!.abs()} días'),
                                 style: TextStyle(
                                   color: widget.member!.daysLeft! > 0
                                       ? colors.success
-                                      : (widget.member!.daysLeft! == 0 ? colors.warning : colors.danger),
+                                      : (widget.member!.daysLeft! == 0
+                                            ? colors.warning
+                                            : colors.danger),
                                   fontWeight: FontWeight.w900,
                                   fontSize: 13.5,
                                 ),
@@ -233,7 +295,11 @@ class _AdminVerdictViewState extends State<AdminVerdictView> {
                             else
                               Text(
                                 'Indeterminada',
-                                style: TextStyle(color: colors.textSecondary, fontWeight: FontWeight.bold, fontSize: 13),
+                                style: TextStyle(
+                                  color: colors.textSecondary,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                ),
                               ),
                           ],
                         ),
@@ -249,19 +315,30 @@ class _AdminVerdictViewState extends State<AdminVerdictView> {
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.15),
+                      ),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
                           'ACCESO DIRECTO / ASIGNAR PLAN',
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 0.5),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 11,
+                            letterSpacing: 0.5,
+                          ),
                         ),
                         const SizedBox(height: 10),
                         ..._directPlans().expand(
                           (plan) => [
-                            _buildDirectPlanTile(context, plan.name, plan.price),
+                            _buildDirectPlanTile(
+                              context,
+                              plan.name,
+                              plan.price,
+                            ),
                             const SizedBox(height: 6),
                           ],
                         ),
@@ -272,7 +349,8 @@ class _AdminVerdictViewState extends State<AdminVerdictView> {
                 const SizedBox(height: 32),
                 Column(
                   children: [
-                    if (widget.result == 'not_found' && widget.onCreateNewClient != null) ...[
+                    if (widget.result == 'not_found' &&
+                        widget.onCreateNewClient != null) ...[
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton.icon(
@@ -281,9 +359,16 @@ class _AdminVerdictViewState extends State<AdminVerdictView> {
                             foregroundColor: Colors.black,
                             padding: const EdgeInsets.symmetric(vertical: 14),
                           ),
-                          icon: const Icon(Icons.person_add_alt_1_rounded, color: Colors.blue),
-                          label: const Text('Crear Nuevo Socio', style: TextStyle(fontWeight: FontWeight.w800)),
-                          onPressed: () => widget.onCreateNewClient!(widget.dni),
+                          icon: const Icon(
+                            Icons.person_add_alt_1_rounded,
+                            color: Colors.blue,
+                          ),
+                          label: const Text(
+                            'Crear Nuevo Socio',
+                            style: TextStyle(fontWeight: FontWeight.w800),
+                          ),
+                          onPressed: () =>
+                              widget.onCreateNewClient!(widget.dni),
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -291,7 +376,11 @@ class _AdminVerdictViewState extends State<AdminVerdictView> {
                     if (widget.result == 'granted') ...[
                       Text(
                         'Regresando al escáner en $_secondsLeft segundos...',
-                        style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w600),
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                       const SizedBox(height: 16),
                       SizedBox(
@@ -303,13 +392,23 @@ class _AdminVerdictViewState extends State<AdminVerdictView> {
                             padding: const EdgeInsets.symmetric(vertical: 16),
                           ),
                           onPressed: widget.onBack,
-                          child: const Text('Listo', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
+                          child: const Text(
+                            'Listo',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 15,
+                            ),
+                          ),
                         ),
                       ),
                     ] else if (widget.result == 'grace') ...[
                       Text(
                         'Ingreso registrado en gracia. El socio debe regularizar su pago.',
-                        style: TextStyle(color: Color(0xE6FFFFFF), fontSize: 13, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          color: Color(0xE6FFFFFF),
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                        ),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 16),
@@ -322,7 +421,13 @@ class _AdminVerdictViewState extends State<AdminVerdictView> {
                             padding: const EdgeInsets.symmetric(vertical: 16),
                           ),
                           onPressed: widget.onBack,
-                          child: const Text('Listo', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
+                          child: const Text(
+                            'Listo',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 15,
+                            ),
+                          ),
                         ),
                       ),
                     ] else ...[
@@ -334,10 +439,15 @@ class _AdminVerdictViewState extends State<AdminVerdictView> {
                               style: roleFilledPillButtonStyle(
                                 backgroundColor: Colors.black,
                                 foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
                               ),
                               icon: const Icon(Icons.replay_rounded),
-                              label: const Text('Reintentar', style: TextStyle(fontWeight: FontWeight.w800)),
+                              label: const Text(
+                                'Reintentar',
+                                style: TextStyle(fontWeight: FontWeight.w800),
+                              ),
                               onPressed: widget.onBack,
                             ),
                           ),
@@ -358,9 +468,24 @@ class _AdminVerdictViewState extends State<AdminVerdictView> {
     final activePlans = widget.membershipPlans.where((p) => p.active).toList();
     if (activePlans.isNotEmpty) return activePlans.take(4).toList();
     return const [
-      MembershipPlan(id: '', name: 'Plan Mensual Oro', durationDays: 30, price: 150),
-      MembershipPlan(id: '', name: 'Plan Mensual Plata', durationDays: 30, price: 120),
-      MembershipPlan(id: '', name: 'Plan Trimestral Platinium', durationDays: 90, price: 400),
+      MembershipPlan(
+        id: '',
+        name: 'Plan Mensual Oro',
+        durationDays: 30,
+        price: 150,
+      ),
+      MembershipPlan(
+        id: '',
+        name: 'Plan Mensual Plata',
+        durationDays: 30,
+        price: 120,
+      ),
+      MembershipPlan(
+        id: '',
+        name: 'Plan Trimestral Platinium',
+        durationDays: 90,
+        price: 400,
+      ),
     ];
   }
 
@@ -376,12 +501,24 @@ class _AdminVerdictViewState extends State<AdminVerdictView> {
         clipBehavior: Clip.antiAlias,
         child: ListTile(
           dense: true,
-          title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 13)),
+          title: Text(
+            name,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+              fontSize: 13,
+            ),
+          ),
           trailing: Text(
             'S/ $price',
-            style: TextStyle(fontWeight: FontWeight.w900, color: widget.palette.accentInk, fontSize: 12),
+            style: TextStyle(
+              fontWeight: FontWeight.w900,
+              color: widget.palette.accentInk,
+              fontSize: 12,
+            ),
           ),
-          onTap: () => widget.onChargeDirect(widget.dni, planName: name, price: price),
+          onTap: () =>
+              widget.onChargeDirect(widget.dni, planName: name, price: price),
         ),
       ),
     );

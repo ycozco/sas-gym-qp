@@ -1,3 +1,4 @@
+import type { AuthenticatedRequest } from '../../core/types/authenticated-request';
 import {
   Controller,
   Post,
@@ -29,22 +30,32 @@ export class ObservationsController {
   @UseInterceptors(
     FileInterceptor('file', {
       limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB max
-      fileFilter: (req: any, file: any, cb: any) => {
+      fileFilter: (
+        _req: unknown,
+        file: Express.Multer.File,
+        cb: (error: Error | null, acceptFile: boolean) => void,
+      ) => {
         if (!file.mimetype.match(/\/(jpg|jpeg|png|webp)$/)) {
-          return cb(new BadRequestException('Solo se permiten imágenes (JPG, JPEG, PNG, WEBP).'), false);
+          return cb(
+            new BadRequestException(
+              'Solo se permiten imágenes (JPG, JPEG, PNG, WEBP).',
+            ),
+            false,
+          );
         }
         cb(null, true);
       },
       storage: diskStorage({
-        destination: (req: any, file: any, cb: any) => {
+        destination: (_req, _file, cb) => {
           const uploadPath = './uploads/observations';
           if (!existsSync(uploadPath)) {
             mkdirSync(uploadPath, { recursive: true });
           }
           cb(null, uploadPath);
         },
-        filename: (req: any, file: any, cb: any) => {
-          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        filename: (_req, file, cb) => {
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
           const extension = file.originalname.split('.').pop();
           cb(null, `${uniqueSuffix}.${extension}`);
         },
@@ -52,13 +63,15 @@ export class ObservationsController {
     }),
   )
   async uploadObservation(
-    @Req() req: any,
-    @UploadedFile() file: any,
+    @Req() req: AuthenticatedRequest,
+    @UploadedFile() file: Express.Multer.File | undefined,
     @Body('category') category: string,
     @Body('description') description: string,
   ) {
     if (!description || !category) {
-      throw new BadRequestException('La categoría y descripción son obligatorias.');
+      throw new BadRequestException(
+        'La categoría y descripción son obligatorias.',
+      );
     }
 
     const userId = req.user.sub;
@@ -78,7 +91,7 @@ export class ObservationsController {
 
   @Get()
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
-  async getObservations(@Req() req: any) {
+  async getObservations(@Req() req: AuthenticatedRequest) {
     const tenantId = req.user.tenantId;
     return this.observationsService.getObservations(tenantId);
   }

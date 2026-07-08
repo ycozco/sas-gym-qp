@@ -19,7 +19,9 @@ void main() {
     expect(find.byType(QRPattern), findsOneWidget);
   });
 
-  testWidgets('TimerRing monta con valores arbitrarios sin lanzar', (tester) async {
+  testWidgets('TimerRing monta con valores arbitrarios sin lanzar', (
+    tester,
+  ) async {
     await _mount(
       tester,
       const TimerRing(secondsRemaining: 12, totalSeconds: 30),
@@ -33,11 +35,10 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
   });
 
-  testWidgets('GymSuspendedBarrier monta y muestra titulo de suspension', (tester) async {
-    await _mount(
-      tester,
-      GymSuspendedBarrier(onContactAdmin: () {}),
-    );
+  testWidgets('GymSuspendedBarrier monta y muestra titulo de suspension', (
+    tester,
+  ) async {
+    await _mount(tester, GymSuspendedBarrier(onContactAdmin: () {}));
     expect(find.text('SERVICIO SUSPENDIDO'), findsOneWidget);
   });
 }

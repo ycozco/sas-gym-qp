@@ -1,8 +1,0 @@
-services:
-  web:
-    build:
-      context: .
-    container_name: sas_gym_flutter_web
-    ports:
-      - "8383:80"
-    restart: unless-stopped
