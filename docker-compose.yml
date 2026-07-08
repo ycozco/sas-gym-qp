@@ -12,11 +12,12 @@ services:
     # Esto previene que contenedores de redes públicas u otros equipos de la LAN
     # accedan a PostgreSQL, pero permite mantenimiento local.
     ports:
-      - "127.0.0.1:5432:5432"
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - internal-net
+      - public-net
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d gymsmart"]
       interval: 5s
@@ -115,11 +116,12 @@ services:
     container_name: gymsmart-redis
     restart: always
     ports:
-      - "127.0.0.1:6379:6379"
+      - "6379:6379"
     volumes:
       - redis_data:/data
     networks:
       - internal-net
+      - public-net
 
 networks:
   # Red aislada interna: solo accesible por db y api. No tiene salida externa.

@@ -31,9 +31,11 @@ class _MemberDietViewState extends ConsumerState<MemberDietView> {
     final gymState = GymStateProvider.of(context);
     final isOnline = gymState.isOnline;
     final isBackendMode = gymState.isBackendMode;
-    await ref
-        .read(activeDietProvider.notifier)
-        .loadActiveDiet(isOnline: isOnline, isBackendMode: isBackendMode);
+    await ref.read(activeDietProvider.notifier).loadActiveDiet(
+          isOnline: isOnline,
+          isBackendMode: isBackendMode,
+          userId: gymState.currentUser?.id ?? '',
+        );
   }
 
   @override
@@ -332,7 +334,7 @@ class _MemberDietViewState extends ConsumerState<MemberDietView> {
               ],
             ),
           );
-        }).toList(),
+        }),
 
         const SizedBox(height: 12),
         // Suggestions Card

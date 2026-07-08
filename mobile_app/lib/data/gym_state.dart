@@ -1996,7 +1996,7 @@ class GymState extends ChangeNotifier {
       state: _mapMembershipState(
         latestMembership['estado']?.toString() ?? json['estado']?.toString(),
       ),
-      assignedTrainer: trainerUser?['nombre_completo']?.toString() ?? '',
+      assignedTrainer: trainerUser['nombre_completo']?.toString() ?? '',
       paymentHistory: paymentHistory,
       physicalMeasurements: {
         if (memberProfile['peso_kg'] != null)

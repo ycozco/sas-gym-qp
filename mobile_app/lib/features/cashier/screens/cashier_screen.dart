@@ -202,6 +202,8 @@ class _CashierScreenState extends State<CashierScreen> {
           key: ValueKey<String>('cashier-scan-$_scanSession'),
           palette: palette,
           state: state,
+          scanInput: _scanDniInput,
+          onScanChanged: (val) => setState(() => _scanDniInput = val),
           onTriggerVerdict: (result, member, dni) {
             _go('verdict', {'result': result, 'member': member, 'dni': dni});
           },
