@@ -1,5 +1,8 @@
 # compiled output
 /dist
+
+# Flutter web build artifacts (generated from Docker)
+/public/app
 /node_modules
 
 # Environment variables

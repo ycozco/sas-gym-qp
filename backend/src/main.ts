@@ -85,9 +85,10 @@ async function bootstrap() {
     app.use('/uploads', express.static(join(process.cwd(), 'uploads')));
   }
 
-  // ─── FRONTEND ESTÁTICO UNIFICADO (LANDING Y ADMIN) ────────────────
+  // ─── FRONTEND ESTÁTICO UNIFICADO (LANDING, ADMIN Y WEBAPP) ────────
   const publicPath = join(process.cwd(), 'public');
   app.use('/admin', express.static(join(publicPath, 'admin')));
+  app.use('/app', express.static(join(publicPath, 'app')));
   app.use('/', express.static(join(publicPath, 'landing')));
 
   // ─── PREFIJO GLOBAL ───────────────────────────────────────────────
