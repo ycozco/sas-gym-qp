@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
@@ -103,6 +107,7 @@ export class AuthService {
     };
     const refreshToken = await this.createRefreshSession(user.id, meta);
     const accessToken = await this.jwtService.signAsync(payload);
+    await this.recordLoginAudit(user, meta);
 
     return {
       token: accessToken,
@@ -227,23 +232,60 @@ export class AuthService {
     userId: string,
     preferencesDto: UpdatePreferencesDto,
   ) {
-    const updated = await this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        theme_preference: this.themePreferenceFromWire(
-          preferencesDto.themeMode,
-        ),
+    const userData: Prisma.UserUpdateInput = {};
+    if (preferencesDto.themeMode !== undefined) {
+      userData.theme_preference = this.themePreferenceFromWire(
+        preferencesDto.themeMode,
+      );
+    }
+
+    if (
+      preferencesDto.themeMode === undefined &&
+      preferencesDto.trainingVisible === undefined
+    ) {
+      throw new BadRequestException(
+        'No se enviaron preferencias para actualizar.',
+      );
+    }
+
+    const select = {
+      id: true,
+      theme_preference: true,
+      member_profile: {
+        select: {
+          modo_activo: true,
+        },
       },
-      select: {
-        id: true,
-        theme_preference: true,
-      },
-    });
+    };
+
+    const updated =
+      Object.keys(userData).length > 0
+        ? await this.prisma.user.update({
+            where: { id: userId },
+            data: userData,
+            select,
+          })
+        : await this.prisma.user.findUniqueOrThrow({
+            where: { id: userId },
+            select,
+          });
+
+    if (preferencesDto.trainingVisible !== undefined) {
+      await this.prisma.memberProfile.updateMany({
+        where: { user_id: userId },
+        data: { modo_activo: preferencesDto.trainingVisible },
+      });
+      if (updated.member_profile) {
+        updated.member_profile.modo_activo = preferencesDto.trainingVisible;
+      }
+    }
 
     return {
       id: updated.id,
       themePreference: this.themePreferenceToWire(updated.theme_preference),
       theme_preference: this.themePreferenceToWire(updated.theme_preference),
+      trainingVisible:
+        preferencesDto.trainingVisible ?? updated.member_profile?.modo_activo,
     };
   }
 
@@ -314,5 +356,29 @@ export class AuthService {
 
   private hashRefreshToken(refreshToken: string) {
     return createHash('sha256').update(refreshToken).digest('hex');
+  }
+
+  private async recordLoginAudit(
+    user: AuthenticatedUserRecord,
+    meta: AuthRequestMeta,
+  ) {
+    try {
+      await this.prisma.auditLog.create({
+        data: {
+          tenant_id: user.tenant_id,
+          actor_id: user.id,
+          actor_name: user.email,
+          rol: user.rol,
+          accion: 'LOGIN',
+          entidad: 'AUTH',
+          detalles: {
+            ip: meta.ip ?? null,
+            userAgent: meta.userAgent ?? null,
+          } as any,
+        },
+      });
+    } catch (error) {
+      console.error('Error al registrar login en auditoría:', error);
+    }
   }
 }

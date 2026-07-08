@@ -71,7 +71,7 @@ export class AuditInterceptor implements NestInterceptor<unknown, unknown> {
       const cleanUrl = url.split('?')[0];
       const parts = cleanUrl.split('/').filter(Boolean);
       const entidad = parts.at(-2) ?? parts.at(-1) ?? 'DESCONOCIDA';
-      const details = sanitizeDeep(body);
+      const details = body === undefined ? {} : sanitizeDeep(body);
       await this.prisma.auditLog.create({
         data: {
           tenant_id: user.tenantId || 'global',
