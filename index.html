@@ -166,30 +166,27 @@
 
   <main class="grid">
 
-    <!-- App Móvil -->
-    <a class="card" href="mockups/mobile/index.html">
+    <!-- Landing Page -->
+    <a class="card" href="http://localhost:3000/">
       <span class="ic" aria-hidden="true">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
              stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="6" y="2" width="12" height="20" rx="3"/><path d="M10 18h4"/>
+          <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
         </svg>
       </span>
-      <div class="ct">App Móvil</div>
-      <div class="cpath">mockups/mobile/</div>
+      <div class="ct">Landing Page</div>
+      <div class="cpath">public/landing/ · http://localhost:3000/</div>
       <div class="cd">
-        Prototipo hi-fi de la app móvil (PWA). Las cuatro experiencias de rol
-        se eligen con las pestañas superiores del lienzo de teléfono.
+        Página de inicio comercial estática (Astro). Presentación de la marca, planes comerciales, contacto y accesos directos.
       </div>
       <div class="roles">
-        <span class="chip">Miembro</span>
-        <span class="chip">Entrenador</span>
-        <span class="chip">Caja</span>
-        <span class="chip">Admin</span>
-        <span class="chip">Super Admin</span>
+        <span class="chip">Público</span>
+        <span class="chip">Clientes</span>
+        <span class="chip">Astro</span>
       </div>
       <div class="cgo">
-        <span>Abrir app móvil</span>
-        <span class="count">5 roles · login</span>
+        <span>Abrir Landing Page</span>
+        <span class="count">Puerto 3000</span>
         <span class="arrow" aria-hidden="true">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
@@ -198,7 +195,7 @@
     </a>
 
     <!-- Panel Web Admin Real -->
-    <a class="card" href="web/index.html">
+    <a class="card" href="http://localhost:8282/admin/">
       <span class="ic" aria-hidden="true">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
              stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -206,10 +203,9 @@
         </svg>
       </span>
       <div class="ct">Panel Web Admin Real</div>
-      <div class="cpath">web_admin/ · servido en /web/</div>
+      <div class="cpath">web_admin/ · http://localhost:8282/admin/</div>
       <div class="cd">
-        Panel de escritorio conectado al backend NestJS. Login real, tenant
-        activo, configuración del gimnasio, tema y planes de membresía por API.
+        Panel de escritorio (React/Vite). Gestión de membresías, cajas/turnos, finanzas, campañas de CRM, puntos de fidelidad y analíticas reales.
       </div>
       <div class="roles">
         <span class="chip">Super Admin</span>
@@ -219,8 +215,66 @@
         <span class="chip">Miembro</span>
       </div>
       <div class="cgo">
-        <span>Abrir panel web real</span>
-        <span class="count">API real · tenants</span>
+        <span>Abrir Panel Web</span>
+        <span class="count">Puerto 8282 (Vite)</span>
+        <span class="arrow" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
+        </span>
+      </div>
+    </a>
+
+    <!-- Flutter Web App -->
+    <a class="card" href="http://localhost:3000/app/">
+      <span class="ic" aria-hidden="true">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/>
+        </svg>
+      </span>
+      <div class="ct">App Móvil Real (Flutter Web)</div>
+      <div class="cpath">mobile_app/ · http://localhost:3000/app/</div>
+      <div class="cd">
+        Aplicación móvil real compilada para Web. Control de asistencia mediante QR nativo y control de caja directa en el dispositivo.
+      </div>
+      <div class="roles">
+        <span class="chip">Miembro</span>
+        <span class="chip">Entrenador</span>
+        <span class="chip">Caja</span>
+        <span class="chip">Admin</span>
+      </div>
+      <div class="cgo">
+        <span>Abrir App Real</span>
+        <span class="count">Puerto 3000</span>
+        <span class="arrow" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
+        </span>
+      </div>
+    </a>
+
+    <!-- App Móvil (Mockup) -->
+    <a class="card" href="http://localhost:8282/mockups/mobile/index.html">
+      <span class="ic" aria-hidden="true">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10S2 17.523 2 12A10 10 0 0 1 12 2z"/>
+        </svg>
+      </span>
+      <div class="ct">App Móvil (Mockup)</div>
+      <div class="cpath">mockups/mobile/ · http://localhost:8282/mockups/...</div>
+      <div class="cd">
+        Prototipo interactivo estático de la app móvil. Permite simular los flujos de pantalla y la interfaz del usuario.
+      </div>
+      <div class="roles">
+        <span class="chip">Miembro</span>
+        <span class="chip">Entrenador</span>
+        <span class="chip">Caja</span>
+        <span class="chip">Admin</span>
+      </div>
+      <div class="cgo">
+        <span>Abrir Mockup App</span>
+        <span class="count">Puerto 8282 (Estático)</span>
         <span class="arrow" aria-hidden="true">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
