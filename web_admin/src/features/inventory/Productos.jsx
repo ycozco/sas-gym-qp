@@ -1,3 +1,7 @@
+import React from 'react';
+import { PRODUCTS } from '../../../data.jsx';
+import { Badge, Btn, ErrorBlock, I, Kpi, Modal, Panel, normalizeProduct } from '../../../shared.jsx';
+
 function Productos({ app }) {
   const [editing, setEditing] = React.useState(null);
   const [message, setMessage] = React.useState("");
@@ -118,4 +122,4 @@ function ProductForm({ product, onSave, onCancel }) {
   );
 }
 
-window.Productos = Productos;
+export { Productos };

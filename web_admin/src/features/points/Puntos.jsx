@@ -1,3 +1,7 @@
+import React from 'react';
+import { PTS_CANJES } from '../../../data.jsx';
+import { Badge, Btn, I, Kpi, Modal, Panel, icon } from '../../../shared.jsx';
+
 function Puntos({ app }) {
   const [tab, setTab] = React.useState("catalogo");
   const [config, setConfig] = React.useState({
@@ -12,7 +16,7 @@ function Puntos({ app }) {
     if (app?.reloadPointsData) {
       app.reloadPointsData();
     }
-  }, []);
+  }, [app]);
 
   React.useEffect(() => {
     if (app?.pointsConfig) {
@@ -27,24 +31,15 @@ function Puntos({ app }) {
   }, [app?.pointsConfig]);
 
   const [editingItem, setEditingItem] = React.useState(null);
-  const [localCatalog, setLocalCatalog] = React.useState([
-    { id: "1", nombre: "Botella de agua 600ml", tipo: "Producto", precio_puntos: 150 },
-    { id: "2", nombre: "Proteína Whey (porción)", tipo: "Producto", precio_puntos: 600 },
-    { id: "3", nombre: "Pase libre de 1 Día", tipo: "Membresía", precio_puntos: 900 },
-    { id: "4", nombre: "Toalla deportiva", tipo: "Producto", precio_puntos: 400 },
-    { id: "5", nombre: "10% de Descuento en Renovación", tipo: "Membresía", precio_puntos: 1200 },
-  ]);
 
   const summary = app?.pointsSummary;
   const catalog = app?.pointsCatalog;
   const products = catalog?.products || [];
   const memberships = catalog?.memberships || [];
-  const catalogRows = products.length || memberships.length
-    ? [
-        ...products.map(p => ({ id: p.id, nombre: p.nombre, tipo: "Producto", precio_puntos: p.precio_puntos })),
-        ...memberships.map(m => ({ id: m.id, nombre: m.nombre, tipo: "Membresía", precio_puntos: m.precio_puntos })),
-      ]
-    : localCatalog;
+  const catalogRows = [
+    ...products.filter(p => p.activo !== false).map(p => ({ ...p, tipo: "Producto" })),
+    ...memberships.filter(m => m.activo !== false).map(m => ({ ...m, tipo: "Membresía" })),
+  ];
 
   const exchanges = summary?.exchanges?.length ? summary.exchanges.map(x => ({
     id: x.id,
@@ -79,15 +74,54 @@ function Puntos({ app }) {
     }
   };
 
-  const handleSaveItem = (e) => {
+  const handleSaveItem = async (e) => {
     e.preventDefault();
     if (!editingItem.nombre || !editingItem.precio_puntos) return;
-    if (editingItem.id) {
-      setLocalCatalog(prev => prev.map(item => item.id === editingItem.id ? editingItem : item));
-    } else {
-      setLocalCatalog(prev => [...prev, { ...editingItem, id: String(Date.now()) }]);
+    try {
+      if (editingItem.tipo === "Membresía") {
+        await app.savePointsMembership({
+          id: editingItem.id,
+          nombre: editingItem.nombre,
+          descripcion: editingItem.descripcion || "",
+          precio_puntos: Number(editingItem.precio_puntos),
+          duracion_dias: Number(editingItem.duracion_dias) || 30,
+          stock: Number(editingItem.stock) || 0,
+          destacada: editingItem.destacada === true,
+        });
+      } else {
+        await app.savePointsProduct({
+          id: editingItem.id,
+          nombre: editingItem.nombre,
+          descripcion: editingItem.descripcion || "",
+          precio_puntos: Number(editingItem.precio_puntos),
+          stock: Number(editingItem.stock) || 0,
+          stock_minimo: Number(editingItem.stock_minimo) || 5,
+          destacado: editingItem.destacado === true,
+        });
+      }
+      setEditingItem(null);
+      if (app?.reloadPointsData) {
+        await app.reloadPointsData();
+      }
+    } catch (err) {
+      alert("Error al guardar item: " + (err.message || err));
     }
-    setEditingItem(null);
+  };
+
+  const handleDeleteItem = async (item) => {
+    if (!confirm(`¿Estás seguro de inhabilitar el ítem "${item.nombre}"?`)) return;
+    try {
+      if (item.tipo === "Membresía") {
+        await app.deactivatePointsMembership(item.id);
+      } else {
+        await app.deactivatePointsProduct(item.id);
+      }
+      if (app?.reloadPointsData) {
+        await app.reloadPointsData();
+      }
+    } catch (err) {
+      alert("Error al inhabilitar item: " + (err.message || err));
+    }
   };
 
   return (
@@ -115,10 +149,20 @@ function Puntos({ app }) {
                     <td><Badge kind={c.tipo === "Membresía" ? "accent" : "info"}>{c.tipo}</Badge></td>
                     <td className="num" style={{ font: "700 13.5px var(--font-mono)" }}>{c.precio_puntos} pts</td>
                     <td className="num">
-                      <Btn kind="ghost" size="sm" onClick={() => setEditingItem(c)}>Editar</Btn>
+                      <div style={{ display: "inline-flex", gap: 8 }}>
+                        <Btn kind="ghost" size="sm" onClick={() => setEditingItem(c)}>Editar</Btn>
+                        <Btn kind="ghost" size="sm" onClick={() => handleDeleteItem(c)} style={{ color: "var(--danger)" }}>{I.trash}</Btn>
+                      </div>
                     </td>
                   </tr>
                 ))}
+                {catalogRows.length === 0 && (
+                  <tr>
+                    <td colSpan="4">
+                      <div className="empty">El catálogo de puntos está vacío. ¡Agrega un ítem!</div>
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </Panel>
@@ -173,23 +217,54 @@ function Puntos({ app }) {
 
       {editingItem && (
         <Modal title={editingItem.id ? "Editar Item del Catálogo" : "Nuevo Item del Catálogo"} onClose={() => setEditingItem(null)}>
-          <form onSubmit={handleSaveItem}>
+          <form onSubmit={handleSaveItem} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <div className="field">
               <label>Nombre del Item</label>
-              <input value={editingItem.nombre} onChange={e => setEditingItem({ ...editingItem, nombre: e.target.value })} required />
+              <input value={editingItem.nombre || ""} onChange={e => setEditingItem({ ...editingItem, nombre: e.target.value })} required />
             </div>
             <div className="field">
-              <label>Tipo de Item</label>
-              <select value={editingItem.tipo} onChange={e => setEditingItem({ ...editingItem, tipo: e.target.value })}>
-                <option value="Producto">Producto</option>
-                <option value="Membresía">Membresía</option>
-              </select>
+              <label>Descripción</label>
+              <textarea rows="2" value={editingItem.descripcion || ""} onChange={e => setEditingItem({ ...editingItem, descripcion: e.target.value })} />
             </div>
-            <div className="field">
-              <label>Costo en Puntos</label>
-              <input type="number" value={editingItem.precio_puntos} onChange={e => setEditingItem({ ...editingItem, precio_puntos: Number(e.target.value) })} required />
+            <div className="row-2">
+              <div className="field">
+                <label>Tipo de Item</label>
+                <select value={editingItem.tipo || "Producto"} onChange={e => setEditingItem({ ...editingItem, tipo: e.target.value })} disabled={!!editingItem.id}>
+                  <option value="Producto">Producto</option>
+                  <option value="Membresía">Membresía</option>
+                </select>
+              </div>
+              <div className="field">
+                <label>Costo en Puntos</label>
+                <input type="number" value={editingItem.precio_puntos || ""} onChange={e => setEditingItem({ ...editingItem, precio_puntos: Number(e.target.value) })} required />
+              </div>
             </div>
-            <div className="modal-foot inline">
+
+            {editingItem.tipo === "Membresía" ? (
+              <div className="row-2">
+                <div className="field">
+                  <label>Duración (Días)</label>
+                  <input type="number" value={editingItem.duracion_dias || 30} onChange={e => setEditingItem({ ...editingItem, duracion_dias: Number(e.target.value) })} required />
+                </div>
+                <div className="field">
+                  <label>Stock (0 = Ilimitado)</label>
+                  <input type="number" value={editingItem.stock || 0} onChange={e => setEditingItem({ ...editingItem, stock: Number(e.target.value) })} />
+                </div>
+              </div>
+            ) : (
+              <div className="row-2">
+                <div className="field">
+                  <label>Stock Disponible</label>
+                  <input type="number" value={editingItem.stock || 0} onChange={e => setEditingItem({ ...editingItem, stock: Number(e.target.value) })} required />
+                </div>
+                <div className="field">
+                  <label>Stock Mínimo Alerta</label>
+                  <input type="number" value={editingItem.stock_minimo || 5} onChange={e => setEditingItem({ ...editingItem, stock_minimo: Number(e.target.value) })} />
+                </div>
+              </div>
+            )}
+
+            <div className="modal-foot inline" style={{ marginTop: 8 }}>
               <Btn type="button" kind="ghost" onClick={() => setEditingItem(null)}>Cancelar</Btn>
               <Btn type="submit" kind="primary">Guardar Item</Btn>
             </div>
@@ -200,4 +275,4 @@ function Puntos({ app }) {
   );
 }
 
-window.Puntos = Puntos;
+export { Puntos };

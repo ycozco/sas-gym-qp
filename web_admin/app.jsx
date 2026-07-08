@@ -143,6 +143,11 @@ function App() {
   const [pointsSummary, setPointsSummary] = React.useState(null);
   const [pointsCatalog, setPointsCatalog] = React.useState(null);
   const [pointsConfig, setPointsConfig] = React.useState(null);
+  const [leads, setLeads] = React.useState([]);
+  const [campaigns, setCampaigns] = React.useState([]);
+  const [financesSummary, setFinancesSummary] = React.useState(null);
+  const [expenses, setExpenses] = React.useState([]);
+  const [payroll, setPayroll] = React.useState([]);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState("");
   const [section, setSection] = React.useState("dashboard");
@@ -442,6 +447,8 @@ function App() {
           await loadPointsData(override).catch(() => null);
         }
         if (nextRole === "admin") {
+          await loadCrmData(override).catch(() => null);
+          await loadFinancesData(override).catch(() => null);
           await loadDashboardSummary(override).catch(() => null);
           await loadAdminData(override).catch(() => null);
           await loadObservations(override).catch(() => []);
@@ -645,6 +652,72 @@ function App() {
     return loadProducts(true);
   };
 
+  const savePointsProduct = async (product) => {
+    const payload = {
+      nombre: product.nombre,
+      descripcion: product.descripcion || "",
+      precio_puntos: Number(product.precio_puntos),
+      stock: Number(product.stock) || 0,
+      stock_minimo: Number(product.stock_minimo) || 5,
+      destacado: product.destacado === true,
+    };
+    if (product.id) {
+      await apiRequest(`/points/catalog/products/${product.id}`, {
+        ...authHeaders,
+        method: "PATCH",
+        body: payload,
+      });
+    } else {
+      await apiRequest("/points/catalog/products", {
+        ...authHeaders,
+        method: "POST",
+        body: payload,
+      });
+    }
+    return loadPointsData();
+  };
+
+  const deactivatePointsProduct = async (id) => {
+    await apiRequest(`/points/catalog/products/${id}`, {
+      ...authHeaders,
+      method: "DELETE",
+    });
+    return loadPointsData();
+  };
+
+  const savePointsMembership = async (membership) => {
+    const payload = {
+      nombre: membership.nombre,
+      descripcion: membership.descripcion || "",
+      precio_puntos: Number(membership.precio_puntos),
+      duracion_dias: Number(membership.duracion_dias),
+      stock: Number(membership.stock) || 0,
+      destacada: membership.destacada === true,
+    };
+    if (membership.id) {
+      await apiRequest(`/points/catalog/memberships/${membership.id}`, {
+        ...authHeaders,
+        method: "PATCH",
+        body: payload,
+      });
+    } else {
+      await apiRequest("/points/catalog/memberships", {
+        ...authHeaders,
+        method: "POST",
+        body: payload,
+      });
+    }
+    return loadPointsData();
+  };
+
+  const deactivatePointsMembership = async (id) => {
+    await apiRequest(`/points/catalog/memberships/${id}`, {
+      ...authHeaders,
+      method: "DELETE",
+    });
+    return loadPointsData();
+  };
+
   const searchMembers = (q) =>
     apiRequest(`/members/search?q=${encodeURIComponent(q)}`, authHeaders);
   const getActiveCaja = () => apiRequest("/payments/caja/active", authHeaders);
@@ -784,6 +857,129 @@ function App() {
       method: "POST",
       body: payload,
     });
+  const saveSchedule = async (payload) => {
+    const isNew = !payload.id;
+    const url = isNew ? "/schedules" : `/schedules/${payload.id}`;
+    const method = isNew ? "POST" : "PATCH";
+    const data = await apiRequest(url, {
+      ...authHeaders,
+      method,
+      body: payload,
+    });
+    await loadSchedules();
+    return data;
+  };
+
+  const deleteSchedule = async (id) => {
+    await apiRequest(`/schedules/${id}`, {
+      ...authHeaders,
+      method: "DELETE",
+    });
+    await loadSchedules();
+  };
+
+  const loadTrainers = async () => {
+    return apiRequest("/schedules/trainers", authHeaders);
+  };
+
+  const loadCrmData = React.useCallback(
+    async (override = authHeaders) => {
+      const [leadsData, campaignsData] = await Promise.all([
+        apiRequest("/crm/leads", override).catch(() => []),
+        apiRequest("/crm/campaigns", override).catch(() => []),
+      ]);
+      setLeads(leadsData);
+      setCampaigns(campaignsData);
+      return { leads: leadsData, campaigns: campaignsData };
+    },
+    [authHeaders],
+  );
+
+  const saveLead = async (payload) => {
+    const isNew = !payload.id;
+    const url = isNew ? "/crm/leads" : `/crm/leads/${payload.id}`;
+    const method = isNew ? "POST" : "PATCH";
+    const data = await apiRequest(url, {
+      ...authHeaders,
+      method,
+      body: payload,
+    });
+    await loadCrmData();
+    return data;
+  };
+
+  const deleteLead = async (id) => {
+    await apiRequest(`/crm/leads/${id}`, {
+      ...authHeaders,
+      method: "DELETE",
+    });
+    await loadCrmData();
+  };
+
+  const saveCampaign = async (payload) => {
+    const data = await apiRequest("/crm/campaigns", {
+      ...authHeaders,
+      method: "POST",
+      body: payload,
+    });
+    await loadCrmData();
+    return data;
+  };
+
+  const sendCampaign = async (id) => {
+    const data = await apiRequest(`/crm/campaigns/${id}/send`, {
+      ...authHeaders,
+      method: "POST",
+    });
+    await loadCrmData();
+    return data;
+  };
+
+  const loadFinancesData = React.useCallback(
+    async (override = authHeaders) => {
+      const [sum, exp, pay] = await Promise.all([
+        apiRequest("/finances/summary", override).catch(() => null),
+        apiRequest("/finances/expenses", override).catch(() => []),
+        apiRequest("/finances/payroll", override).catch(() => []),
+      ]);
+      setFinancesSummary(sum);
+      setExpenses(exp);
+      setPayroll(pay);
+      return { summary: sum, expenses: exp, payroll: pay };
+    },
+    [authHeaders],
+  );
+
+  const saveExpense = async (payload) => {
+    const data = await apiRequest("/finances/expenses", {
+      ...authHeaders,
+      method: "POST",
+      body: payload,
+    });
+    await loadFinancesData();
+    return data;
+  };
+
+  const savePayroll = async (payload) => {
+    const data = await apiRequest("/finances/payroll", {
+      ...authHeaders,
+      method: "POST",
+      body: payload,
+    });
+    await loadFinancesData();
+    return data;
+  };
+
+  const payPayroll = async (id) => {
+    const data = await apiRequest(`/finances/payroll/${id}/pay`, {
+      ...authHeaders,
+      method: "POST",
+    });
+    await loadFinancesData();
+    return data;
+  };
+
+
   const savePointsConfig = async (payload) => {
     const data = await apiRequest("/points/config", {
       ...authHeaders,
@@ -815,6 +1011,23 @@ function App() {
 
   const gym = tenantSettings || GYM;
   const appContext = {
+    leads,
+    campaigns,
+    financesSummary,
+    expenses,
+    payroll,
+    saveSchedule,
+    deleteSchedule,
+    loadTrainers,
+    loadCrmData,
+    saveLead,
+    deleteLead,
+    saveCampaign,
+    sendCampaign,
+    loadFinancesData,
+    saveExpense,
+    savePayroll,
+    payPayroll,
     authToken,
     tenantId,
     currentUser,
@@ -862,6 +1075,10 @@ function App() {
     createRoutineTemplate,
     assignRoutine,
     savePointsConfig,
+    savePointsProduct,
+    deactivatePointsProduct,
+    savePointsMembership,
+    deactivatePointsMembership,
     saveTenantSettings,
     saveMembershipPlan,
     deactivateMembershipPlan,

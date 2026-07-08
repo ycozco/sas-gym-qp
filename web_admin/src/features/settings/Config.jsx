@@ -1,3 +1,7 @@
+import React from 'react';
+import { GYM } from '../../../data.jsx';
+import { Btn, ErrorBlock, I, Panel, normalizeTenantSettings } from '../../../shared.jsx';
+
 function Config({ app }) {
   const tenant = app?.tenantSettings || normalizeTenantSettings(GYM);
   const [form, setForm] = React.useState(() => ({
@@ -32,7 +36,7 @@ function Config({ app }) {
       graceDays: app.tenantSettings.graceDays ?? 1,
       alertDays: app.tenantSettings.alertDays ?? 7,
     });
-  }, [app?.tenantSettings?.id]);
+  }, [app?.tenantSettings]);
 
   const setField = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
   const save = async () => {
@@ -110,4 +114,4 @@ function Config({ app }) {
   );
 }
 
-window.Config = Config;
+export { Config };

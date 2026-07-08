@@ -1,3 +1,7 @@
+import React from 'react';
+import { MEMBERSHIP_PLANS, MEMB_KPIS } from '../../../data.jsx';
+import { Badge, Btn, ErrorBlock, I, Kpi, Modal, Panel, icon, normalizeMembershipPlan } from '../../../shared.jsx';
+
 function MembershipPlanForm({ plan, onSave, onCancel }) {
   const [form, setForm] = React.useState(() => plan || {
     name: "",
@@ -154,4 +158,4 @@ function Membresias({ app }) {
   );
 }
 
-window.Membresias = Membresias;
+export { Membresias };

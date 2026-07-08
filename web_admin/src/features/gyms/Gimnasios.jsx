@@ -1,3 +1,7 @@
+import React from 'react';
+import { GYMS } from '../../../data.jsx';
+import { Badge, Btn, I, Panel } from '../../../shared.jsx';
+
 function Gimnasios({ app }) {
   const [q, setQ] = React.useState("");
   const [filter, setFilter] = React.useState("Todos");
@@ -70,4 +74,4 @@ function Gimnasios({ app }) {
   );
 }
 
-window.Gimnasios = Gimnasios;
+export { Gimnasios };

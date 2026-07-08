@@ -1,3 +1,6 @@
+import React from 'react';
+import { Badge, Btn, ErrorBlock, I, Kpi, MemberSearchBox, Panel } from '../../../shared.jsx';
+
 function Entrenamientos({ app }) {
   const [tab, setTab] = React.useState("asignaciones");
   
@@ -730,4 +733,4 @@ function Entrenamientos({ app }) {
   );
 }
 
-window.Entrenamientos = Entrenamientos;
+export { Entrenamientos };

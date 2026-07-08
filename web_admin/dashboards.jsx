@@ -1,3 +1,7 @@
+import React from 'react';
+import { ADMIN_KPIS, COACH_MEMBERS, GYMS, PENDING_PAYMENTS, USER_PAYMENTS, WEEK_ATTENDANCE } from './data.jsx';
+import { Avatar, Badge, Bars, Btn, ErrorBlock, I, Kpi, Panel, icon } from './shared.jsx';
+
 // dashboards.jsx - Login + dashboards por rol conectados al backend.
 
 function Login({ onLogin, loading, error }) {
@@ -86,7 +90,7 @@ function CajeroDashboard({ go, app }) {
     app?.getCajaDetails?.().then(d => alive && setDetails(d)).catch(() => {});
     app?.getCajaSales?.().then(d => alive && setSales(d)).catch(() => {});
     return () => { alive = false; };
-  }, [app?.tenantId]);
+  }, [app]);
   const total = details?.stats?.total_esperado ?? 0;
   const productSales = sales?.productSales?.length ?? 0;
   const memberSales = sales?.membershipPayments?.length ?? 0;
@@ -223,4 +227,4 @@ function SuperDashboard({ go, app }) {
   );
 }
 
-Object.assign(window, { Login, AdminDashboard, CajeroDashboard, CoachDashboard, MiembroDashboard, SuperDashboard });
+export { Login, AdminDashboard, CajeroDashboard, CoachDashboard, MiembroDashboard, SuperDashboard };

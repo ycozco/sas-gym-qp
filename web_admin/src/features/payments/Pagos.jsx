@@ -1,3 +1,7 @@
+import React from 'react';
+import { PAYMENTS_TODAY, PENDING_ACCRED } from '../../../data.jsx';
+import { Avatar, Badge, Btn, ErrorBlock, I, Panel } from '../../../shared.jsx';
+
 function Pagos({ app }) {
   const [tab, setTab] = React.useState("pend");
   const [message, setMessage] = React.useState("");
@@ -83,4 +87,4 @@ function Pagos({ app }) {
   );
 }
 
-window.Pagos = Pagos;
+export { Pagos };

@@ -1,3 +1,7 @@
+import React from 'react';
+import { USERS, USER_PAYMENTS } from '../../../data.jsx';
+import { Avatar, Badge, Btn, ErrorBlock, I, Modal, Panel, StatusBadge } from '../../../shared.jsx';
+
 function normalizeWebMember(user) {
   const membership = user.memberships?.[0] || {};
   return {
@@ -195,4 +199,4 @@ function UserDetail({ user, onBack, go }) {
   );
 }
 
-window.Usuarios = Usuarios;
+export { Usuarios };

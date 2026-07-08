@@ -1,3 +1,7 @@
+import React from 'react';
+import { ATTENDANCE_LOG } from '../../../data.jsx';
+import { Badge, Bars, Btn, ErrorBlock, I, Panel } from '../../../shared.jsx';
+
 function Asistencia({ app, go }) {
   const [dni, setDni] = React.useState("");
   const [result, setResult] = React.useState(null);
@@ -98,4 +102,4 @@ function Asistencia({ app, go }) {
   );
 }
 
-window.Asistencia = Asistencia;
+export { Asistencia };

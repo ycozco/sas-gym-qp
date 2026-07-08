@@ -1,3 +1,6 @@
+import { PAY_METHODS, REVENUE_6M } from '../../../data.jsx';
+import { Bars, Donut, Kpi, Panel } from '../../../shared.jsx';
+
 function Reportes({ app }) {
   const summary = app?.dashboardSummary || {};
   const revenue = Number(summary.revenueToday || 0);
@@ -45,4 +48,4 @@ function Reportes({ app }) {
   );
 }
 
-window.Reportes = Reportes;
+export { Reportes };
