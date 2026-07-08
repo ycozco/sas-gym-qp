@@ -1,15 +1,17 @@
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 const repoRoot = process.cwd();
 const requiredFiles = [
   'web_admin/index.html',
   'web_admin/shared.jsx',
+  'web_admin/data.jsx',
   'web_admin/app.jsx',
-  'web_admin/modules.jsx',
-  'web_admin/modules2.jsx',
   'web_admin/dashboards.jsx',
   'web_admin/styles.css',
+  'web_admin/src/main.jsx',
+  'web_admin/package.json',
+  'web_admin/vite.config.js',
 ];
 
 const missing = requiredFiles.filter((file) => !existsSync(join(repoRoot, file)));
@@ -22,18 +24,34 @@ const shared = readFileSync(join(repoRoot, 'web_admin/shared.jsx'), 'utf8');
 const app = readFileSync(join(repoRoot, 'web_admin/app.jsx'), 'utf8');
 const styles = readFileSync(join(repoRoot, 'web_admin/styles.css'), 'utf8');
 
-const indexMarkers = [
-  'shared.jsx',
-  'data.jsx',
-  'dashboards.jsx',
-  'modules.jsx',
-  'modules2.jsx',
-  'app.jsx',
-];
+const indexMarkers = ['type="module"', '/src/main.jsx'];
 
 const missingIndexMarkers = indexMarkers.filter((marker) => !indexHtml.includes(marker));
 if (missingIndexMarkers.length > 0) {
   throw new Error(`index.html no carga bundles esperados: ${missingIndexMarkers.join(', ')}`);
+}
+
+const forbiddenIndexMarkers = ['text/babel', '@babel/standalone', 'unpkg.com/react'];
+const legacyIndexMarkers = forbiddenIndexMarkers.filter((marker) => indexHtml.includes(marker));
+if (legacyIndexMarkers.length > 0) {
+  throw new Error(`index.html conserva carga legacy: ${legacyIndexMarkers.join(', ')}`);
+}
+
+const sourceFiles = [
+  'web_admin/app.jsx',
+  'web_admin/shared.jsx',
+  'web_admin/data.jsx',
+  'web_admin/dashboards.jsx',
+  ...readdirSync(join(repoRoot, 'web_admin/src/features'), { recursive: true })
+    .filter((file) => file.endsWith('.jsx'))
+    .map((file) => `web_admin/src/features/${file}`),
+];
+const globalExports = sourceFiles.filter((file) => {
+  const source = readFileSync(join(repoRoot, file), 'utf8');
+  return /Object\.assign\(window|window\.[A-Z][A-Za-z]+\s*=/.test(source);
+});
+if (globalExports.length > 0) {
+  throw new Error(`Persisten exports globales en: ${globalExports.join(', ')}`);
 }
 
 const appMarkers = [
