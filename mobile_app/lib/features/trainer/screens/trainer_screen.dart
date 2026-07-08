@@ -292,7 +292,12 @@ class _TrainerScreenState extends State<TrainerScreen> {
           progress: state.trainerProgress,
         );
       default:
-        return TrainerProfileTab(key: key, palette: palette, onGo: _go);
+        return TrainerProfileTab(
+          key: key,
+          palette: palette,
+          state: state,
+          onGo: _go,
+        );
     }
   }
 }

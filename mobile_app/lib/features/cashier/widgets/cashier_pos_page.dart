@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
+import '../../../core/network/api_error_message.dart';
 import '../../../data/gym_state.dart';
 import '../../../models/gym_models.dart';
 import '../../../theme/app_theme_tokens.dart';
@@ -38,34 +39,6 @@ class CashierPOSPage extends StatefulWidget {
 }
 
 class _CashierPOSPageState extends State<CashierPOSPage> {
-  // Available POS inventory (physical goods only, memberships moved to dedicated tab)
-  final List<Map<String, dynamic>> _posItems = [
-    {
-      'name': 'Botella de agua 600ml',
-      'price': 3.0,
-      'icon': '💧',
-      'category': 'Bebidas',
-    },
-    {
-      'name': 'Proteína whey porción',
-      'price': 12.0,
-      'icon': '💪',
-      'category': 'Suplementos',
-    },
-    {
-      'name': 'Pre-entreno scoop',
-      'price': 8.0,
-      'icon': '⚡',
-      'category': 'Suplementos',
-    },
-    {
-      'name': 'Barra energética',
-      'price': 5.0,
-      'icon': '🍫',
-      'category': 'Snacks',
-    },
-  ];
-
   BoxDecoration _cardDecoration(BuildContext context) {
     final colors = context.sasColors;
     return BoxDecoration(
@@ -373,149 +346,127 @@ class _CashierPOSPageState extends State<CashierPOSPage> {
           Container(
             padding: const EdgeInsets.all(18),
             decoration: _cardDecoration(context),
-            child: Column(
-              children: [
-                if (widget.state.activeCaja == null) ...[
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF2C1315),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: Colors.redAccent.withValues(alpha: 0.3),
-                      ),
-                    ),
-                    child: const Row(
-                      children: [
-                        Icon(
-                          Icons.lock_rounded,
-                          color: Colors.redAccent,
-                          size: 20,
-                        ),
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'La caja está cerrada. Debes abrir la caja desde el Inicio para cobrar.',
-                            style: TextStyle(
-                              color: Colors.redAccent,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    style: roleFilledPillButtonStyle(
-                      backgroundColor: widget.state.activeCaja == null
-                          ? colors.textMuted
-                          : widget.palette.accent,
-                      foregroundColor: widget.state.activeCaja == null
-                          ? Colors.white60
-                          : widget.palette.accentInk,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    onPressed: widget.state.activeCaja == null
-                        ? null
-                        : () {
-                            if (widget.selectedMemberDni == null) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Por favor, selecciona un Socio destinatario primero',
-                                  ),
-                                ),
-                              );
-                              return;
-                            }
-                            _openPaymentCheckoutDialog(total);
-                          },
-                    child: const Text(
-                      'CONTINUAR AL PAGO',
-                      style: TextStyle(fontWeight: FontWeight.w900),
-                    ),
-                  ),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: roleFilledPillButtonStyle(
+                  backgroundColor: widget.palette.accent,
+                  foregroundColor: widget.palette.accentInk,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
-              ],
+                onPressed: () {
+                  if (widget.selectedMemberDni == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Por favor, selecciona un Socio destinatario primero',
+                        ),
+                      ),
+                    );
+                    return;
+                  }
+                  _openPaymentCheckoutDialog(total);
+                },
+                child: const Text(
+                  'CONTINUAR AL PAGO',
+                  style: TextStyle(fontWeight: FontWeight.w900),
+                ),
+              ),
             ),
           ),
         const SizedBox(height: 22),
 
         // Catalog header
         const SectionHeader(title: 'Catálogo POS de Venta'),
-        Column(
-          children: _posItems.map((item) {
-            return Card(
-              margin: const EdgeInsets.only(bottom: 10),
-              color: colors.surface,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: BorderSide(color: colors.border),
+        if (widget.state.products.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: _cardDecoration(context),
+            child: Text(
+              'No hay productos disponibles para venta.',
+              style: TextStyle(
+                color: colors.textSecondary,
+                fontWeight: FontWeight.bold,
               ),
-              child: ListTile(
-                leading: Text(
-                  item['icon'] as String,
-                  style: const TextStyle(fontSize: 22),
+            ),
+          )
+        else
+          Column(
+            children: widget.state.products.map((item) {
+              return Card(
+                margin: const EdgeInsets.only(bottom: 10),
+                color: colors.surface,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(color: colors.border),
                 ),
-                title: Text(
-                  item['name'] as String,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w800,
-                    color: colors.textPrimary,
+                child: ListTile(
+                  leading: const Icon(Icons.inventory_2_rounded),
+                  title: Text(
+                    item.name,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      color: colors.textPrimary,
+                    ),
+                  ),
+                  subtitle: Text(
+                    '${item.category} · Stock ${item.stock}',
+                    style: TextStyle(fontSize: 12, color: colors.textSecondary),
+                  ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'S/ ${item.price.toStringAsFixed(2)}',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 14,
+                          color: colors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      IconButton(
+                        icon: Icon(
+                          Icons.add_shopping_cart_rounded,
+                          color: item.stock > 0
+                              ? colors.accent
+                              : colors.textMuted,
+                        ),
+                        onPressed: item.stock <= 0
+                            ? null
+                            : () {
+                                setState(() {
+                                  final idx = widget.cartItems.indexWhere(
+                                    (c) =>
+                                        (item.id != null &&
+                                            c['productId'] == item.id) ||
+                                        c['name'] == item.name,
+                                  );
+                                  if (idx != -1) {
+                                    widget.cartItems[idx]['qty']++;
+                                  } else {
+                                    widget.cartItems.add({
+                                      'productId': item.id,
+                                      'id': item.id,
+                                      'type': 'product',
+                                      'name': item.name,
+                                      'price': item.price,
+                                      'unitPrice': item.price,
+                                      'qty': 1,
+                                      'icon': 'inventory',
+                                    });
+                                  }
+                                });
+                                widget.onCartChanged();
+                              },
+                      ),
+                    ],
                   ),
                 ),
-                subtitle: Text(
-                  item['category'] as String,
-                  style: TextStyle(fontSize: 12, color: colors.textSecondary),
-                ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'S/ ${item['price']}',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w900,
-                        fontSize: 14,
-                        color: colors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    IconButton(
-                      icon: Icon(
-                        Icons.add_shopping_cart_rounded,
-                        color: colors.accent,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          final idx = widget.cartItems.indexWhere(
-                            (c) => c['name'] == item['name'],
-                          );
-                          if (idx != -1) {
-                            widget.cartItems[idx]['qty']++;
-                          } else {
-                            widget.cartItems.add({
-                              'name': item['name'],
-                              'price': item['price'],
-                              'qty': 1,
-                              'icon': item['icon'],
-                            });
-                          }
-                        });
-                        widget.onCartChanged();
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }).toList(),
-        ),
+              );
+            }).toList(),
+          ),
       ],
     );
   }
@@ -695,7 +646,7 @@ class _CashierPOSPageState extends State<CashierPOSPage> {
                               style: roleFilledPillButtonStyle(
                                 backgroundColor: !isCombined
                                     ? widget.palette.accent
-                                    : const Color(0xFFF0EFEA),
+                                    : dialogColors.surfaceAlt,
                                 foregroundColor: !isCombined
                                     ? widget.palette.accentInk
                                     : dialogColors.textPrimary,
@@ -721,7 +672,7 @@ class _CashierPOSPageState extends State<CashierPOSPage> {
                               style: roleFilledPillButtonStyle(
                                 backgroundColor: isCombined
                                     ? widget.palette.accent
-                                    : const Color(0xFFF0EFEA),
+                                    : dialogColors.surfaceAlt,
                                 foregroundColor: isCombined
                                     ? widget.palette.accentInk
                                     : dialogColors.textPrimary,
@@ -778,8 +729,11 @@ class _CashierPOSPageState extends State<CashierPOSPage> {
                                     selected: sel,
                                     selectedColor: widget.palette.accent,
                                     backgroundColor: dialogColors.surfaceAlt,
+                                    disabledColor: dialogColors.surfaceAlt,
                                     side: BorderSide(
-                                      color: dialogColors.border,
+                                      color: sel
+                                          ? widget.palette.accent
+                                          : dialogColors.border,
                                     ),
                                     shape: const StadiumBorder(),
                                     onSelected: (val) {
@@ -1067,17 +1021,13 @@ class _CashierPOSPageState extends State<CashierPOSPage> {
                               }
                             } catch (e) {
                               if (context.mounted) {
-                                String errorMsg =
-                                    'Error al procesar la venta en el servidor.';
-                                if (e is DioException &&
-                                    e.response != null &&
-                                    e.response!.data != null) {
-                                  final data = e.response!.data;
-                                  if (data is Map &&
-                                      data.containsKey('message')) {
-                                    errorMsg = data['message'].toString();
-                                  }
-                                }
+                                final errorMsg = e is DioException
+                                    ? ApiErrorMessage.fromDio(
+                                        e,
+                                        fallback:
+                                            'Error al procesar la venta en el servidor.',
+                                      )
+                                    : 'Error al procesar la venta en el servidor.';
                                 showDialog(
                                   context: context,
                                   builder: (ctx) {

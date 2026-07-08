@@ -38,10 +38,10 @@ flutter test
 ### Integracion local
 
 ```powershell
-docker compose up --build
-docker compose ps
-docker compose logs api
-docker compose logs frontend-web
+docker compose --env-file .env -f infra/docker/compose.local.yml up -d --build
+docker compose --env-file .env -f infra/docker/compose.local.yml ps
+docker compose --env-file .env -f infra/docker/compose.local.yml logs api
+docker compose --env-file .env -f infra/docker/compose.local.yml logs app-web
 ```
 
 Servicios a verificar:
@@ -122,21 +122,21 @@ Ya existen pruebas base en `mobile_app/test/`:
 1. Levantar servicios:
 
 ```powershell
-docker compose up --build
+docker compose --env-file .env -f infra/docker/compose.local.yml up -d --build
 ```
 
 2. Confirmar estado:
 
 ```powershell
-docker compose ps
+docker compose --env-file .env -f infra/docker/compose.local.yml ps
 ```
 
 3. Revisar logs:
 
 ```powershell
-docker compose logs api
-docker compose logs frontend-web
-docker compose logs web
+docker compose --env-file .env -f infra/docker/compose.local.yml logs api
+docker compose --env-file .env -f infra/docker/compose.local.yml logs app-web
+docker compose --env-file .env -f infra/docker/compose.local.yml logs admin-web
 ```
 
 ### Casos de integracion API + DB
@@ -230,7 +230,7 @@ Una entrega se considera verificada cuando:
 - `npm run test` pasa en backend.
 - `flutter analyze` pasa sin errores.
 - `flutter test` pasa.
-- `docker compose up --build` levanta los servicios principales.
+- `docker compose --env-file .env -f infra/docker/compose.local.yml up -d --build` levanta los servicios principales.
 - Las URLs `3000`, `8383` y `8282` responden.
 - Los flujos criticos por rol tienen evidencia manual o automatizada.
 - No se expone `proyecto_antiguo/` desde el hub estatico.

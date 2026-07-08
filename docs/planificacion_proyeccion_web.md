@@ -8,32 +8,32 @@ Este documento complementa `proyeccion.md`, que contiene los hallazgos tecnicos 
 
 ## Entorno local disponible
 
-El proyecto ya cuenta con Docker Compose en la raiz:
+El proyecto usa Compose vigente solo desde `infra/docker/compose.local.yml`:
 
 ```powershell
-docker compose up --build
+docker compose --env-file .env -f infra/docker/compose.local.yml up -d --build
 ```
 
 Servicios principales:
 
 | Servicio | Contenedor | Uso | URL / Puerto |
 |---|---|---|---|
-| `db` | `gymsmart-postgres` | PostgreSQL local | `127.0.0.1:5432` |
-| `api` | `gymsmart-api` | Backend NestJS | `http://localhost:3000` |
-| `frontend-web` | `sas_gym_flutter_web` | Flutter web compilado | `http://localhost:8383` |
-| `web` | `sas_gym_frontend` | Hub, docs y mockups | `http://localhost:8282` |
-| `test-client` | `gymsmart-test-client` | Cliente curl aislado | Red `external-test-net` |
+| `postgres` | `sasgym_postgres_local` | PostgreSQL local | `localhost:5432` |
+| `redis` | `sasgym_redis_local` | Redis local | `localhost:6379` |
+| `api` | `sasgym_api_local` | Backend NestJS | `http://localhost:3000` |
+| `app-web` | `sasgym_app_web_local` | Flutter web compilado | `http://localhost:8383` |
+| `admin-web` | `sasgym_admin_web_local` | Hub, docs y mockups | `http://localhost:8282` |
 
 Comandos utiles:
 
 ```powershell
-docker compose ps
-docker compose logs api
-docker compose logs frontend-web
-docker compose logs web
+docker compose --env-file .env -f infra/docker/compose.local.yml ps
+docker compose --env-file .env -f infra/docker/compose.local.yml logs api
+docker compose --env-file .env -f infra/docker/compose.local.yml logs app-web
+docker compose --env-file .env -f infra/docker/compose.local.yml logs admin-web
 ```
 
-Nota critica: el Compose actual ejecuta `prisma db push --force-reset`, por lo que debe tratarse como entorno de desarrollo/pruebas, no produccion.
+Nota critica: el Compose local ejecuta `npm run db:setup:local`. Si `ALLOW_TEST_DATA_RESET=true`, puede resetear datos locales incompatibles; por eso debe tratarse como entorno de desarrollo/pruebas, no produccion.
 
 ## Meta web-sistema
 
@@ -45,7 +45,7 @@ Objetivo: usar los contenedores locales como entorno reproducible de desarrollo.
 
 Tareas:
 
-- Levantar entorno con `docker compose up --build`.
+- Levantar entorno con `docker compose --env-file .env -f infra/docker/compose.local.yml up -d --build`.
 - Confirmar:
   - API en `http://localhost:3000`.
   - Flutter web en `http://localhost:8383`.
@@ -141,7 +141,7 @@ Tareas:
   - solo dependencias productivas;
   - `node dist/main`;
   - usuario no-root.
-- Crear `docker-compose.dev.yml` y `docker-compose.prod.yml`.
+- Mantener `infra/docker/compose.local.yml` e `infra/docker/compose.prod.yml` como fuentes unicas.
 - Reemplazar `prisma db push --force-reset` por `prisma migrate deploy` en prod.
 - Remover volumen `./backend:/app` en prod.
 - Usar secrets externos.
@@ -161,8 +161,8 @@ Objetivo: ordenar las superficies web para QA y demostracion.
 
 Tareas:
 
-- Mantener `web` como hub local en `8282`.
-- Mantener `frontend-web` como app Flutter web en `8383`.
+- Mantener `admin-web` como hub local en `8282`.
+- Mantener `app-web` como app Flutter web en `8383`.
 - Documentar rutas:
   - `/mockups/web/`
   - `/mockups/mobile/`
@@ -180,8 +180,8 @@ Criterio de salida:
 Arranque:
 
 ```powershell
-docker compose up --build
-docker compose ps
+docker compose --env-file .env -f infra/docker/compose.local.yml up -d --build
+docker compose --env-file .env -f infra/docker/compose.local.yml ps
 ```
 
 Backend:
@@ -198,18 +198,18 @@ Integracion:
 - Abrir `http://localhost:3000`.
 - Abrir `http://localhost:8383`.
 - Abrir `http://localhost:8282`.
-- Revisar logs con `docker compose logs api`.
+- Revisar logs con `docker compose --env-file .env -f infra/docker/compose.local.yml logs api`.
 
 Cliente aislado:
 
 ```powershell
-docker compose exec test-client curl http://api:3000/api/v1
+docker compose --env-file .env -f infra/docker/compose.local.yml exec api curl http://localhost:3000/api/v1
 ```
 
 ## Entregables esperados
 
 - Backend compila y prueba.
-- Compose dev levanta API, DB, Flutter web y hub.
+- Compose local levanta API, DB, Redis, Flutter web y hub.
 - Compose prod/staging no usa `force-reset`.
 - Flujo caja/pagos/auditoria funciona contra API real.
 - Politicas de seguridad aplicadas por ambiente.

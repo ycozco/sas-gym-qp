@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_app/data/gym_seed.dart';
 import 'package:flutter_app/data/gym_state.dart';
+import 'package:flutter_app/core/config/app_config.dart';
 import 'package:flutter_app/features/auth/screens/login_screen.dart';
+import 'package:flutter_app/features/member/widgets/class_booking_view.dart';
 import 'package:flutter_app/features/member/widgets/full_qr_view.dart';
+import 'package:flutter_app/features/member/widgets/notifications_view.dart';
 import 'package:flutter_app/models/gym_models.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -45,6 +48,20 @@ void main() {
     expect(find.text('Modo Demo / Cuentas Semilla'), findsNothing);
   });
 
+  testWidgets('login shows non-production api diagnostic', (tester) async {
+    final state = GymState(startBackground: false);
+    addTearDown(state.dispose);
+
+    await tester.pumpWidget(
+      GymStateProvider(
+        notifier: state,
+        child: const MaterialApp(home: LoginScreen()),
+      ),
+    );
+
+    expect(find.textContaining('API '), findsOneWidget);
+  });
+
   test('backend mode does not preload demo seed data', () {
     final state = GymState(startBackground: false);
     addTearDown(state.dispose);
@@ -53,6 +70,62 @@ void main() {
     expect(state.products, isEmpty);
     expect(state.auditLogs, isEmpty);
   });
+
+  test('demo mode requires explicit build authorization', () {
+    expect(
+      () => AppConfig.resolveMode('demo', allowDemoMode: false),
+      throwsA(isA<StateError>()),
+    );
+    expect(AppConfig.resolveMode('demo', allowDemoMode: true), AppMode.demo);
+    expect(
+      AppConfig.resolveMode('backend', allowDemoMode: false),
+      AppMode.backend,
+    );
+  });
+
+  test('mobile backend mode requires explicit API_BASE_URL', () {
+    expect(AppConfig.resolveApiBaseUrl, throwsA(isA<StateError>()));
+  });
+
+  testWidgets('class booking does not render embedded demo schedules', (
+    tester,
+  ) async {
+    final state = GymState(startBackground: false);
+    addTearDown(state.dispose);
+
+    await tester.pumpWidget(
+      GymStateProvider(
+        notifier: state,
+        child: MaterialApp(
+          home: ClassBookingView(
+            palette: rolePalettes[GymRole.member]!,
+            onBack: () {},
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Crossfit WOD'), findsNothing);
+    expect(find.text('No hay clases disponibles'), findsOneWidget);
+  });
+
+  testWidgets(
+    'notifications view does not render embedded demo notifications',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: NotificationsView(
+            palette: rolePalettes[GymRole.member]!,
+            onBack: () {},
+          ),
+        ),
+      );
+
+      expect(find.text('Membresía activa'), findsNothing);
+      expect(find.text('Nueva Rutina Asignada'), findsNothing);
+      expect(find.text('No hay notificaciones'), findsOneWidget);
+    },
+  );
 
   testWidgets('member QR renders when backend qr_secret exists', (
     tester,

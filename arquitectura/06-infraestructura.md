@@ -1,15 +1,14 @@
 # Infraestructura
 
-## Docker Compose raiz
+## Docker Compose vigentes
 
-El archivo principal es `docker-compose.yml` en la raiz. Define:
+La configuracion Docker vigente vive solo en `infra/docker/`:
 
-- `db`: PostgreSQL 15.
-- `api`: NestJS API.
-- `frontend-web`: build web de Flutter servido por Nginx.
-- `flutter-ci`: target para `flutter analyze` y `flutter test`.
-- `web`: hub estatico de mockups y docs.
-- `test-client`: contenedor curl aislado para pruebas externas.
+- `infra/docker/compose.local.yml`: desarrollo local.
+- `infra/docker/compose.prod.yml`: produccion/preproduccion.
+- `infra/docker/compose.tools.yml`: herramientas opcionales.
+
+Los Compose antiguos de raiz, backend y mobile fueron eliminados para evitar ambiguedad operativa.
 
 ## Puertos
 
@@ -22,23 +21,28 @@ El archivo principal es `docker-compose.yml` en la raiz. Define:
 
 ## Redes
 
-El Compose raiz separa redes:
+El Compose local separa redes:
 
-- `internal-net`: red interna para base de datos y API. Esta marcada como `internal`.
-- `public-net`: red publica para API, Flutter web y hub estatico.
-- `external-test-net`: red para simular clientes fuera de la red interna.
+- `sasgym_backend_local`: PostgreSQL, Redis, API y WS.
+- `sasgym_public_local`: API, WS, Flutter web y admin web.
 
 ## Persistencia
 
-PostgreSQL usa el volumen `postgres_data`.
+PostgreSQL usa el volumen `sasgym_pgdata_local`.
 
-Importante: el comando de la API en Compose ejecuta:
+Importante: el comando de la API local ejecuta:
 
 ```sh
-npx prisma db push --force-reset && npx prisma generate && npx prisma db seed && npm run start:dev
+npm run db:setup:local && npm run start:dev
 ```
 
-Esto esta orientado a desarrollo. Puede reiniciar el esquema y los datos.
+El seed local es manual y resetea la BD local:
+
+```bash
+docker compose --env-file .env -f infra/docker/compose.local.yml exec api npm run seed:local
+```
+
+Usarlo solo para inicializar o reiniciar datos demo. El arranque normal no debe resembrar ventas ni cambiar fechas.
 
 ## Contenedor Flutter
 
@@ -66,8 +70,8 @@ No monta `proyecto_antiguo/`, lo cual es correcto porque esa carpeta contiene ba
 
 Raiz:
 
-```powershell
-docker compose up --build
+```bash
+docker compose --env-file .env -f infra/docker/compose.local.yml up -d --build
 ```
 
 Backend:
@@ -91,15 +95,15 @@ flutter run -d chrome
 
 CI Flutter via Docker:
 
-```powershell
-docker compose build flutter-ci
+```bash
+docker compose --env-file .env -f infra/docker/compose.local.yml build app-web
 ```
 
 ## Riesgos de infraestructura actual (Entorno AS-IS)
 
-- El `backend/docker-compose.yml` separado expone PostgreSQL de forma pública. En producción debe usarse una red privada interna.
+- La fuente unica de Docker Compose esta en `infra/docker/`.
 - Existen carpetas generadas de desarrollo (`node_modules`, `dist`, `build`, etc.) que no deben versionarse.
-- Los secretos en docker-compose se definen inline. En producción deben extraerse a variables de entorno externas.
+- Los secretos en Compose deben venir de archivos `.env` no versionados.
 
 ---
 
@@ -208,7 +212,7 @@ http {
     }
 
     upstream frontend_flutter {
-        server frontend-web:80;
+        server app-web:80;
     }
 
     server {
@@ -263,100 +267,6 @@ http {
 }
 ```
 
-### Configuración del Compose de Producción (`docker-compose.yml`)
+### Configuración del Compose de Producción
 
-```yaml
-version: '3.8'
-
-services:
-  db:
-    image: postgres:15-alpine
-    container_name: gymsmart-postgres
-    restart: always
-    environment:
-      POSTGRES_USER: ${DB_USER:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: gymsmart
-    ports:
-      - "127.0.0.1:5432:5432" # Solo mantenimiento local
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - internal-net
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d gymsmart"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  redis:
-    image: redis:7-alpine
-    container_name: gymsmart-redis
-    restart: always
-    command: redis-server --requirepass ${REDIS_PASSWORD}
-    networks:
-      - internal-net
-    healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 3
-
-  api:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: gymsmart-api
-    restart: on-failure
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    environment:
-      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/gymsmart?schema=public&connection_limit=15
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
-      - JWT_SECRET=${JWT_SECRET}
-      - TZ=America/Lima
-      - PORT=3000
-    command: sh -c "npx prisma migrate deploy && node dist/main.js"
-    networks:
-      - internal-net
-      - public-net
-
-  frontend-web:
-    build:
-      context: ./mobile_app
-      dockerfile: Dockerfile
-    container_name: gymsmart-flutter-web
-    restart: unless-stopped
-    networks:
-      - public-net
-
-  gateway:
-    image: nginx:alpine
-    container_name: gymsmart-nginx
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./infra/nginx/ssl:/etc/nginx/ssl:ro
-    depends_on:
-      - api
-      - frontend-web
-    networks:
-      - public-net
-
-networks:
-  internal-net:
-    driver: bridge
-    internal: true
-  public-net:
-    driver: bridge
-
-volumes:
-  postgres_data:
-```
+La fuente unica de configuracion productiva es `infra/docker/compose.prod.yml`. No duplicar YAML productivo en documentos; cualquier cambio debe hacerse en el archivo Compose vigente y luego documentarse de forma resumida.

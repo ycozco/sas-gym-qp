@@ -54,6 +54,7 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      REDIS_URL: redis://redis:6379
       JWT_SECRET: ${JWT_SECRET}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
       JWT_ACCESS_TTL: ${JWT_ACCESS_TTL:-15m}
@@ -70,8 +71,10 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+    # El seed local resetea la BD. Ejecutarlo manualmente solo cuando se
+    # quiera volver a la data inicial de pruebas.
     command: >
-      sh -c "npm run db:setup:local && npm run seed:local && npm run start:dev"
+      sh -c "npm run db:setup:local && npm run start:dev"
     networks:
       - sasgym_backend_local
       - sasgym_public_local
@@ -94,6 +97,7 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      REDIS_URL: redis://redis:6379
       JWT_SECRET: ${JWT_SECRET}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
       JWT_ACCESS_TTL: ${JWT_ACCESS_TTL:-15m}

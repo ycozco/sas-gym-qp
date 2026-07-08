@@ -7,7 +7,7 @@ Revision profunda del aplicativo Flutter, backend NestJS, modelo Prisma, WebSock
 Superficies revisadas:
 
 - App movil / Flutter: `mobile_app/`.
-- Backend / sistema: `backend/`, `docker-compose.yml`, `backend/Dockerfile`, `mobile_app/Dockerfile`.
+- Backend / sistema: `backend/`, `infra/docker/compose.local.yml`, `infra/docker/compose.prod.yml`, `backend/Dockerfile`, `mobile_app/Dockerfile`.
 - Seguridad operacional: secretos, CORS, uploads, red, logs, cache, colas offline, autenticacion y tenants.
 
 Limitacion: se intento ejecutar `flutter analyze`, pero el sandbox devolvio `windows sandbox: spawn setup refresh`. Los hallazgos se basan en inspeccion estatica de codigo y configuracion.
@@ -151,8 +151,8 @@ Accion recomendada:
 
 Ubicaciones:
 
-- `docker-compose.yml`
-- `backend/docker-compose.yml`
+- `infra/docker/compose.local.yml`
+- `infra/docker/compose.prod.yml`
 - `backend/src/modules/auth/auth.module.ts`
 - `backend/src/core/guards/auth.guard.ts`
 - `backend/src/core/gateways/saas.gateway.ts`
@@ -185,8 +185,8 @@ Accion recomendada:
 
 Ubicacion:
 
-- `docker-compose.yml`
-- `backend/docker-compose.yml`
+- `infra/docker/compose.local.yml`
+- `infra/docker/compose.prod.yml`
 
 Patron:
 
@@ -214,7 +214,7 @@ Accion recomendada:
 Ubicaciones:
 
 - `backend/Dockerfile`
-- `docker-compose.yml`
+- `infra/docker/compose.local.yml`
 
 Patrones:
 

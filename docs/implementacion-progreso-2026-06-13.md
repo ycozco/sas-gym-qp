@@ -7,13 +7,13 @@
 
 ## ✅ FASE 1 — Infraestructura Docker + DB Schema
 
-### HITO 1.1 — `docker-compose.dev.yml`
+### HITO 1.1 — `infra/docker/compose.local.yml`
 **Estado:** ✅ Completado | **Fecha:** 2026-06-13 21:25
 Archivo de composición para desarrollo local con hot reload (bind mounts), seed automático y todos los servicios (incluyendo base de datos y Redis) en contenedores separados.
 
 ---
 
-### HITO 1.2 — `docker-compose.prod.yml`
+### HITO 1.2 — `infra/docker/compose.prod.yml`
 **Estado:** ✅ Completado | **Fecha:** 2026-06-13 21:25
 Archivo de producción con límites estrictos de memoria RAM y CPU, configuración de optimizaciones de V8 y contenedor de Redis de producción.
 

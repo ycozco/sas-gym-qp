@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../data/gym_state.dart';
 import '../../../models/gym_models.dart';
 import '../../../widgets/app_shell.dart';
 import 'trainer_shared_utils.dart';
@@ -7,14 +8,36 @@ class TrainerProfileTab extends StatelessWidget {
   const TrainerProfileTab({
     super.key,
     required this.palette,
+    required this.state,
     required this.onGo,
   });
 
   final RolePalette palette;
+  final GymState state;
   final Function(String, [Map<String, dynamic>?]) onGo;
 
   @override
   Widget build(BuildContext context) {
+    final user = state.currentUser;
+    final trainerProfile = user?.trainerProfile ?? const <String, dynamic>{};
+    final name = user?.nombreCompleto ?? 'Entrenador';
+    final email = user?.email ?? 'Sin correo registrado';
+    final initials = _initials(name);
+    final sede =
+        trainerProfile['sede_nombre']?.toString() ??
+        trainerProfile['sede']?.toString() ??
+        'Sede sin registrar';
+    final especialidad =
+        trainerProfile['especialidad']?.toString() ??
+        trainerProfile['especialidades']?.toString() ??
+        'Sin especialidad registrada';
+    final turno = trainerProfile['turno']?.toString() ?? 'Turno sin registrar';
+    final certificacion =
+        trainerProfile['certificacion']?.toString() ??
+        'Certificación sin registrar';
+    final rating = trainerProfile['rating']?.toString();
+    final students = state.assignedTrainerMembers.length;
+
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 6, 20, 24),
       children: [
@@ -28,56 +51,49 @@ class TrainerProfileTab extends StatelessWidget {
                 radius: 48,
                 backgroundColor: palette.accent.withValues(alpha: 0.12),
                 foregroundColor: palette.accent,
-                child: const Text(
-                  'CM',
-                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.w900),
+                child: Text(
+                  initials,
+                  style: const TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
-              const Text(
-                'Carlos Mendoza',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
+              Text(
+                name,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                ),
               ),
               const SizedBox(height: 4),
-              const Text(
-                'Entrenador Elite · Sede Providencia',
-                style: TextStyle(fontSize: 13, color: Colors.grey),
+              Text(
+                'Entrenador · $sede',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 13, color: Colors.grey),
               ),
               const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  Icon(
-                    Icons.star_rate_rounded,
+                children: [
+                  const Icon(
+                    Icons.groups_rounded,
                     color: Color(0xFFFFB300),
-                    size: 24,
+                    size: 22,
                   ),
-                  Icon(
-                    Icons.star_rate_rounded,
-                    color: Color(0xFFFFB300),
-                    size: 24,
-                  ),
-                  Icon(
-                    Icons.star_rate_rounded,
-                    color: Color(0xFFFFB300),
-                    size: 24,
-                  ),
-                  Icon(
-                    Icons.star_rate_rounded,
-                    color: Color(0xFFFFB300),
-                    size: 24,
-                  ),
-                  Icon(
-                    Icons.star_rate_rounded,
-                    color: Color(0xFFFFB300),
-                    size: 24,
-                  ),
-                  SizedBox(width: 8),
-                  Text(
-                    '4.9 (53 alumnos)',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13.5,
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      rating == null
+                          ? '$students alumnos asignados'
+                          : '$rating · $students alumnos',
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13.5,
+                      ),
                     ),
                   ),
                 ],
@@ -97,16 +113,10 @@ class TrainerProfileTab extends StatelessWidget {
                 style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
               ),
               const SizedBox(height: 14),
-              _rowProfileInfo('Turno', 'Lunes a Viernes · 08:00 - 16:00'),
-              _rowProfileInfo(
-                'Especialidad',
-                'Hipertrofia, Fuerza y Biomecánica',
-              ),
-              _rowProfileInfo(
-                'Certificación',
-                'NSCA - Certified Personal Trainer',
-              ),
-              _rowProfileInfo('Email', 'carlos.mendoza@sasgym.com'),
+              _rowProfileInfo('Turno', turno),
+              _rowProfileInfo('Especialidad', especialidad),
+              _rowProfileInfo('Certificación', certificacion),
+              _rowProfileInfo('Email', email),
             ],
           ),
         ),
@@ -174,10 +184,26 @@ class TrainerProfileTab extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             desc,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold),
           ),
         ],
       ),
     );
+  }
+
+  String _initials(String name) {
+    final parts = name
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((part) => part.isNotEmpty)
+        .toList();
+    if (parts.isEmpty) return 'EN';
+    if (parts.length == 1) {
+      return parts.first.characters.take(2).toString().toUpperCase();
+    }
+    return '${parts.first.characters.first}${parts.last.characters.first}'
+        .toUpperCase();
   }
 }

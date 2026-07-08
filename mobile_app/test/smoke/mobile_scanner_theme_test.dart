@@ -83,9 +83,7 @@ void main() {
     expect(labels.last, 'DNI inválido');
   });
 
-  testWidgets('admin scanner renders dynamic presets with proper accents', (
-    tester,
-  ) async {
+  testWidgets('admin scanner renders real QR validation UI', (tester) async {
     final state = GymState(startBackground: false);
     addTearDown(state.dispose);
 
@@ -106,10 +104,10 @@ void main() {
       ),
     );
 
-    expect(find.text('Simulación de accesos'), findsOneWidget);
-    expect(find.text('DNI inválido'), findsOneWidget);
-    expect(find.textContaining('(Inactivo)'), findsOneWidget);
-    expect(find.textContaining('(Suspendido)'), findsOneWidget);
+    expect(find.text('Lectura QR'), findsOneWidget);
+    expect(find.text('Validar QR'), findsOneWidget);
+    expect(find.text('Simulación de accesos'), findsNothing);
+    expect(find.text('DNI inválido'), findsNothing);
   });
 
   test('dark theme routes cards and inputs to themed surfaces', () {

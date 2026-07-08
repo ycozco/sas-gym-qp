@@ -48,4 +48,16 @@ void main() {
 
     expect(find.byType(MaterialApp), findsOneWidget);
   });
+
+  test('unauthorized session clears current user', () {
+    final state = GymState(startBackground: false);
+    addTearDown(state.dispose);
+
+    state.setCurrentUserForTest(_userForRole(GymRole.member));
+    state.handleUnauthorizedSession();
+
+    expect(state.currentUser, isNull);
+    expect(state.authLoading, isFalse);
+    expect(state.authError, 'Sesión expirada. Inicia sesión nuevamente.');
+  });
 }

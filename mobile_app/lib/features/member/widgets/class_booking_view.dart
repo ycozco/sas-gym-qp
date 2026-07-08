@@ -35,19 +35,7 @@ class _ClassBookingViewState extends State<ClassBookingView> {
         ),
       ),
       body: classes.isEmpty
-          ? Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Text(
-                  'No hay clases disponibles en esta sede por el momento.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: context.sasColors.textMuted,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            )
+          ? _EmptyClassesState(palette: widget.palette)
           : ListView.separated(
               padding: const EdgeInsets.all(20),
               itemCount: classes.length,
@@ -165,6 +153,48 @@ class _ClassBookingViewState extends State<ClassBookingView> {
                 );
               },
             ),
+    );
+  }
+}
+
+class _EmptyClassesState extends StatelessWidget {
+  const _EmptyClassesState({required this.palette});
+
+  final RolePalette palette;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.sasColors;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.event_busy_outlined, size: 42, color: palette.accent),
+            const SizedBox(height: 14),
+            Text(
+              'No hay clases disponibles',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: colors.textPrimary,
+                fontWeight: FontWeight.w800,
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Cuando la sede publique horarios, apareceran aqui.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: colors.textMuted,
+                fontSize: 12.5,
+                height: 1.35,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

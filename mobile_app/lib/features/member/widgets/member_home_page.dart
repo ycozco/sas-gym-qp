@@ -15,10 +15,10 @@ class MemberHomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = GymStateProvider.of(context);
-    final mateo = getLoggedMember(state);
+    final member = getLoggedMember(state);
 
-    final isExpired = mateo.state == 'expired';
-    final isGrace = mateo.state == 'grace';
+    final isExpired = member.state == 'expired';
+    final isGrace = member.state == 'grace';
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 6, 20, 36),
@@ -29,7 +29,7 @@ class MemberHomePage extends StatelessWidget {
           subtitle: 'Accede rápido a tus clases, membresía y QR de ingreso.',
         ),
         const SizedBox(height: 16),
-        HeroCard(palette: palette, member: mateo, onGo: onGo),
+        HeroCard(palette: palette, member: member, onGo: onGo),
         const SizedBox(height: 16),
 
         // Alert banners if expired or grace
@@ -61,7 +61,7 @@ class MemberHomePage extends StatelessWidget {
               child: MetricTile(
                 icon: Icons.calendar_month,
                 label: 'Esta semana',
-                value: '${mateo.sessions} asists.',
+                value: '${member.sessions} asists.',
                 note: 'Racha activa',
                 accent: palette.accent,
               ),
@@ -71,17 +71,15 @@ class MemberHomePage extends StatelessWidget {
               child: MetricTile(
                 icon: Icons.workspace_premium,
                 label: 'Estado',
-                value: mateo.state == 'active'
+                value: member.state == 'active'
                     ? 'Activo'
-                    : mateo.state == 'grace'
+                    : member.state == 'grace'
                     ? 'Gracia'
                     : 'Vencido',
-                note: mateo.state == 'active'
-                    ? 'Vence el 4 de jun'
-                    : 'Sin días restantes',
-                accent: mateo.state == 'active'
+                note: _membershipNote(member),
+                accent: member.state == 'active'
                     ? const Color(0xFF00B85C)
-                    : mateo.state == 'grace'
+                    : member.state == 'grace'
                     ? const Color(0xFFFFB300)
                     : Colors.redAccent,
               ),
@@ -298,9 +296,9 @@ class MemberHomePage extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+        color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
+        border: Border.all(color: color.withOpacity(0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -352,6 +350,15 @@ class MemberHomePage extends StatelessWidget {
   BoxDecoration _cardDecoration(BuildContext context) {
     return themedCardDecoration(context, radius: 12);
   }
+
+  String _membershipNote(MemberRecord member) {
+    if (member.state == 'active' && member.daysLeft != null) {
+      return 'Quedan ${member.daysLeft} días';
+    }
+    if (member.state == 'active') return 'Vigente';
+    if (member.state == 'grace') return 'Regulariza tu plan';
+    return 'Sin días restantes';
+  }
 }
 
 class HeroCard extends StatelessWidget {
@@ -368,12 +375,14 @@ class HeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final firstName = member.name.trim().split(RegExp(r'\s+')).first;
+    final initials = _initials(member.name);
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: palette.gradient,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: palette.accent.withValues(alpha: 0.25)),
+        border: Border.all(color: palette.accent.withOpacity(0.25)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -385,21 +394,26 @@ class HeroCard extends StatelessWidget {
                 color: palette.accent,
                 solid: true,
               ),
-              const Spacer(),
-              IconButton(
-                icon: const Icon(
-                  Icons.notifications_outlined,
-                  color: Colors.black87,
+              const SizedBox(width: 8),
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: IconButton(
+                    icon: const Icon(
+                      Icons.notifications_outlined,
+                      color: Colors.black87,
+                    ),
+                    onPressed: () => onGo('notifications'),
+                  ),
                 ),
-                onPressed: () => onGo('notifications'),
               ),
               const SizedBox(width: 4),
               CircleAvatar(
                 radius: 20,
-                backgroundColor: Colors.white.withValues(alpha: 0.9),
-                child: const Text(
-                  'MS',
-                  style: TextStyle(
+                backgroundColor: Colors.white.withOpacity(0.9),
+                child: Text(
+                  initials,
+                  style: const TextStyle(
                     color: Colors.black,
                     fontWeight: FontWeight.w900,
                   ),
@@ -409,17 +423,15 @@ class HeroCard extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Hola, ${member.name.split(' ')[0]} 👋',
-            style: const TextStyle(
-              fontSize: 26,
-              fontWeight: FontWeight.w900,
-              letterSpacing: -0.6,
-            ),
+            'Hola, $firstName',
+            style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900),
           ),
           const SizedBox(height: 6),
-          const Text(
-            'Tienes tu rutina lista para hoy. Mantén el ritmo.',
-            style: TextStyle(
+          Text(
+            member.isActiveInGym
+                ? 'Tu estado social figura como entrenando ahora.'
+                : 'Tu estado social figura como inactivo.',
+            style: const TextStyle(
               fontSize: 13.5,
               color: Color(0xFF5E5E5E),
               fontWeight: FontWeight.w500,
@@ -428,5 +440,19 @@ class HeroCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _initials(String name) {
+    final parts = name
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((part) => part.isNotEmpty)
+        .toList();
+    if (parts.isEmpty) return 'S';
+    if (parts.length == 1) {
+      return parts.first.characters.take(2).toString().toUpperCase();
+    }
+    return '${parts.first.characters.first}${parts.last.characters.first}'
+        .toUpperCase();
   }
 }

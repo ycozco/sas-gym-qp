@@ -17,22 +17,12 @@ class CashierSalesPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.sasColors;
-    final cashierSalesLogs = state.auditLogs
-        .where(
-          (log) =>
-              log.actor.contains('Caja') &&
-              (log.action.contains('Venta') || log.action.contains('Cobró')),
-        )
-        .toList();
+    final cashierSales = state.cashierSales;
 
-    double totalTurnRevenue = cashierSalesLogs.fold(0, (sum, log) {
-      final reg = RegExp(r'S/\s*([0-9.]+)');
-      final match = reg.firstMatch(log.detail);
-      if (match != null) {
-        return sum + (double.tryParse(match.group(1)!) ?? 0.0);
-      }
-      return sum;
-    });
+    final totalTurnRevenue = cashierSales.fold<double>(
+      0,
+      (sum, sale) => sum + ((sale['amount'] as num?)?.toDouble() ?? 0),
+    );
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
@@ -57,7 +47,7 @@ class CashierSalesPage extends StatelessWidget {
                 child: _posStatBox(
                   context,
                   'Ventas Totales',
-                  '${cashierSalesLogs.length}',
+                  '${cashierSales.length}',
                   'registradas',
                 ),
               ),
@@ -75,11 +65,12 @@ class CashierSalesPage extends StatelessWidget {
         ),
         const SizedBox(height: 24),
 
-        const SectionHeader(
+        SectionHeader(
           title: 'Historial del Turno',
-          action: 'Solicitar anulación',
+          action: 'Actualizar',
+          onTap: () => state.loadCajaSalesBackend(),
         ),
-        if (cashierSalesLogs.isEmpty)
+        if (cashierSales.isEmpty)
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
@@ -99,7 +90,8 @@ class CashierSalesPage extends StatelessWidget {
           )
         else
           Column(
-            children: cashierSalesLogs.map((log) {
+            children: cashierSales.map((sale) {
+              final amount = (sale['amount'] as num?)?.toDouble() ?? 0;
               return Container(
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.all(14),
@@ -117,7 +109,7 @@ class CashierSalesPage extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            log.action,
+                            sale['title']?.toString() ?? 'Venta',
                             style: TextStyle(
                               fontWeight: FontWeight.w800,
                               fontSize: 14.5,
@@ -126,10 +118,19 @@ class CashierSalesPage extends StatelessWidget {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            log.detail,
+                            sale['detail']?.toString() ?? '',
                             style: TextStyle(
                               color: colors.textSecondary,
                               fontSize: 12,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'S/ ${amount.toStringAsFixed(2)}',
+                            style: TextStyle(
+                              color: colors.accent,
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w900,
                             ),
                           ),
                         ],
@@ -139,7 +140,7 @@ class CashierSalesPage extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
-                          log.time,
+                          sale['time']?.toString() ?? '',
                           style: TextStyle(
                             fontSize: 11,
                             color: colors.textMuted,
@@ -152,7 +153,7 @@ class CashierSalesPage extends StatelessWidget {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(
-                                  'Solicitud de anulación enviada al Administrador para: ${log.action}',
+                                  'Solicitud de anulación enviada al Administrador para: ${sale['title'] ?? 'venta'}',
                                 ),
                                 backgroundColor: palette.accent,
                               ),

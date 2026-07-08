@@ -98,7 +98,7 @@ class _ReportObservationViewState extends State<ReportObservationView> {
         state.addObservation(
           _category,
           _descCtrl.text,
-          state.currentUser?.nombreCompleto ?? 'Mateo Salas',
+          state.currentUser?.nombreCompleto ?? 'Usuario local',
         );
         success = true;
       }

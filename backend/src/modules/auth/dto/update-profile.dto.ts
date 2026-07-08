@@ -1,4 +1,5 @@
 import { IsNumber, IsOptional, IsString, IsObject } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class UpdateProfileDto {
   @IsOptional()
@@ -14,10 +15,12 @@ export class UpdateProfileDto {
   nickname?: string;
 
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   pesoKg?: number;
 
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   alturaCm?: number;
 

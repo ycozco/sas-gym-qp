@@ -238,22 +238,15 @@ export class PaymentsService {
       return true;
     }
 
-    // Para cajero, validamos el turno (06:00 - 14:00 es el turno activo simulado)
-    const localTime = new Date();
-    const hourStr = new Intl.DateTimeFormat('es-PE', {
-      timeZone: 'America/Lima',
-      hour: 'numeric',
-      hour12: false,
-    }).format(localTime);
+    const activeCaja = await this.prisma.caja.findFirst({
+      where: {
+        cajero_id: cashierId,
+        tenant_id: user.tenant_id,
+        estado: 'abierta',
+      },
+    });
 
-    const currentHour = parseInt(hourStr, 10);
-
-    // Verificamos si la hora actual está dentro del turno 06:00 a 14:00 (6 a 13 inclusive)
-    if (currentHour >= 6 && currentHour < 14) {
-      return true;
-    }
-
-    return false;
+    return Boolean(activeCaja);
   }
 
   async processPOSCharge(

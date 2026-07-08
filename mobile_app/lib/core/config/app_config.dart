@@ -17,6 +17,10 @@ class AppConfig {
     'APP_MODE',
     defaultValue: 'backend',
   );
+  static const bool allowDemoMode = bool.fromEnvironment(
+    'ALLOW_DEMO_MODE',
+    defaultValue: false,
+  );
   static const bool enableDemoLogin = bool.fromEnvironment(
     'ENABLE_DEMO_LOGIN',
     defaultValue: false,
@@ -41,8 +45,17 @@ class AppConfig {
   static bool get isProduction => environment == AppEnvironment.prod;
 
   static AppMode get mode {
-    return switch (appModeName.toLowerCase()) {
-      'demo' => AppMode.demo,
+    return resolveMode(appModeName, allowDemoMode: allowDemoMode);
+  }
+
+  @visibleForTesting
+  static AppMode resolveMode(String value, {required bool allowDemoMode}) {
+    return switch (value.toLowerCase()) {
+      'demo' when allowDemoMode => AppMode.demo,
+      'demo' => throw StateError(
+        'APP_MODE=demo is disabled for local/backend APK builds. '
+        'Use APP_MODE=backend, or compile with --dart-define=ALLOW_DEMO_MODE=true for an intentional demo build.',
+      ),
       _ => AppMode.backend,
     };
   }
@@ -63,10 +76,22 @@ class AppConfig {
     if (kIsWeb) {
       return 'http://localhost:3000/api/v1';
     }
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      return 'http://10.0.2.2:3000/api/v1';
+    if (!isDemoMode) {
+      throw StateError(
+        'API_BASE_URL is required for mobile/desktop backend mode. '
+        'For a physical device use --dart-define=API_BASE_URL=http://<PC_LAN_IP>:3000/api/v1. '
+        'For Android emulator use http://10.0.2.2:3000/api/v1.',
+      );
     }
     return 'http://localhost:3000/api/v1';
+  }
+
+  static String diagnosticApiBaseUrlLabel() {
+    try {
+      return resolveApiBaseUrl();
+    } catch (_) {
+      return 'API_BASE_URL no configurada';
+    }
   }
 
   static String? demoTotpSecretForDni(String dni) {

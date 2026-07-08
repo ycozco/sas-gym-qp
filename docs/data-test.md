@@ -60,7 +60,7 @@ npm run seed:test
 Con Docker Compose, si se ejecuta dentro del contenedor API:
 
 ```powershell
-docker compose exec api sh -lc "ALLOW_TEST_DATA_RESET=true npm run seed:test"
+docker compose --env-file .env -f infra/docker/compose.local.yml exec api sh -lc "ALLOW_TEST_DATA_RESET=true npm run seed:test"
 ```
 
 ## Revision de edicion de membresias
@@ -90,7 +90,7 @@ Endpoints implementados:
 Verificacion ejecutada:
 
 ```powershell
-docker compose exec api sh -lc "npx ts-node prisma/verify-plan-snapshot.ts"
+docker compose --env-file .env -f infra/docker/compose.local.yml exec api sh -lc "npx ts-node prisma/verify-plan-snapshot.ts"
 ```
 
 Resultado:

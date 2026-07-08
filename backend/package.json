@@ -24,7 +24,7 @@
     "seed:local": "prisma db seed",
     "data:reconcile": "node dist/scripts/reconcile.js",
     "seed:test": "ts-node prisma/seed-test.ts",
-    "db:setup:local": "npm run prisma:generate && npm run migrate:deploy",
+    "db:setup:local": "sh scripts/setup-local-db.sh",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
