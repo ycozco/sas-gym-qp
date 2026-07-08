@@ -33,7 +33,10 @@ class TrainerTemplatesTab extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 14),
           ),
           icon: const Icon(Icons.create_new_folder_outlined),
-          label: const Text('Crear Nueva Plantilla', style: TextStyle(fontWeight: FontWeight.w900)),
+          label: const Text(
+            'Crear Nueva Plantilla',
+            style: TextStyle(fontWeight: FontWeight.w900),
+          ),
           onPressed: () => _showCreateTemplateDialog(context),
         ),
         const SizedBox(height: 18),
@@ -52,20 +55,43 @@ class TrainerTemplatesTab extends StatelessWidget {
                     children: [
                       const Icon(Icons.assignment_outlined, color: Colors.blue),
                       const SizedBox(width: 10),
-                      Text(tmpl['name'] as String, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
+                      Text(
+                        tmpl['name'] as String,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 15,
+                        ),
+                      ),
                       const Spacer(),
-                      StatusPill(label: tmpl['muscle'] as String, color: Colors.blue.withValues(alpha: 0.15), solid: false),
+                      StatusPill(
+                        label: tmpl['muscle'] as String,
+                        color: Colors.blue.withValues(alpha: 0.15),
+                        solid: false,
+                      ),
                     ],
                   ),
                   const SizedBox(height: 12),
-                  const Text('Ejercicios programados:', style: TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.bold)),
+                  const Text(
+                    'Ejercicios programados:',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   const SizedBox(height: 6),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
                     children: exercises.map((ex) {
                       return Chip(
-                        label: Text(ex, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+                        label: Text(
+                          ex,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                         backgroundColor: const Color(0xFFFAFAFA),
                         side: const BorderSide(color: Color(0xFFE8E4D9)),
                         padding: EdgeInsets.zero,
@@ -96,20 +122,29 @@ class TrainerTemplatesTab extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             side: BorderSide(color: colors.border),
           ),
-          title: const Text('Crear Plantilla', style: TextStyle(fontWeight: FontWeight.w900)),
+          title: const Text(
+            'Crear Plantilla',
+            style: TextStyle(fontWeight: FontWeight.w900),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
-                decoration: const InputDecoration(labelText: 'Nombre de la Plantilla (ej. Rutina D)'),
+                decoration: const InputDecoration(
+                  labelText: 'Nombre de la Plantilla (ej. Rutina D)',
+                ),
                 onChanged: (val) => name = val,
               ),
               TextField(
-                decoration: const InputDecoration(labelText: 'Músculo / Categoría (ej. Espalda)'),
+                decoration: const InputDecoration(
+                  labelText: 'Músculo / Categoría (ej. Espalda)',
+                ),
                 onChanged: (val) => muscle = val,
               ),
               TextField(
-                decoration: const InputDecoration(labelText: 'Ejercicios (separados por coma)'),
+                decoration: const InputDecoration(
+                  labelText: 'Ejercicios (separados por coma)',
+                ),
                 onChanged: (val) => exStr = val,
               ),
             ],
@@ -129,7 +164,11 @@ class TrainerTemplatesTab extends StatelessWidget {
               ),
               onPressed: () {
                 if (name.isNotEmpty && muscle.isNotEmpty) {
-                  final list = exStr.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+                  final list = exStr
+                      .split(',')
+                      .map((e) => e.trim())
+                      .where((e) => e.isNotEmpty)
+                      .toList();
                   onAddTemplate(name, muscle, list);
                   Navigator.pop(ctx);
                 }

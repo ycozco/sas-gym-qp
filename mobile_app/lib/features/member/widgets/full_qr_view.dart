@@ -85,8 +85,7 @@ class _FullQRViewState extends State<FullQRView> {
     final userDni = state.currentUser?.dni ?? '11111111';
     final profile = state.currentUser?.memberProfile;
     final secret =
-        profile?['qr_secret']?.toString() ??
-        profile?['qrSecret']?.toString();
+        profile?['qr_secret']?.toString() ?? profile?['qrSecret']?.toString();
     if (secret == null || secret.isEmpty) {
       setState(() {
         _qrData = '';

@@ -20,7 +20,9 @@ class TimerRing extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double progress = totalSeconds > 0 ? secondsRemaining / totalSeconds : 0.0;
+    final double progress = totalSeconds > 0
+        ? secondsRemaining / totalSeconds
+        : 0.0;
 
     return SizedBox(
       width: size,

@@ -122,7 +122,10 @@ class _AdminCajaAuditPageState extends State<AdminCajaAuditPage> {
                 child: const Center(
                   child: Text(
                     'No se encontraron cajeros con turnos registrados.',
-                    style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               )
@@ -136,7 +139,11 @@ class _AdminCajaAuditPageState extends State<AdminCajaAuditPage> {
     );
   }
 
-  Widget _buildCashierCard(BuildContext context, CashierAccount cashier, dynamic colors) {
+  Widget _buildCashierCard(
+    BuildContext context,
+    CashierAccount cashier,
+    dynamic colors,
+  ) {
     final activeShift = cashier.shift.toLowerCase() == 'abierta';
 
     return Container(
@@ -169,7 +176,9 @@ class _AdminCajaAuditPageState extends State<AdminCajaAuditPage> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      cashier.active ? 'Cajero Habilitado' : 'Cajero Suspendido',
+                      cashier.active
+                          ? 'Cajero Habilitado'
+                          : 'Cajero Suspendido',
                       style: TextStyle(fontSize: 11, color: colors.textMuted),
                     ),
                   ],
@@ -197,7 +206,11 @@ class _AdminCajaAuditPageState extends State<AdminCajaAuditPage> {
           if (cashier.sessionHistory.isEmpty)
             Text(
               'No registra turnos en el sistema.',
-              style: TextStyle(fontSize: 12, color: colors.textMuted, fontStyle: FontStyle.italic),
+              style: TextStyle(
+                fontSize: 12,
+                color: colors.textMuted,
+                fontStyle: FontStyle.italic,
+              ),
             )
           else
             ...cashier.sessionHistory.take(3).map((session) {
@@ -208,7 +221,11 @@ class _AdminCajaAuditPageState extends State<AdminCajaAuditPage> {
     );
   }
 
-  Widget _buildSessionTile(BuildContext context, CashierSession session, dynamic colors) {
+  Widget _buildSessionTile(
+    BuildContext context,
+    CashierSession session,
+    dynamic colors,
+  ) {
     final isOpen = session.estado == 'abierta';
     final hasDiff = session.diferencia != 0.0;
 
@@ -221,7 +238,9 @@ class _AdminCajaAuditPageState extends State<AdminCajaAuditPage> {
         border: Border.all(
           color: isOpen
               ? widget.palette.accent.withValues(alpha: 0.2)
-              : (hasDiff ? Colors.redAccent.withValues(alpha: 0.2) : colors.border),
+              : (hasDiff
+                    ? Colors.redAccent.withValues(alpha: 0.2)
+                    : colors.border),
         ),
       ),
       child: Column(
@@ -242,8 +261,15 @@ class _AdminCajaAuditPageState extends State<AdminCajaAuditPage> {
                 onTap: () => _showEditSessionDialog(context, session),
                 borderRadius: BorderRadius.circular(4),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                  child: Icon(Icons.edit_rounded, size: 12, color: widget.palette.accent),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 2,
+                  ),
+                  child: Icon(
+                    Icons.edit_rounded,
+                    size: 12,
+                    color: widget.palette.accent,
+                  ),
                 ),
               ),
               const Spacer(),
@@ -257,9 +283,17 @@ class _AdminCajaAuditPageState extends State<AdminCajaAuditPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _metricLabel('Apertura', 'S/ ${session.montoApertura.toStringAsFixed(0)}', colors),
+              _metricLabel(
+                'Apertura',
+                'S/ ${session.montoApertura.toStringAsFixed(0)}',
+                colors,
+              ),
               if (!isOpen) ...[
-                _metricLabel('Cierre Real', 'S/ ${session.totalIngresos.toStringAsFixed(0)}', colors),
+                _metricLabel(
+                  'Cierre Real',
+                  'S/ ${session.totalIngresos.toStringAsFixed(0)}',
+                  colors,
+                ),
                 _metricLabel(
                   'Diferencia',
                   'S/ ${session.diferencia.toStringAsFixed(2)}',
@@ -267,7 +301,12 @@ class _AdminCajaAuditPageState extends State<AdminCajaAuditPage> {
                   valueColor: hasDiff ? Colors.redAccent : Colors.green,
                 ),
               ] else
-                _metricLabel('Teórico', 'Esperando cuadre', colors, valueColor: Colors.blueAccent),
+                _metricLabel(
+                  'Teórico',
+                  'Esperando cuadre',
+                  colors,
+                  valueColor: Colors.blueAccent,
+                ),
             ],
           ),
 
@@ -281,12 +320,20 @@ class _AdminCajaAuditPageState extends State<AdminCajaAuditPage> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.warning_rounded, color: Colors.redAccent, size: 16),
+                  const Icon(
+                    Icons.warning_rounded,
+                    color: Colors.redAccent,
+                    size: 16,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       'Obs: ${session.observaciones ?? "Sin justificar"}',
-                      style: const TextStyle(fontSize: 11, color: Colors.redAccent, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Colors.redAccent,
+                        fontWeight: FontWeight.bold,
+                      ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -300,13 +347,22 @@ class _AdminCajaAuditPageState extends State<AdminCajaAuditPage> {
     );
   }
 
-  Widget _metricLabel(String label, String value, dynamic colors, {Color? valueColor}) {
+  Widget _metricLabel(
+    String label,
+    String value,
+    dynamic colors, {
+    Color? valueColor,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: TextStyle(fontSize: 10, color: colors.textMuted, fontWeight: FontWeight.w600),
+          style: TextStyle(
+            fontSize: 10,
+            color: colors.textMuted,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         const SizedBox(height: 2),
         Text(
@@ -366,14 +422,30 @@ class _AdminEditCajaDialogState extends State<_AdminEditCajaDialog> {
   void initState() {
     super.initState();
     _estado = widget.session.estado;
-    _montoAperturaCtrl = TextEditingController(text: widget.session.montoApertura.toStringAsFixed(2));
-    _fechaAperturaCtrl = TextEditingController(text: widget.session.fechaApertura);
-    _fechaCierreCtrl = TextEditingController(text: widget.session.fechaCierre ?? '');
-    _montoCierreEfectivoCtrl = TextEditingController(text: (widget.session.montoCierreEfectivo ?? 0.0).toStringAsFixed(2));
-    _montoCierreTransferenciaCtrl = TextEditingController(text: (widget.session.montoCierreTransferencia ?? 0.0).toStringAsFixed(2));
-    _montoCierreYapeCtrl = TextEditingController(text: (widget.session.montoCierreYape ?? 0.0).toStringAsFixed(2));
-    _montoCierrePOSCtrl = TextEditingController(text: (widget.session.montoCierrePOS ?? 0.0).toStringAsFixed(2));
-    _observacionesCtrl = TextEditingController(text: widget.session.observaciones ?? '');
+    _montoAperturaCtrl = TextEditingController(
+      text: widget.session.montoApertura.toStringAsFixed(2),
+    );
+    _fechaAperturaCtrl = TextEditingController(
+      text: widget.session.fechaApertura,
+    );
+    _fechaCierreCtrl = TextEditingController(
+      text: widget.session.fechaCierre ?? '',
+    );
+    _montoCierreEfectivoCtrl = TextEditingController(
+      text: (widget.session.montoCierreEfectivo ?? 0.0).toStringAsFixed(2),
+    );
+    _montoCierreTransferenciaCtrl = TextEditingController(
+      text: (widget.session.montoCierreTransferencia ?? 0.0).toStringAsFixed(2),
+    );
+    _montoCierreYapeCtrl = TextEditingController(
+      text: (widget.session.montoCierreYape ?? 0.0).toStringAsFixed(2),
+    );
+    _montoCierrePOSCtrl = TextEditingController(
+      text: (widget.session.montoCierrePOS ?? 0.0).toStringAsFixed(2),
+    );
+    _observacionesCtrl = TextEditingController(
+      text: widget.session.observaciones ?? '',
+    );
   }
 
   @override
@@ -423,7 +495,7 @@ class _AdminEditCajaDialogState extends State<_AdminEditCajaDialog> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 DropdownButtonFormField<String>(
-                  value: _estado,
+                  initialValue: _estado,
                   dropdownColor: colors.surface,
                   style: TextStyle(color: colors.textPrimary, fontSize: 14),
                   decoration: InputDecoration(
@@ -449,7 +521,9 @@ class _AdminEditCajaDialogState extends State<_AdminEditCajaDialog> {
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _montoAperturaCtrl,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   style: TextStyle(color: colors.textPrimary, fontSize: 14),
                   decoration: InputDecoration(
                     labelText: 'Monto Apertura (S/)',
@@ -459,7 +533,8 @@ class _AdminEditCajaDialogState extends State<_AdminEditCajaDialog> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  validator: (val) => val == null || val.isEmpty ? 'Requerido' : null,
+                  validator: (val) =>
+                      val == null || val.isEmpty ? 'Requerido' : null,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
@@ -473,7 +548,8 @@ class _AdminEditCajaDialogState extends State<_AdminEditCajaDialog> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  validator: (val) => val == null || val.isEmpty ? 'Requerido' : null,
+                  validator: (val) =>
+                      val == null || val.isEmpty ? 'Requerido' : null,
                 ),
                 if (_estado == 'cerrada') ...[
                   const SizedBox(height: 12),
@@ -492,7 +568,9 @@ class _AdminEditCajaDialogState extends State<_AdminEditCajaDialog> {
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: _montoCierreEfectivoCtrl,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
                     style: TextStyle(color: colors.textPrimary, fontSize: 14),
                     decoration: InputDecoration(
                       labelText: 'Cierre Efectivo (S/)',
@@ -506,7 +584,9 @@ class _AdminEditCajaDialogState extends State<_AdminEditCajaDialog> {
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: _montoCierreTransferenciaCtrl,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
                     style: TextStyle(color: colors.textPrimary, fontSize: 14),
                     decoration: InputDecoration(
                       labelText: 'Cierre Transferencia (S/)',
@@ -520,7 +600,9 @@ class _AdminEditCajaDialogState extends State<_AdminEditCajaDialog> {
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: _montoCierreYapeCtrl,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
                     style: TextStyle(color: colors.textPrimary, fontSize: 14),
                     decoration: InputDecoration(
                       labelText: 'Cierre Yape/Plin (S/)',
@@ -534,7 +616,9 @@ class _AdminEditCajaDialogState extends State<_AdminEditCajaDialog> {
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: _montoCierrePOSCtrl,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
                     style: TextStyle(color: colors.textPrimary, fontSize: 14),
                     decoration: InputDecoration(
                       labelText: 'Cierre Tarjeta/POS (S/)',
@@ -588,10 +672,16 @@ class _AdminEditCajaDialogState extends State<_AdminEditCajaDialog> {
                       widget.session.id,
                       montoApertura: double.parse(_montoAperturaCtrl.text),
                       fechaApertura: _fechaAperturaCtrl.text,
-                      fechaCierre: _fechaCierreCtrl.text.isEmpty ? null : _fechaCierreCtrl.text,
+                      fechaCierre: _fechaCierreCtrl.text.isEmpty
+                          ? null
+                          : _fechaCierreCtrl.text,
                       estado: _estado,
-                      montoCierreEfectivo: double.parse(_montoCierreEfectivoCtrl.text),
-                      montoCierreTransferencia: double.parse(_montoCierreTransferenciaCtrl.text),
+                      montoCierreEfectivo: double.parse(
+                        _montoCierreEfectivoCtrl.text,
+                      ),
+                      montoCierreTransferencia: double.parse(
+                        _montoCierreTransferenciaCtrl.text,
+                      ),
                       montoCierreYape: double.parse(_montoCierreYapeCtrl.text),
                       montoCierrePOS: double.parse(_montoCierrePOSCtrl.text),
                       observaciones: _observacionesCtrl.text,

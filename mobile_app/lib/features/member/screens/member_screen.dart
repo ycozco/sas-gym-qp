@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import '../../../data/gym_seed.dart';
-import '../../../data/gym_state.dart';
 import '../../../models/gym_models.dart';
-import '../../../theme/app_theme_tokens.dart';
 import '../../../widgets/app_shell.dart';
 import '../widgets/workout_assistant_view.dart';
 import '../widgets/pay_membership_view.dart';
@@ -62,10 +60,12 @@ class _MemberScreenState extends State<MemberScreen> {
     final customAccent = _getAccentColor();
     final palette = RolePalette(
       accent: customAccent,
-      accentInk: customAccent.computeLuminance() > 0.45 ? const Color(0xFF0B0B0B) : Colors.white,
+      accentInk: customAccent.computeLuminance() > 0.45
+          ? const Color(0xFF0B0B0B)
+          : Colors.white,
       surfaceTint: defaultPalette.surfaceTint,
       gradient: LinearGradient(
-        colors: [customAccent.withOpacity(0.15), const Color(0xFF0F0F11)],
+        colors: [customAccent.withValues(alpha: 0.15), const Color(0xFF0F0F11)],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       ),

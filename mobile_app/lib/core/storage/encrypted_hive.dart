@@ -9,10 +9,14 @@ class EncryptedHive {
     try {
       return await Hive.openBox(name, encryptionCipher: HiveAesCipher(hiveKey));
     } catch (e) {
-      if (AppConfig.isProduction || AppConfig.environment == AppEnvironment.staging) {
+      if (AppConfig.isProduction ||
+          AppConfig.environment == AppEnvironment.staging) {
         rethrow;
       }
-      AppLogger.debug('Migrating legacy Hive box to encrypted storage: $name', e);
+      AppLogger.debug(
+        'Migrating legacy Hive box to encrypted storage: $name',
+        e,
+      );
       return _migrateLegacyBox(name, hiveKey);
     }
   }

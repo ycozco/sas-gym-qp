@@ -52,7 +52,9 @@ class AdminDashboardPage extends StatelessWidget {
       }
     }
 
-    final int activeCajasCount = state.cashiers.where((c) => c.shift.toLowerCase() == 'abierta').length;
+    final int activeCajasCount = state.cashiers
+        .where((c) => c.shift.toLowerCase() == 'abierta')
+        .length;
 
     return ListView(
       key: const PageStorageKey<String>('admin-dashboard'),

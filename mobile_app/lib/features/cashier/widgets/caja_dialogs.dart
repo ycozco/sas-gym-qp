@@ -71,12 +71,17 @@ class _AperturaCajaDialogState extends State<AperturaCajaDialog> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _montoCtrl,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 decoration: const InputDecoration(
                   labelText: 'Monto de Apertura (S/) *',
                   prefixText: 'S/ ',
                 ),
-                style: TextStyle(fontWeight: FontWeight.bold, color: colors.textPrimary),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: colors.textPrimary,
+                ),
                 validator: (val) {
                   if (val == null || val.trim().isEmpty) return 'Requerido';
                   final d = double.tryParse(val.trim());
@@ -103,7 +108,10 @@ class _AperturaCajaDialogState extends State<AperturaCajaDialog> {
           onPressed: _loading ? null : () => Navigator.pop(context),
           child: Text(
             'Cancelar',
-            style: TextStyle(color: colors.textSecondary, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              color: colors.textSecondary,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
         ElevatedButton(
@@ -143,9 +151,15 @@ class _AperturaCajaDialogState extends State<AperturaCajaDialog> {
               ? const SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
                 )
-              : const Text('ABRIR CAJA', style: TextStyle(fontWeight: FontWeight.bold)),
+              : const Text(
+                  'ABRIR CAJA',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
         ),
       ],
     );
@@ -222,12 +236,17 @@ class _EgresoCajaDialogState extends State<EgresoCajaDialog> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _montoCtrl,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 decoration: const InputDecoration(
                   labelText: 'Monto de Egreso (S/) *',
                   prefixText: 'S/ ',
                 ),
-                style: TextStyle(fontWeight: FontWeight.bold, color: colors.textPrimary),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: colors.textPrimary,
+                ),
                 validator: (val) {
                   if (val == null || val.trim().isEmpty) return 'Requerido';
                   final d = double.tryParse(val.trim());
@@ -243,7 +262,8 @@ class _EgresoCajaDialogState extends State<EgresoCajaDialog> {
                   hintText: 'Ej. Pago de taxi, útiles de limpieza...',
                 ),
                 style: TextStyle(color: colors.textPrimary),
-                validator: (val) => val == null || val.trim().isEmpty ? 'Requerido' : null,
+                validator: (val) =>
+                    val == null || val.trim().isEmpty ? 'Requerido' : null,
               ),
               const SizedBox(height: 12),
               TextFormField(
@@ -258,19 +278,35 @@ class _EgresoCajaDialogState extends State<EgresoCajaDialog> {
               const SizedBox(height: 14),
               Text(
                 'Medio de pago afectado:',
-                style: TextStyle(color: colors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: colors.textSecondary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
                 dropdownColor: colors.surface,
-                value: _metodoPago,
-                style: TextStyle(color: colors.textPrimary, fontWeight: FontWeight.bold),
+                initialValue: _metodoPago,
+                style: TextStyle(
+                  color: colors.textPrimary,
+                  fontWeight: FontWeight.bold,
+                ),
                 decoration: const InputDecoration(
-                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                 ),
                 items: const [
-                  DropdownMenuItem(value: 'efectivo', child: Text('Efectivo (Gaveta)')),
-                  DropdownMenuItem(value: 'transferencia', child: Text('Transferencia Bancaria')),
+                  DropdownMenuItem(
+                    value: 'efectivo',
+                    child: Text('Efectivo (Gaveta)'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'transferencia',
+                    child: Text('Transferencia Bancaria'),
+                  ),
                   DropdownMenuItem(value: 'yape', child: Text('Yape / Plin')),
                 ],
                 onChanged: (val) {
@@ -286,7 +322,10 @@ class _EgresoCajaDialogState extends State<EgresoCajaDialog> {
           onPressed: _loading ? null : () => Navigator.pop(context),
           child: Text(
             'Cancelar',
-            style: TextStyle(color: colors.textSecondary, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              color: colors.textSecondary,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
         ElevatedButton(
@@ -331,9 +370,15 @@ class _EgresoCajaDialogState extends State<EgresoCajaDialog> {
               ? const SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
                 )
-              : const Text('REGISTRAR EGRESO', style: TextStyle(fontWeight: FontWeight.bold)),
+              : const Text(
+                  'REGISTRAR EGRESO',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
         ),
       ],
     );
@@ -399,7 +444,10 @@ class _ArqueoCajaDialogState extends State<ArqueoCajaDialog> {
     } catch (e) {
       if (mounted) {
         messenger.showSnackBar(
-          SnackBar(content: Text('Error al obtener cuadre teórico: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Error al obtener cuadre teórico: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
         navigator.pop();
       }
@@ -421,7 +469,10 @@ class _ArqueoCajaDialogState extends State<ArqueoCajaDialog> {
               children: [
                 CircularProgressIndicator(),
                 SizedBox(height: 16),
-                Text('Obteniendo arqueo del sistema...', style: TextStyle(fontWeight: FontWeight.w600)),
+                Text(
+                  'Obteniendo arqueo del sistema...',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
               ],
             ),
           ),
@@ -434,11 +485,13 @@ class _ArqueoCajaDialogState extends State<ArqueoCajaDialog> {
 
     // Parsed inputs or defaults to 0
     final double physicalCash = double.tryParse(_cashCtrl.text.trim()) ?? 0.0;
-    final double physicalTransfer = double.tryParse(_transferCtrl.text.trim()) ?? 0.0;
+    final double physicalTransfer =
+        double.tryParse(_transferCtrl.text.trim()) ?? 0.0;
     final double physicalYape = double.tryParse(_yapeCtrl.text.trim()) ?? 0.0;
     final double physicalPOS = double.tryParse(_posCtrl.text.trim()) ?? 0.0;
 
-    final double totalContado = physicalCash + physicalTransfer + physicalYape + physicalPOS;
+    final double totalContado =
+        physicalCash + physicalTransfer + physicalYape + physicalPOS;
     final double totalSistema = opening + stats.totalEsperado;
     final double diferencia = totalContado - totalSistema;
 
@@ -483,19 +536,35 @@ class _ArqueoCajaDialogState extends State<ArqueoCajaDialog> {
                   ),
                   child: Column(
                     children: [
-                      _rowTeorico('Saldo de Apertura:', 'S/ ${opening.toStringAsFixed(2)}', colors),
-                      _rowTeorico('Ventas Netas esperadas:', 'S/ ${stats.totalEsperado.toStringAsFixed(2)}', colors),
+                      _rowTeorico(
+                        'Saldo de Apertura:',
+                        'S/ ${opening.toStringAsFixed(2)}',
+                        colors,
+                      ),
+                      _rowTeorico(
+                        'Ventas Netas esperadas:',
+                        'S/ ${stats.totalEsperado.toStringAsFixed(2)}',
+                        colors,
+                      ),
                       const Divider(height: 16),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
                             'EFECTIVO ESPERADO GAVETA:',
-                            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 11, color: colors.textSecondary),
+                            style: TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 11,
+                              color: colors.textSecondary,
+                            ),
                           ),
                           Text(
                             'S/ ${stats.efectivoEsperado.toStringAsFixed(2)}',
-                            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: colors.textPrimary),
+                            style: TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 13,
+                              color: colors.textPrimary,
+                            ),
                           ),
                         ],
                       ),
@@ -505,11 +574,19 @@ class _ArqueoCajaDialogState extends State<ArqueoCajaDialog> {
                         children: [
                           Text(
                             'TOTAL ESPERADO SISTEMA:',
-                            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 11, color: colors.textSecondary),
+                            style: TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 11,
+                              color: colors.textSecondary,
+                            ),
                           ),
                           Text(
                             'S/ ${totalSistema.toStringAsFixed(2)}',
-                            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: colors.accent),
+                            style: TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 13,
+                              color: colors.accent,
+                            ),
                           ),
                         ],
                       ),
@@ -519,30 +596,61 @@ class _ArqueoCajaDialogState extends State<ArqueoCajaDialog> {
                 const SizedBox(height: 18),
                 Text(
                   'Ingresa el arqueo físico real de dinero contado:',
-                  style: TextStyle(color: colors.textSecondary, fontSize: 12.5, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: colors.textSecondary,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 12),
 
                 // Inputs por método
-                _buildPhysicalInput('Efectivo Físico (Gaveta)', _cashCtrl, stats.efectivoEsperado, colors),
-                _buildPhysicalInput('Transferencias Bancarias', _transferCtrl, stats.totalVentasTransferencia - stats.transferenciaEgreso, colors),
-                _buildPhysicalInput('Yape / Plin Recibido', _yapeCtrl, stats.totalVentasYape - stats.yapeEgreso, colors),
-                _buildPhysicalInput('Tarjeta POS Recibido', _posCtrl, stats.totalVentasPOS - stats.posEgreso, colors),
+                _buildPhysicalInput(
+                  'Efectivo Físico (Gaveta)',
+                  _cashCtrl,
+                  stats.efectivoEsperado,
+                  colors,
+                ),
+                _buildPhysicalInput(
+                  'Transferencias Bancarias',
+                  _transferCtrl,
+                  stats.totalVentasTransferencia - stats.transferenciaEgreso,
+                  colors,
+                ),
+                _buildPhysicalInput(
+                  'Yape / Plin Recibido',
+                  _yapeCtrl,
+                  stats.totalVentasYape - stats.yapeEgreso,
+                  colors,
+                ),
+                _buildPhysicalInput(
+                  'Tarjeta POS Recibido',
+                  _posCtrl,
+                  stats.totalVentasPOS - stats.posEgreso,
+                  colors,
+                ),
 
                 const SizedBox(height: 12),
 
                 // Diferencia
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
                     color: diferencia == 0.0
                         ? const Color(0xFF132D1C)
-                        : (diferencia.abs() < 10.0 ? const Color(0xFF33230C) : const Color(0xFF2C1315)),
+                        : (diferencia.abs() < 10.0
+                              ? const Color(0xFF33230C)
+                              : const Color(0xFF2C1315)),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: diferencia == 0.0
                           ? Colors.green.withValues(alpha: 0.3)
-                          : (diferencia.abs() < 10.0 ? Colors.orange.withValues(alpha: 0.3) : Colors.red.withValues(alpha: 0.3)),
+                          : (diferencia.abs() < 10.0
+                                ? Colors.orange.withValues(alpha: 0.3)
+                                : Colors.red.withValues(alpha: 0.3)),
                     ),
                   ),
                   child: Row(
@@ -551,7 +659,11 @@ class _ArqueoCajaDialogState extends State<ArqueoCajaDialog> {
                         diferencia == 0.0
                             ? Icons.check_circle_outline_rounded
                             : Icons.warning_amber_rounded,
-                        color: diferencia == 0.0 ? Colors.green : (diferencia.abs() < 10.0 ? Colors.orange : Colors.red),
+                        color: diferencia == 0.0
+                            ? Colors.green
+                            : (diferencia.abs() < 10.0
+                                  ? Colors.orange
+                                  : Colors.red),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
@@ -561,18 +673,27 @@ class _ArqueoCajaDialogState extends State<ArqueoCajaDialog> {
                             Text(
                               diferencia == 0.0
                                   ? 'Caja Cuadrada'
-                                  : (diferencia > 0 ? 'Sobrante en Caja' : 'Faltante en Caja'),
+                                  : (diferencia > 0
+                                        ? 'Sobrante en Caja'
+                                        : 'Faltante en Caja'),
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 13,
-                                color: diferencia == 0.0 ? Colors.green : (diferencia.abs() < 10.0 ? Colors.orange : Colors.red),
+                                color: diferencia == 0.0
+                                    ? Colors.green
+                                    : (diferencia.abs() < 10.0
+                                          ? Colors.orange
+                                          : Colors.red),
                               ),
                             ),
                             Text(
                               diferencia == 0.0
                                   ? 'Los montos físicos coinciden con el sistema.'
                                   : 'Hay una diferencia física de S/ ${diferencia.toStringAsFixed(2)}',
-                              style: const TextStyle(fontSize: 11, color: Colors.white70),
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Colors.white70,
+                              ),
                             ),
                           ],
                         ),
@@ -582,7 +703,11 @@ class _ArqueoCajaDialogState extends State<ArqueoCajaDialog> {
                         style: TextStyle(
                           fontWeight: FontWeight.w900,
                           fontSize: 16,
-                          color: diferencia == 0.0 ? Colors.green : (diferencia.abs() < 10.0 ? Colors.orange : Colors.red),
+                          color: diferencia == 0.0
+                              ? Colors.green
+                              : (diferencia.abs() < 10.0
+                                    ? Colors.orange
+                                    : Colors.red),
                         ),
                       ),
                     ],
@@ -593,7 +718,9 @@ class _ArqueoCajaDialogState extends State<ArqueoCajaDialog> {
                 TextFormField(
                   controller: _obsCtrl,
                   decoration: InputDecoration(
-                    labelText: diferencia == 0.0 ? 'Notas de cierre (Opcional)' : 'Justificación de diferencia (Obligatorio) *',
+                    labelText: diferencia == 0.0
+                        ? 'Notas de cierre (Opcional)'
+                        : 'Justificación de diferencia (Obligatorio) *',
                     hintText: 'Ej. Faltó dar vuelto de 2 soles...',
                   ),
                   style: TextStyle(color: colors.textPrimary),
@@ -617,7 +744,10 @@ class _ArqueoCajaDialogState extends State<ArqueoCajaDialog> {
           onPressed: _submitting ? null : () => Navigator.pop(context),
           child: Text(
             'Cancelar',
-            style: TextStyle(color: colors.textSecondary, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              color: colors.textSecondary,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
         ElevatedButton(
@@ -648,7 +778,10 @@ class _ArqueoCajaDialogState extends State<ArqueoCajaDialog> {
                   } catch (e) {
                     if (mounted) {
                       messenger.showSnackBar(
-                        SnackBar(content: Text('Error al cerrar caja: $e'), backgroundColor: Colors.red),
+                        SnackBar(
+                          content: Text('Error al cerrar caja: $e'),
+                          backgroundColor: Colors.red,
+                        ),
                       );
                     }
                   } finally {
@@ -659,9 +792,15 @@ class _ArqueoCajaDialogState extends State<ArqueoCajaDialog> {
               ? const SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
                 )
-              : const Text('CERRAR CAJA', style: TextStyle(fontWeight: FontWeight.bold)),
+              : const Text(
+                  'CERRAR CAJA',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
         ),
       ],
     );
@@ -673,14 +812,29 @@ class _ArqueoCajaDialogState extends State<ArqueoCajaDialog> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(title, style: TextStyle(color: colors.textSecondary, fontSize: 12.5)),
-          Text(value, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: colors.textPrimary)),
+          Text(
+            title,
+            style: TextStyle(color: colors.textSecondary, fontSize: 12.5),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+              color: colors.textPrimary,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildPhysicalInput(String label, TextEditingController controller, double expected, dynamic colors) {
+  Widget _buildPhysicalInput(
+    String label,
+    TextEditingController controller,
+    double expected,
+    dynamic colors,
+  ) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
@@ -689,8 +843,18 @@ class _ArqueoCajaDialogState extends State<ArqueoCajaDialog> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: colors.textPrimary)),
-                Text('Esperado: S/ ${expected.toStringAsFixed(2)}', style: TextStyle(color: colors.textMuted, fontSize: 11)),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12.5,
+                    color: colors.textPrimary,
+                  ),
+                ),
+                Text(
+                  'Esperado: S/ ${expected.toStringAsFixed(2)}',
+                  style: TextStyle(color: colors.textMuted, fontSize: 11),
+                ),
               ],
             ),
           ),
@@ -705,8 +869,14 @@ class _ArqueoCajaDialogState extends State<ArqueoCajaDialog> {
             padding: const EdgeInsets.symmetric(horizontal: 10),
             child: TextField(
               controller: controller,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              style: TextStyle(fontWeight: FontWeight.bold, color: colors.textPrimary, fontSize: 13.5),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: colors.textPrimary,
+                fontSize: 13.5,
+              ),
               onChanged: (_) => setState(() {}),
               decoration: const InputDecoration(
                 border: InputBorder.none,
@@ -736,10 +906,12 @@ class AjustarMontoAperturaDialog extends StatefulWidget {
   final VoidCallback onSuccess;
 
   @override
-  State<AjustarMontoAperturaDialog> createState() => _AjustarMontoAperturaDialogState();
+  State<AjustarMontoAperturaDialog> createState() =>
+      _AjustarMontoAperturaDialogState();
 }
 
-class _AjustarMontoAperturaDialogState extends State<AjustarMontoAperturaDialog> {
+class _AjustarMontoAperturaDialogState
+    extends State<AjustarMontoAperturaDialog> {
   late final TextEditingController _montoCtrl;
   final _formKey = GlobalKey<FormState>();
   bool _loading = false;
@@ -747,7 +919,9 @@ class _AjustarMontoAperturaDialogState extends State<AjustarMontoAperturaDialog>
   @override
   void initState() {
     super.initState();
-    _montoCtrl = TextEditingController(text: widget.initialAmount.toStringAsFixed(2));
+    _montoCtrl = TextEditingController(
+      text: widget.initialAmount.toStringAsFixed(2),
+    );
   }
 
   @override
@@ -793,7 +967,9 @@ class _AjustarMontoAperturaDialogState extends State<AjustarMontoAperturaDialog>
             const SizedBox(height: 16),
             TextFormField(
               controller: _montoCtrl,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               style: TextStyle(color: colors.textPrimary, fontSize: 14),
               decoration: InputDecoration(
                 labelText: 'Monto de Apertura (S/)',

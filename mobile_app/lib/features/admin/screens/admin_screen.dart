@@ -130,7 +130,8 @@ class _AdminScreenState extends State<AdminScreen> {
           palette: palette,
           state: state,
           productSearchQuery: _productSearchQuery,
-          onProductSearchChanged: (val) => setState(() => _productSearchQuery = val),
+          onProductSearchChanged: (val) =>
+              setState(() => _productSearchQuery = val),
           onBack: _back,
           onAddProduct: () => _go('product_form'),
           onEditProduct: (p) => _go('product_form', {'product': p}),
@@ -184,11 +185,7 @@ class _AdminScreenState extends State<AdminScreen> {
       if (hideNav) {
         return activeView;
       }
-      return Column(
-        children: [
-          Expanded(child: activeView),
-        ],
-      );
+      return Column(children: [Expanded(child: activeView)]);
     }
 
     return Column(
@@ -196,7 +193,12 @@ class _AdminScreenState extends State<AdminScreen> {
         Expanded(
           child: AnimatedSwitcher(
             duration: const Duration(milliseconds: 220),
-            child: _buildTab(_currentTab, state, palette, key: ValueKey<int>(_currentTab)),
+            child: _buildTab(
+              _currentTab,
+              state,
+              palette,
+              key: ValueKey<int>(_currentTab),
+            ),
           ),
         ),
         RoleNavBar(
@@ -254,11 +256,7 @@ class _AdminScreenState extends State<AdminScreen> {
           },
         );
       case 3:
-        return AdminCashiersPage(
-          key: key,
-          palette: palette,
-          state: state,
-        );
+        return AdminCashiersPage(key: key, palette: palette, state: state);
       default:
         return AdminMorePage(
           key: key,

@@ -1,42 +1,97 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 import '../core/network/api_client.dart';
+import '../core/storage/secure_storage.dart';
 
-class ActiveDietNotifier extends StateNotifier<AsyncValue<Map<String, dynamic>?>> {
+class ActiveDietNotifier
+    extends StateNotifier<AsyncValue<Map<String, dynamic>?>> {
   ActiveDietNotifier() : super(const AsyncValue.loading());
 
-  /**
-   * Carga la dieta activa del miembro, intentando del servidor si hay conexión,
-   * o haciendo fallback a la caché local de Hive.
-   */
+  static const _cacheTtl = Duration(days: 7);
+
+  Future<String?> _cacheKeyForUser(String userId) async {
+    final tenantId = await SecureStorage.getTenantId();
+    if (tenantId == null || tenantId.isEmpty || userId.isEmpty) {
+      return null;
+    }
+    return 'nutrition:$tenantId:$userId:active-diet';
+  }
+
   Future<Map<String, dynamic>?> loadActiveDiet({
     required bool isOnline,
     required bool isBackendMode,
+    required String userId,
   }) async {
     state = const AsyncValue.loading();
     try {
       final box = Hive.box('gym_cache');
+      final cacheKey = await _cacheKeyForUser(userId);
 
       if (isBackendMode && isOnline) {
         try {
           final response = await ApiClient().dio.get('/diets/me');
           if (response.data != null) {
             final data = Map<String, dynamic>.from(response.data as Map);
-            await box.put('active_diet', data);
+            if (cacheKey != null) {
+              await box.put(cacheKey, {
+                'savedAt': DateTime.now().toIso8601String(),
+                'data': data,
+              });
+            }
             state = AsyncValue.data(data);
             return data;
           }
-        } catch (e) {
-          // Si falla la API de red, permitimos que caiga al fallback de caché
+
+          if (cacheKey != null) {
+            await box.delete(cacheKey);
+          }
+          state = const AsyncValue.data(null);
+          return null;
+        } on DioException catch (e, stackTrace) {
+          final statusCode = e.response?.statusCode;
+          final isHttpAccessError = statusCode == 401 || statusCode == 403;
+          final isNetworkError =
+              e.type == DioExceptionType.connectionError ||
+              e.type == DioExceptionType.connectionTimeout ||
+              e.type == DioExceptionType.receiveTimeout ||
+              e.type == DioExceptionType.sendTimeout;
+
+          if (isHttpAccessError) {
+            if (cacheKey != null) {
+              await box.delete(cacheKey);
+            }
+            state = AsyncValue.error(e, stackTrace);
+            return null;
+          }
+
+          if (!isNetworkError) {
+            state = AsyncValue.error(e, stackTrace);
+            return null;
+          }
         }
       }
 
-      // Fallback a Hive local
-      final cached = box.get('active_diet');
-      if (cached != null && cached is Map) {
-        final data = Map<String, dynamic>.from(cached);
-        state = AsyncValue.data(data);
-        return data;
+      if (cacheKey != null) {
+        final cached = box.get(cacheKey);
+        if (cached is Map) {
+          final rawSavedAt = cached['savedAt']?.toString();
+          final savedAt = rawSavedAt == null
+              ? null
+              : DateTime.tryParse(rawSavedAt);
+          final rawData = cached['data'];
+          final isFresh =
+              savedAt != null &&
+              DateTime.now().difference(savedAt) <= _cacheTtl;
+
+          if (isFresh && rawData is Map) {
+            final data = Map<String, dynamic>.from(rawData);
+            state = AsyncValue.data(data);
+            return data;
+          }
+
+          await box.delete(cacheKey);
+        }
       }
 
       state = const AsyncValue.data(null);
@@ -48,7 +103,10 @@ class ActiveDietNotifier extends StateNotifier<AsyncValue<Map<String, dynamic>?>
   }
 }
 
-// Proveedor de estado de la dieta activa
-final activeDietProvider = StateNotifierProvider<ActiveDietNotifier, AsyncValue<Map<String, dynamic>?>>((ref) {
-  return ActiveDietNotifier();
-});
+final activeDietProvider =
+    StateNotifierProvider<
+      ActiveDietNotifier,
+      AsyncValue<Map<String, dynamic>?>
+    >((ref) {
+      return ActiveDietNotifier();
+    });

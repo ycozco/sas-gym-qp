@@ -73,7 +73,8 @@ class _CashierHomePageState extends State<CashierHomePage> {
           RoleHeroHeader(
             palette: widget.palette,
             title: 'Caja y Accesos',
-            subtitle: 'Valida ingresos, cobra operaciones y deja trazabilidad inmediata.',
+            subtitle:
+                'Valida ingresos, cobra operaciones y deja trazabilidad inmediata.',
             trailing: StatusPill(
               label: isCajaOpen ? 'CAJA ABIERTA' : 'CAJA CERRADA',
               color: isCajaOpen ? widget.palette.accent : Colors.red,
@@ -98,7 +99,8 @@ class _CashierHomePageState extends State<CashierHomePage> {
                 child: MetricTile(
                   icon: Icons.qr_code_scanner_rounded,
                   label: 'Asistencias Hoy',
-                  value: '${widget.state.members.where((m) => m.todayCheckIn).length}',
+                  value:
+                      '${widget.state.members.where((m) => m.todayCheckIn).length}',
                   note: 'En este turno',
                   accent: widget.palette.accent,
                 ),
@@ -108,7 +110,8 @@ class _CashierHomePageState extends State<CashierHomePage> {
                 child: MetricTile(
                   icon: Icons.inventory_2_outlined,
                   label: 'Stock Crítico',
-                  value: '${widget.state.products.where((p) => p.stock < 20).length}',
+                  value:
+                      '${widget.state.products.where((p) => p.stock < 20).length}',
                   note: 'Menos de 20 un.',
                   accent: Colors.redAccent,
                 ),
@@ -174,7 +177,9 @@ class _CashierHomePageState extends State<CashierHomePage> {
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 10),
                   child: LogTile(
-                    icon: entry.action.contains('Cobró') || entry.action.contains('Venta')
+                    icon:
+                        entry.action.contains('Cobró') ||
+                            entry.action.contains('Venta')
                         ? Icons.point_of_sale_rounded
                         : Icons.qr_code_scanner_rounded,
                     title: entry.action,
@@ -208,7 +213,11 @@ class _CashierHomePageState extends State<CashierHomePage> {
               SizedBox(width: 10),
               Text(
                 'Caja Cerrada',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Colors.redAccent),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.redAccent,
+                ),
               ),
             ],
           ),
@@ -227,7 +236,10 @@ class _CashierHomePageState extends State<CashierHomePage> {
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
               icon: const Icon(Icons.vpn_key_rounded),
-              label: const Text('APERTURAR TURNO DE CAJA', style: TextStyle(fontWeight: FontWeight.w900)),
+              label: const Text(
+                'APERTURAR TURNO DE CAJA',
+                style: TextStyle(fontWeight: FontWeight.w900),
+              ),
               onPressed: () {
                 showDialog<void>(
                   context: context,
@@ -247,8 +259,13 @@ class _CashierHomePageState extends State<CashierHomePage> {
     );
   }
 
-  Widget _buildOpenCajaDashboard(BuildContext context, dynamic colors, CashierSession activeCaja) {
-    final double saldoTotal = _details?.stats.efectivoEsperado ?? activeCaja.montoApertura;
+  Widget _buildOpenCajaDashboard(
+    BuildContext context,
+    dynamic colors,
+    CashierSession activeCaja,
+  ) {
+    final double saldoTotal =
+        _details?.stats.efectivoEsperado ?? activeCaja.montoApertura;
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -290,7 +307,10 @@ class _CashierHomePageState extends State<CashierHomePage> {
                       },
                       borderRadius: BorderRadius.circular(4),
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 2,
+                        ),
                         child: Row(
                           children: [
                             Text(
@@ -355,7 +375,10 @@ class _CashierHomePageState extends State<CashierHomePage> {
               padding: const EdgeInsets.symmetric(vertical: 14),
             ),
             icon: const Icon(Icons.outbox_rounded),
-            label: const Text('REGISTRAR EGRESO', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            label: const Text(
+              'REGISTRAR EGRESO',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            ),
             onPressed: () {
               showDialog<void>(
                 context: context,
@@ -379,7 +402,10 @@ class _CashierHomePageState extends State<CashierHomePage> {
               padding: const EdgeInsets.symmetric(vertical: 14),
             ),
             icon: const Icon(Icons.balance_rounded),
-            label: const Text('ARQUEAR Y CERRAR', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            label: const Text(
+              'ARQUEAR Y CERRAR',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            ),
             onPressed: () {
               showDialog<void>(
                 context: context,
@@ -398,4 +424,3 @@ class _CashierHomePageState extends State<CashierHomePage> {
     );
   }
 }
-

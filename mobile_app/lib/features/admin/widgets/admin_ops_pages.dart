@@ -278,7 +278,10 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
     super.dispose();
   }
 
-  Future<void> _showPlanDialog(BuildContext context, {MembershipPlan? plan}) async {
+  Future<void> _showPlanDialog(
+    BuildContext context, {
+    MembershipPlan? plan,
+  }) async {
     final nameCtrl = TextEditingController(text: plan?.name ?? '');
     final descCtrl = TextEditingController(text: plan?.description ?? '');
     final daysCtrl = TextEditingController(text: '${plan?.durationDays ?? 30}');
@@ -305,18 +308,24 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
                     const SizedBox(height: 10),
                     TextField(
                       controller: descCtrl,
-                      decoration: const InputDecoration(labelText: 'Descripcion'),
+                      decoration: const InputDecoration(
+                        labelText: 'Descripcion',
+                      ),
                     ),
                     const SizedBox(height: 10),
                     TextField(
                       controller: daysCtrl,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'Duracion en dias'),
+                      decoration: const InputDecoration(
+                        labelText: 'Duracion en dias',
+                      ),
                     ),
                     const SizedBox(height: 10),
                     TextField(
                       controller: priceCtrl,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                       decoration: const InputDecoration(labelText: 'Precio'),
                     ),
                     const SizedBox(height: 10),
@@ -334,7 +343,8 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
                       contentPadding: EdgeInsets.zero,
                       value: active,
                       title: const Text('Activo'),
-                      onChanged: (value) => setDialogState(() => active = value),
+                      onChanged: (value) =>
+                          setDialogState(() => active = value),
                     ),
                   ],
                 ),
@@ -348,9 +358,13 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
                   onPressed: () async {
                     final days = int.tryParse(daysCtrl.text.trim());
                     final price = double.tryParse(priceCtrl.text.trim());
-                    if (nameCtrl.text.trim().isEmpty || days == null || price == null) {
+                    if (nameCtrl.text.trim().isEmpty ||
+                        days == null ||
+                        price == null) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Completa nombre, duracion y precio.')),
+                        const SnackBar(
+                          content: Text('Completa nombre, duracion y precio.'),
+                        ),
                       );
                       return;
                     }
@@ -488,7 +502,9 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
                 const SizedBox(height: 14),
                 TextField(
                   controller: _nameCtrl,
-                  decoration: const InputDecoration(labelText: 'Nombre comercial'),
+                  decoration: const InputDecoration(
+                    labelText: 'Nombre comercial',
+                  ),
                 ),
                 const SizedBox(height: 10),
                 TextField(
@@ -540,7 +556,10 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
                     IconButton(
                       tooltip: 'Nuevo plan',
                       onPressed: () => _showPlanDialog(context),
-                      icon: Icon(Icons.add_circle_outline_rounded, color: widget.palette.accent),
+                      icon: Icon(
+                        Icons.add_circle_outline_rounded,
+                        color: widget.palette.accent,
+                      ),
                     ),
                   ],
                 ),
@@ -555,12 +574,19 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
                     return ListTile(
                       contentPadding: EdgeInsets.zero,
                       leading: Icon(
-                        plan.active ? Icons.card_membership_rounded : Icons.block_rounded,
-                        color: plan.active ? widget.palette.accent : colors.textMuted,
+                        plan.active
+                            ? Icons.card_membership_rounded
+                            : Icons.block_rounded,
+                        color: plan.active
+                            ? widget.palette.accent
+                            : colors.textMuted,
                       ),
                       title: Text(
                         plan.name,
-                        style: TextStyle(color: colors.textPrimary, fontWeight: FontWeight.w800),
+                        style: TextStyle(
+                          color: colors.textPrimary,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                       subtitle: Text(
                         '${plan.durationDays} dias - S/ ${plan.price}${plan.active ? '' : ' - inactivo'}',
@@ -571,15 +597,24 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
                         children: [
                           IconButton(
                             tooltip: 'Editar',
-                            onPressed: () => _showPlanDialog(context, plan: plan),
-                            icon: Icon(Icons.edit_outlined, color: colors.textSecondary),
+                            onPressed: () =>
+                                _showPlanDialog(context, plan: plan),
+                            icon: Icon(
+                              Icons.edit_outlined,
+                              color: colors.textSecondary,
+                            ),
                           ),
                           IconButton(
                             tooltip: 'Desactivar',
                             onPressed: plan.active
-                                ? () => widget.state.deactivateMembershipPlan(plan.id)
+                                ? () => widget.state.deactivateMembershipPlan(
+                                    plan.id,
+                                  )
                                 : null,
-                            icon: Icon(Icons.visibility_off_outlined, color: colors.textSecondary),
+                            icon: Icon(
+                              Icons.visibility_off_outlined,
+                              color: colors.textSecondary,
+                            ),
                           ),
                         ],
                       ),
@@ -703,9 +738,7 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
               if (!mounted) return;
               messenger.showSnackBar(
                 const SnackBar(
-                  content: Text(
-                    'Ajustes del gimnasio guardados.',
-                  ),
+                  content: Text('Ajustes del gimnasio guardados.'),
                   backgroundColor: Color(0xFF00B85C),
                 ),
               );

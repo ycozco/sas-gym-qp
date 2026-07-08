@@ -10,20 +10,20 @@ enum GymRole { member, trainer, cashier, admin, superadmin }
 
 extension GymRoleX on GymRole {
   String get label => switch (this) {
-        GymRole.member => 'Usuario',
-        GymRole.trainer => 'Entrenador',
-        GymRole.cashier => 'Caja',
-        GymRole.admin => 'Admin',
-        GymRole.superadmin => 'SuperAdmin',
-      };
+    GymRole.member => 'Usuario',
+    GymRole.trainer => 'Entrenador',
+    GymRole.cashier => 'Caja',
+    GymRole.admin => 'Admin',
+    GymRole.superadmin => 'SuperAdmin',
+  };
 
   String get subtitle => switch (this) {
-        GymRole.member => 'Experiencia del socio',
-        GymRole.trainer => 'Planificación y progreso',
-        GymRole.cashier => 'Operación limitada',
-        GymRole.admin => 'Gestión total y auditoría',
-        GymRole.superadmin => 'Métricas de la red y control',
-      };
+    GymRole.member => 'Experiencia del socio',
+    GymRole.trainer => 'Planificación y progreso',
+    GymRole.cashier => 'Operación limitada',
+    GymRole.admin => 'Gestión total y auditoría',
+    GymRole.superadmin => 'Métricas de la red y control',
+  };
 }
 
 class RolePalette {
@@ -82,7 +82,8 @@ class MembershipPlan {
       id: json['id']?.toString() ?? '',
       name: json['nombre']?.toString() ?? '',
       description: json['descripcion']?.toString(),
-      durationDays: (json['duracion_dias'] ?? json['duracionDias'] ?? 30) as int,
+      durationDays:
+          (json['duracion_dias'] ?? json['duracionDias'] ?? 30) as int,
       price: (json['precio'] as num?)?.toDouble() ?? 0,
       color: json['color']?.toString(),
       order: (json['orden'] ?? 0) as int,
@@ -307,7 +308,8 @@ class MemberRecord {
   final String state; // active, expired, grace, baja_logica
   final String assignedTrainer;
   final List<PaymentRecord> paymentHistory;
-  final Map<String, double> physicalMeasurements; // weight, height, chest, waist, hips
+  final Map<String, double>
+  physicalMeasurements; // weight, height, chest, waist, hips
   final List<String> progressImages; // Simulated images
   final bool todayCheckIn;
   final bool isActiveInGym;
@@ -585,11 +587,13 @@ class LoggedInUser {
       trainerProfile: json['trainer_profile'] as Map<String, dynamic>?,
       memberProfile: json['member_profile'] as Map<String, dynamic>?,
       memberships: json['memberships'] as List<dynamic>?,
-      themePreference: (json['theme_preference'] ?? json['themePreference'] ?? 'system').toString().toLowerCase(),
+      themePreference:
+          (json['theme_preference'] ?? json['themePreference'] ?? 'system')
+              .toString()
+              .toLowerCase(),
     );
   }
 }
-
 
 GymRole parseRole(String roleStr) {
   return switch (roleStr.toUpperCase()) {
@@ -664,11 +668,13 @@ class CashierSession {
       cajeroId: cajeroId ?? this.cajeroId,
       montoApertura: montoApertura ?? this.montoApertura,
       montoCierreEfectivo: montoCierreEfectivo ?? this.montoCierreEfectivo,
-      montoCierreTransferencia: montoCierreTransferencia ?? this.montoCierreTransferencia,
+      montoCierreTransferencia:
+          montoCierreTransferencia ?? this.montoCierreTransferencia,
       montoCierreYape: montoCierreYape ?? this.montoCierreYape,
       montoCierrePOS: montoCierrePOS ?? this.montoCierrePOS,
       totalVentasEfectivo: totalVentasEfectivo ?? this.totalVentasEfectivo,
-      totalVentasTransferencia: totalVentasTransferencia ?? this.totalVentasTransferencia,
+      totalVentasTransferencia:
+          totalVentasTransferencia ?? this.totalVentasTransferencia,
       totalVentasYape: totalVentasYape ?? this.totalVentasYape,
       totalVentasPOS: totalVentasPOS ?? this.totalVentasPOS,
       totalIngresos: totalIngresos ?? this.totalIngresos,
@@ -697,8 +703,10 @@ class CashierSession {
       montoCierrePOS: json['monto_cierre_pos'] != null
           ? (json['monto_cierre_pos'] as num).toDouble()
           : null,
-      totalVentasEfectivo: (json['total_ventas_efectivo'] as num? ?? 0).toDouble(),
-      totalVentasTransferencia: (json['total_ventas_transferencia'] as num? ?? 0).toDouble(),
+      totalVentasEfectivo: (json['total_ventas_efectivo'] as num? ?? 0)
+          .toDouble(),
+      totalVentasTransferencia:
+          (json['total_ventas_transferencia'] as num? ?? 0).toDouble(),
       totalVentasYape: (json['total_ventas_yape'] as num? ?? 0).toDouble(),
       totalVentasPOS: (json['total_ventas_pos'] as num? ?? 0).toDouble(),
       totalIngresos: (json['total_ingresos'] as num? ?? 0).toDouble(),
@@ -833,16 +841,22 @@ class CajaStats {
 
   factory CajaStats.fromJson(Map<String, dynamic> json) {
     return CajaStats(
-      efectivoIngreso: (json['efivo_ingreso'] ?? json['efectivo_ingreso'] as num? ?? 0).toDouble(),
+      efectivoIngreso:
+          (json['efivo_ingreso'] ?? json['efectivo_ingreso'] as num? ?? 0)
+              .toDouble(),
       efectivoEgreso: (json['efectivo_egreso'] as num? ?? 0).toDouble(),
-      transferenciaIngreso: (json['transferencia_ingreso'] as num? ?? 0).toDouble(),
-      transferenciaEgreso: (json['transferencia_egreso'] as num? ?? 0).toDouble(),
+      transferenciaIngreso: (json['transferencia_ingreso'] as num? ?? 0)
+          .toDouble(),
+      transferenciaEgreso: (json['transferencia_egreso'] as num? ?? 0)
+          .toDouble(),
       yapeIngreso: (json['yape_ingreso'] as num? ?? 0).toDouble(),
       yapeEgreso: (json['yape_egreso'] as num? ?? 0).toDouble(),
       posIngreso: (json['pos_ingreso'] as num? ?? 0).toDouble(),
       posEgreso: (json['pos_egreso'] as num? ?? 0).toDouble(),
-      totalVentasEfectivo: (json['total_ventas_efectivo'] as num? ?? 0).toDouble(),
-      totalVentasTransferencia: (json['total_ventas_transferencia'] as num? ?? 0).toDouble(),
+      totalVentasEfectivo: (json['total_ventas_efectivo'] as num? ?? 0)
+          .toDouble(),
+      totalVentasTransferencia:
+          (json['total_ventas_transferencia'] as num? ?? 0).toDouble(),
       totalVentasYape: (json['total_ventas_yape'] as num? ?? 0).toDouble(),
       totalVentasPOS: (json['total_ventas_pos'] as num? ?? 0).toDouble(),
       efectivoEsperado: (json['efectivo_esperado'] as num? ?? 0).toDouble(),
@@ -872,4 +886,3 @@ class CajaDetails {
     );
   }
 }
-

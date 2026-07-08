@@ -160,8 +160,11 @@ class SuperAdminScreen extends StatelessWidget {
                             const SizedBox(height: 6),
                             Row(
                               children: [
-                                const Icon(Icons.people_outline,
-                                    size: 13, color: Color(0xFF909090)),
+                                const Icon(
+                                  Icons.people_outline,
+                                  size: 13,
+                                  color: Color(0xFF909090),
+                                ),
                                 const SizedBox(width: 4),
                                 Text(
                                   '${client.membersCount} socios',
@@ -184,9 +187,13 @@ class SuperAdminScreen extends StatelessWidget {
                           Switch(
                             value: client.active,
                             activeThumbColor: const Color(0xFF00B85C),
-                            activeTrackColor: const Color(0xFF00B85C).withValues(alpha: 0.25),
+                            activeTrackColor: const Color(
+                              0xFF00B85C,
+                            ).withValues(alpha: 0.25),
                             inactiveThumbColor: Colors.red,
-                            inactiveTrackColor: Colors.red.withValues(alpha: 0.25),
+                            inactiveTrackColor: Colors.red.withValues(
+                              alpha: 0.25,
+                            ),
                             onChanged: (val) {
                               state.toggleSaClient(client.id);
                             },
@@ -212,7 +219,8 @@ class SuperAdminScreen extends StatelessWidget {
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
-                                  color: palette.accent == const Color(0xFFE91E63)
+                                  color:
+                                      palette.accent == const Color(0xFFE91E63)
                                       ? Colors.blue
                                       : palette.accent,
                                   decoration: TextDecoration.underline,

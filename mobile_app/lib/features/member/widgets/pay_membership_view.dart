@@ -160,9 +160,7 @@ class _PayMembershipViewState extends State<PayMembershipView> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
                 side: BorderSide(
-                  color: isSelected
-                      ? widget.palette.accent
-                      : colors.border,
+                  color: isSelected ? widget.palette.accent : colors.border,
                   width: isSelected ? 2 : 1,
                 ),
               ),

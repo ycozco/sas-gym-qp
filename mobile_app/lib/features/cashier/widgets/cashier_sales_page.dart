@@ -18,7 +18,11 @@ class CashierSalesPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.sasColors;
     final cashierSalesLogs = state.auditLogs
-        .where((log) => log.actor.contains('Caja') && (log.action.contains('Venta') || log.action.contains('Cobró')))
+        .where(
+          (log) =>
+              log.actor.contains('Caja') &&
+              (log.action.contains('Venta') || log.action.contains('Cobró')),
+        )
         .toList();
 
     double totalTurnRevenue = cashierSalesLogs.fold(0, (sum, log) {
@@ -36,7 +40,8 @@ class CashierSalesPage extends StatelessWidget {
         RoleHeroHeader(
           palette: palette,
           title: 'Ventas de Caja',
-          subtitle: 'Historial de ventas y movimientos registrados en este turno.',
+          subtitle:
+              'Historial de ventas y movimientos registrados en este turno.',
         ),
         const SizedBox(height: 18),
         Container(
@@ -48,9 +53,23 @@ class CashierSalesPage extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Expanded(child: _posStatBox(context, 'Ventas Totales', '${cashierSalesLogs.length}', 'registradas')),
+              Expanded(
+                child: _posStatBox(
+                  context,
+                  'Ventas Totales',
+                  '${cashierSalesLogs.length}',
+                  'registradas',
+                ),
+              ),
               const SizedBox(width: 12),
-              Expanded(child: _posStatBox(context, 'Recaudacion', 'S/ ${totalTurnRevenue.toStringAsFixed(2)}', 'en caja')),
+              Expanded(
+                child: _posStatBox(
+                  context,
+                  'Recaudacion',
+                  'S/ ${totalTurnRevenue.toStringAsFixed(2)}',
+                  'en caja',
+                ),
+              ),
             ],
           ),
         ),
@@ -71,7 +90,10 @@ class CashierSalesPage extends StatelessWidget {
             child: Center(
               child: Text(
                 'No has realizado ventas en este turno.',
-                style: TextStyle(color: colors.textSecondary, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: colors.textSecondary,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           )
@@ -94,22 +116,44 @@ class CashierSalesPage extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(log.action, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5, color: colors.textPrimary)),
+                          Text(
+                            log.action,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 14.5,
+                              color: colors.textPrimary,
+                            ),
+                          ),
                           const SizedBox(height: 2),
-                          Text(log.detail, style: TextStyle(color: colors.textSecondary, fontSize: 12)),
+                          Text(
+                            log.detail,
+                            style: TextStyle(
+                              color: colors.textSecondary,
+                              fontSize: 12,
+                            ),
+                          ),
                         ],
                       ),
                     ),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text(log.time, style: TextStyle(fontSize: 11, color: colors.textMuted, fontWeight: FontWeight.bold)),
+                        Text(
+                          log.time,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: colors.textMuted,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                         const SizedBox(height: 6),
                         GestureDetector(
                           onTap: () {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text('Solicitud de anulación enviada al Administrador para: ${log.action}'),
+                                content: Text(
+                                  'Solicitud de anulación enviada al Administrador para: ${log.action}',
+                                ),
                                 backgroundColor: palette.accent,
                               ),
                             );
@@ -135,7 +179,12 @@ class CashierSalesPage extends StatelessWidget {
     );
   }
 
-  Widget _posStatBox(BuildContext context, String title, String val, String note) {
+  Widget _posStatBox(
+    BuildContext context,
+    String title,
+    String val,
+    String note,
+  ) {
     final colors = context.sasColors;
     return Container(
       padding: const EdgeInsets.all(14),
@@ -147,9 +196,23 @@ class CashierSalesPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: TextStyle(fontSize: 11, color: colors.textSecondary, fontWeight: FontWeight.bold)),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 11,
+              color: colors.textSecondary,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           const SizedBox(height: 6),
-          Text(val, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: colors.textPrimary)),
+          Text(
+            val,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              color: colors.textPrimary,
+            ),
+          ),
           const SizedBox(height: 2),
           Text(note, style: TextStyle(fontSize: 10, color: colors.textMuted)),
         ],
@@ -157,5 +220,3 @@ class CashierSalesPage extends StatelessWidget {
     );
   }
 }
-
-

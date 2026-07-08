@@ -250,7 +250,10 @@ class _WorkoutAssistantViewState extends State<WorkoutAssistantView> {
             child: Text(
               'No tienes una rutina activa publicada en este momento.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white70, fontWeight: FontWeight.w700),
+              style: TextStyle(
+                color: Colors.white70,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         ),

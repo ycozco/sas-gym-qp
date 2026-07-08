@@ -14,10 +14,7 @@ LoggedInUser _memberWithQrSecret() {
     nombreCompleto: 'Member Test',
     dni: '11111111',
     estado: 'ACTIVE',
-    memberProfile: {
-      'objetivo': 'QA',
-      'qr_secret': 'backend-issued-secret',
-    },
+    memberProfile: {'objetivo': 'QA', 'qr_secret': 'backend-issued-secret'},
   );
 }
 
@@ -29,9 +26,7 @@ LoggedInUser _memberWithoutQrSecret() {
     nombreCompleto: 'Member Test',
     dni: '11111111',
     estado: 'ACTIVE',
-    memberProfile: {
-      'objetivo': 'QA',
-    },
+    memberProfile: {'objetivo': 'QA'},
   );
 }
 
@@ -59,7 +54,9 @@ void main() {
     expect(state.auditLogs, isEmpty);
   });
 
-  testWidgets('member QR renders when backend qr_secret exists', (tester) async {
+  testWidgets('member QR renders when backend qr_secret exists', (
+    tester,
+  ) async {
     final state = GymState(startBackground: false);
     addTearDown(state.dispose);
     state.setCurrentGymActiveForTest(active: true);
@@ -83,7 +80,9 @@ void main() {
     expect(find.textContaining('QR no disponible'), findsNothing);
   });
 
-  testWidgets('member QR without backend secret shows unavailable state', (tester) async {
+  testWidgets('member QR without backend secret shows unavailable state', (
+    tester,
+  ) async {
     final state = GymState(startBackground: false);
     addTearDown(state.dispose);
     state.setCurrentGymActiveForTest(active: true);
@@ -106,5 +105,4 @@ void main() {
     expect(find.textContaining('QR no disponible'), findsOneWidget);
     expect(find.textContaining('Token:'), findsNothing);
   });
-
 }

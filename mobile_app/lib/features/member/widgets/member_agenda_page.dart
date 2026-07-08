@@ -63,8 +63,11 @@ class MemberAgendaPage extends StatelessWidget {
                     final dayNumber = rawDays.isNotEmpty
                         ? ((rawDays.first as num?)?.toInt() ?? 1)
                         : 1;
-                    final day = memberWeek[
-                        (dayNumber - 1).clamp(0, memberWeek.length - 1)];
+                    final day =
+                        memberWeek[(dayNumber - 1).clamp(
+                          0,
+                          memberWeek.length - 1,
+                        )];
                     return Container(
                       width: 68,
                       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -153,7 +156,7 @@ class MemberAgendaPage extends StatelessWidget {
               Text(
                 mappedExercises.isNotEmpty
                     ? (template?['descripcion']?.toString() ??
-                        'Rutina activa sincronizada desde el backend.')
+                          'Rutina activa sincronizada desde el backend.')
                     : 'Todavia no tienes una rutina activa publicada.',
                 style: const TextStyle(
                   fontSize: 13,

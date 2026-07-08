@@ -48,7 +48,11 @@ class _CashierScreenState extends State<CashierScreen> {
   }
 
   // Helper to switch tab and auto-populate POS for scanner denied redirection
-  void _redirectScannerToPOS(String memberDni, {String? planName, double? price}) {
+  void _redirectScannerToPOS(
+    String memberDni, {
+    String? planName,
+    double? price,
+  }) {
     setState(() {
       _historyStack.clear();
       _currentTab = 2; // POS tab
@@ -66,7 +70,11 @@ class _CashierScreenState extends State<CashierScreen> {
   }
 
   // Redirect from scanner verdict to Memberships tab with pre-selected member & plan
-  void _redirectScannerToMembership(String memberDni, {String? planName, double? price}) {
+  void _redirectScannerToMembership(
+    String memberDni, {
+    String? planName,
+    double? price,
+  }) {
     setState(() {
       _historyStack.clear();
       _currentTab = 4; // Memberships tab
@@ -103,7 +111,11 @@ class _CashierScreenState extends State<CashierScreen> {
           onBack: _back,
           membershipPlans: state.membershipPlans,
           onChargeDirect: (memberDni, {planName, price}) {
-            _redirectScannerToMembership(memberDni, planName: planName, price: price);
+            _redirectScannerToMembership(
+              memberDni,
+              planName: planName,
+              price: price,
+            );
           },
           onCreateNewClient: (newDni) {
             _back();
@@ -120,11 +132,7 @@ class _CashierScreenState extends State<CashierScreen> {
       if (hideNav) {
         return activeView;
       }
-      return Column(
-        children: [
-          Expanded(child: activeView),
-        ],
-      );
+      return Column(children: [Expanded(child: activeView)]);
     }
 
     return Scaffold(
@@ -134,7 +142,12 @@ class _CashierScreenState extends State<CashierScreen> {
           Expanded(
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 200),
-              child: _buildTab(_currentTab, state, palette, key: ValueKey<int>(_currentTab)),
+              child: _buildTab(
+                _currentTab,
+                state,
+                palette,
+                key: ValueKey<int>(_currentTab),
+              ),
             ),
           ),
           RoleNavBar(
@@ -144,10 +157,16 @@ class _CashierScreenState extends State<CashierScreen> {
             onChanged: (index) => setState(() => _currentTab = index),
             items: const [
               RoleNavItem(icon: Icons.home_rounded, label: 'Inicio'),
-              RoleNavItem(icon: Icons.qr_code_scanner_rounded, label: 'Escanear'),
+              RoleNavItem(
+                icon: Icons.qr_code_scanner_rounded,
+                label: 'Escanear',
+              ),
               RoleNavItem(icon: Icons.point_of_sale_rounded, label: 'POS'),
               RoleNavItem(icon: Icons.receipt_long_rounded, label: 'Ventas'),
-              RoleNavItem(icon: Icons.card_membership_rounded, label: 'Membresías'),
+              RoleNavItem(
+                icon: Icons.card_membership_rounded,
+                label: 'Membresías',
+              ),
             ],
           ),
         ],
@@ -158,11 +177,7 @@ class _CashierScreenState extends State<CashierScreen> {
   Widget _buildTab(int tab, GymState state, RolePalette palette, {Key? key}) {
     switch (tab) {
       case 0:
-        return CashierHomePage(
-          key: key,
-          palette: palette,
-          state: state,
-        );
+        return CashierHomePage(key: key, palette: palette, state: state);
       case 1:
         return CashierScanPage(
           key: key,
@@ -200,11 +215,7 @@ class _CashierScreenState extends State<CashierScreen> {
           },
         );
       case 3:
-        return CashierSalesPage(
-          key: key,
-          palette: palette,
-          state: state,
-        );
+        return CashierSalesPage(key: key, palette: palette, state: state);
       default:
         return CashierMembershipsPage(
           key: key,

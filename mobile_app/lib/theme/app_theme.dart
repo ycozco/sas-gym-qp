@@ -5,25 +5,58 @@ import 'app_theme_tokens.dart';
 class AppTheme {
   static TextTheme _textTheme(SasGymColors colors) {
     return TextTheme(
-      bodyLarge: GoogleFonts.plusJakartaSans(color: colors.textPrimary, fontSize: 16),
-      bodyMedium: GoogleFonts.plusJakartaSans(color: colors.textSecondary, fontSize: 14, height: 1.4),
-      bodySmall: GoogleFonts.plusJakartaSans(color: colors.textMuted, fontSize: 12),
-      titleLarge: GoogleFonts.bricolageGrotesque(color: colors.textPrimary, fontSize: 22, fontWeight: FontWeight.w800),
-      titleMedium: GoogleFonts.bricolageGrotesque(color: colors.textPrimary, fontSize: 18, fontWeight: FontWeight.bold),
-      titleSmall: GoogleFonts.bricolageGrotesque(color: colors.textPrimary, fontSize: 14, fontWeight: FontWeight.bold),
-      labelLarge: GoogleFonts.plusJakartaSans(color: colors.textPrimary, fontWeight: FontWeight.w700),
-      labelMedium: GoogleFonts.plusJakartaSans(color: colors.textSecondary, fontWeight: FontWeight.w600),
+      bodyLarge: GoogleFonts.plusJakartaSans(
+        color: colors.textPrimary,
+        fontSize: 16,
+      ),
+      bodyMedium: GoogleFonts.plusJakartaSans(
+        color: colors.textSecondary,
+        fontSize: 14,
+        height: 1.4,
+      ),
+      bodySmall: GoogleFonts.plusJakartaSans(
+        color: colors.textMuted,
+        fontSize: 12,
+      ),
+      titleLarge: GoogleFonts.bricolageGrotesque(
+        color: colors.textPrimary,
+        fontSize: 22,
+        fontWeight: FontWeight.w800,
+      ),
+      titleMedium: GoogleFonts.bricolageGrotesque(
+        color: colors.textPrimary,
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+      ),
+      titleSmall: GoogleFonts.bricolageGrotesque(
+        color: colors.textPrimary,
+        fontSize: 14,
+        fontWeight: FontWeight.bold,
+      ),
+      labelLarge: GoogleFonts.plusJakartaSans(
+        color: colors.textPrimary,
+        fontWeight: FontWeight.w700,
+      ),
+      labelMedium: GoogleFonts.plusJakartaSans(
+        color: colors.textSecondary,
+        fontWeight: FontWeight.w600,
+      ),
     );
   }
 
   static ButtonStyle _pillButtonStyle(Color background, Color foreground) {
     return ButtonStyle(
       shape: const WidgetStatePropertyAll(StadiumBorder()),
-      padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 20, vertical: 14)),
+      padding: const WidgetStatePropertyAll(
+        EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+      ),
       backgroundColor: WidgetStatePropertyAll(background),
       foregroundColor: WidgetStatePropertyAll(foreground),
       textStyle: WidgetStatePropertyAll(
-        GoogleFonts.plusJakartaSans(fontSize: 14.5, fontWeight: FontWeight.w700),
+        GoogleFonts.plusJakartaSans(
+          fontSize: 14.5,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }
@@ -71,14 +104,23 @@ class AppTheme {
         ),
       ),
       textTheme: _textTheme(colors),
-      elevatedButtonTheme: ElevatedButtonThemeData(style: _pillButtonStyle(colors.textPrimary, colors.surface)),
-      filledButtonTheme: FilledButtonThemeData(style: _pillButtonStyle(colors.textPrimary, colors.surface)),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: _pillButtonStyle(colors.textPrimary, colors.surface),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: _pillButtonStyle(colors.textPrimary, colors.surface),
+      ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: ButtonStyle(
           shape: const WidgetStatePropertyAll(StadiumBorder()),
-          padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 20, vertical: 14)),
+          padding: const WidgetStatePropertyAll(
+            EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          ),
           textStyle: WidgetStatePropertyAll(
-            GoogleFonts.plusJakartaSans(fontSize: 14.5, fontWeight: FontWeight.w700),
+            GoogleFonts.plusJakartaSans(
+              fontSize: 14.5,
+              fontWeight: FontWeight.w700,
+            ),
           ),
           side: WidgetStatePropertyAll(BorderSide(color: colors.border)),
           foregroundColor: WidgetStatePropertyAll(colors.textPrimary),
@@ -88,7 +130,10 @@ class AppTheme {
         style: ButtonStyle(
           shape: const WidgetStatePropertyAll(StadiumBorder()),
           textStyle: WidgetStatePropertyAll(
-            GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700),
+            GoogleFonts.plusJakartaSans(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+            ),
           ),
           foregroundColor: WidgetStatePropertyAll(colors.textPrimary),
         ),
@@ -96,8 +141,14 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: colors.surfaceAlt,
-        labelStyle: GoogleFonts.plusJakartaSans(color: colors.textSecondary, fontSize: 14),
-        hintStyle: GoogleFonts.plusJakartaSans(color: colors.textMuted, fontSize: 14),
+        labelStyle: GoogleFonts.plusJakartaSans(
+          color: colors.textSecondary,
+          fontSize: 14,
+        ),
+        hintStyle: GoogleFonts.plusJakartaSans(
+          color: colors.textMuted,
+          fontSize: 14,
+        ),
         prefixIconColor: colors.textPrimary,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
@@ -115,8 +166,14 @@ class AppTheme {
       tabBarTheme: TabBarThemeData(
         labelColor: colors.textPrimary,
         unselectedLabelColor: colors.textSecondary,
-        labelStyle: GoogleFonts.plusJakartaSans(fontSize: 13.5, fontWeight: FontWeight.w700),
-        unselectedLabelStyle: GoogleFonts.plusJakartaSans(fontSize: 13.5, fontWeight: FontWeight.w600),
+        labelStyle: GoogleFonts.plusJakartaSans(
+          fontSize: 13.5,
+          fontWeight: FontWeight.w700,
+        ),
+        unselectedLabelStyle: GoogleFonts.plusJakartaSans(
+          fontSize: 13.5,
+          fontWeight: FontWeight.w600,
+        ),
         indicator: BoxDecoration(
           color: colors.accent.withValues(alpha: 0.22),
           borderRadius: BorderRadius.circular(999),
@@ -125,7 +182,10 @@ class AppTheme {
       ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: colors.textPrimary,
-        contentTextStyle: GoogleFonts.plusJakartaSans(color: colors.surface, fontSize: 13.5),
+        contentTextStyle: GoogleFonts.plusJakartaSans(
+          color: colors.surface,
+          fontSize: 13.5,
+        ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         behavior: SnackBarBehavior.floating,
       ),
@@ -166,14 +226,23 @@ class AppTheme {
         ),
       ),
       textTheme: _textTheme(colors),
-      elevatedButtonTheme: ElevatedButtonThemeData(style: _pillButtonStyle(colors.accent, colors.accentInk)),
-      filledButtonTheme: FilledButtonThemeData(style: _pillButtonStyle(colors.accent, colors.accentInk)),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: _pillButtonStyle(colors.accent, colors.accentInk),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: _pillButtonStyle(colors.accent, colors.accentInk),
+      ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: ButtonStyle(
           shape: const WidgetStatePropertyAll(StadiumBorder()),
-          padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 20, vertical: 14)),
+          padding: const WidgetStatePropertyAll(
+            EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          ),
           textStyle: WidgetStatePropertyAll(
-            GoogleFonts.plusJakartaSans(fontSize: 14.5, fontWeight: FontWeight.w700),
+            GoogleFonts.plusJakartaSans(
+              fontSize: 14.5,
+              fontWeight: FontWeight.w700,
+            ),
           ),
           side: WidgetStatePropertyAll(BorderSide(color: colors.border)),
           foregroundColor: WidgetStatePropertyAll(colors.textPrimary),
@@ -183,7 +252,10 @@ class AppTheme {
         style: ButtonStyle(
           shape: const WidgetStatePropertyAll(StadiumBorder()),
           textStyle: WidgetStatePropertyAll(
-            GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700),
+            GoogleFonts.plusJakartaSans(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+            ),
           ),
           foregroundColor: WidgetStatePropertyAll(colors.textPrimary),
         ),
@@ -191,8 +263,14 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: colors.surfaceAlt,
-        labelStyle: GoogleFonts.plusJakartaSans(color: colors.textSecondary, fontSize: 14),
-        hintStyle: GoogleFonts.plusJakartaSans(color: colors.textMuted, fontSize: 14),
+        labelStyle: GoogleFonts.plusJakartaSans(
+          color: colors.textSecondary,
+          fontSize: 14,
+        ),
+        hintStyle: GoogleFonts.plusJakartaSans(
+          color: colors.textMuted,
+          fontSize: 14,
+        ),
         prefixIconColor: colors.accent,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
@@ -210,8 +288,14 @@ class AppTheme {
       tabBarTheme: TabBarThemeData(
         labelColor: colors.accent,
         unselectedLabelColor: colors.textSecondary,
-        labelStyle: GoogleFonts.plusJakartaSans(fontSize: 13.5, fontWeight: FontWeight.w700),
-        unselectedLabelStyle: GoogleFonts.plusJakartaSans(fontSize: 13.5, fontWeight: FontWeight.w600),
+        labelStyle: GoogleFonts.plusJakartaSans(
+          fontSize: 13.5,
+          fontWeight: FontWeight.w700,
+        ),
+        unselectedLabelStyle: GoogleFonts.plusJakartaSans(
+          fontSize: 13.5,
+          fontWeight: FontWeight.w600,
+        ),
         indicator: BoxDecoration(
           color: colors.accent.withValues(alpha: 0.14),
           borderRadius: BorderRadius.circular(999),
@@ -220,7 +304,10 @@ class AppTheme {
       ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: colors.surface,
-        contentTextStyle: GoogleFonts.plusJakartaSans(color: colors.textPrimary, fontSize: 13.5),
+        contentTextStyle: GoogleFonts.plusJakartaSans(
+          color: colors.textPrimary,
+          fontSize: 13.5,
+        ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         behavior: SnackBarBehavior.floating,
       ),

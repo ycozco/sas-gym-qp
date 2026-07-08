@@ -64,13 +64,20 @@ class _LogEffortModalState extends State<LogEffortModal> {
             const SizedBox(height: 6),
             Text(
               'Registra las especificaciones reales de tu serie:',
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 13),
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.6),
+                fontSize: 13,
+              ),
             ),
             const SizedBox(height: 20),
 
             const Text(
               'Repeticiones completadas',
-              style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 8),
             Row(
@@ -81,7 +88,11 @@ class _LogEffortModalState extends State<LogEffortModal> {
                 }),
                 Text(
                   '$reps reps',
-                  style: const TextStyle(color: Color(0xFFD2FF3A), fontSize: 22, fontWeight: FontWeight.w900),
+                  style: const TextStyle(
+                    color: Color(0xFFD2FF3A),
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
                 _counterButton(Icons.add, () {
                   setState(() => reps++);
@@ -92,7 +103,11 @@ class _LogEffortModalState extends State<LogEffortModal> {
 
             const Text(
               'Peso levantado (kg)',
-              style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 8),
             Row(
@@ -103,7 +118,11 @@ class _LogEffortModalState extends State<LogEffortModal> {
                 }),
                 Text(
                   '$weight kg',
-                  style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
                 _counterButton(Icons.add_circle_outline, () {
                   setState(() => weight += 2.5);
@@ -117,11 +136,19 @@ class _LogEffortModalState extends State<LogEffortModal> {
               children: [
                 const Text(
                   'Esfuerzo Percibido (RPE)',
-                  style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 Text(
                   '@ RPE $rpe',
-                  style: const TextStyle(color: Color(0xFFFF7A1A), fontSize: 13, fontWeight: FontWeight.w900),
+                  style: const TextStyle(
+                    color: Color(0xFFFF7A1A),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
               ],
             ),
@@ -147,8 +174,20 @@ class _LogEffortModalState extends State<LogEffortModal> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('RPE 5 (Cómodo)', style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 9.5)),
-                Text('RPE 10 (Fallo máximo)', style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 9.5)),
+                Text(
+                  'RPE 5 (Cómodo)',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.4),
+                    fontSize: 9.5,
+                  ),
+                ),
+                Text(
+                  'RPE 10 (Fallo máximo)',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.4),
+                    fontSize: 9.5,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 24),
@@ -158,7 +197,13 @@ class _LogEffortModalState extends State<LogEffortModal> {
                 Expanded(
                   child: TextButton(
                     onPressed: () => Navigator.pop(context),
-                    child: const Text('Cancelar', style: TextStyle(color: Color(0xFF8C8C8C), fontWeight: FontWeight.bold)),
+                    child: const Text(
+                      'Cancelar',
+                      style: TextStyle(
+                        color: Color(0xFF8C8C8C),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -167,14 +212,19 @@ class _LogEffortModalState extends State<LogEffortModal> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFD2FF3A),
                       foregroundColor: Colors.black,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
                     onPressed: () {
                       widget.onSave(reps, weight, rpe);
                       Navigator.pop(context);
                     },
-                    child: const Text('Guardar Serie', style: TextStyle(fontWeight: FontWeight.w900)),
+                    child: const Text(
+                      'Guardar Serie',
+                      style: TextStyle(fontWeight: FontWeight.w900),
+                    ),
                   ),
                 ),
               ],

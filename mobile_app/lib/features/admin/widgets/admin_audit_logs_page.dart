@@ -48,7 +48,8 @@ class _AdminAuditLogsPageState extends State<AdminAuditLogsPage> {
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
       if (widget.state.hasMoreAuditLogs && !widget.state.loadingMoreAuditLogs) {
         widget.state.loadAuditLogs(refresh: false);
       }
@@ -59,7 +60,8 @@ class _AdminAuditLogsPageState extends State<AdminAuditLogsPage> {
   Widget build(BuildContext context) {
     final colors = context.sasColors;
     final filteredLogs = widget.state.auditLogs.where((log) {
-      final matchesSearch = log.action.toLowerCase().contains(widget.searchQuery.toLowerCase()) ||
+      final matchesSearch =
+          log.action.toLowerCase().contains(widget.searchQuery.toLowerCase()) ||
           log.detail.toLowerCase().contains(widget.searchQuery.toLowerCase());
       if (!matchesSearch) return false;
 
@@ -70,8 +72,14 @@ class _AdminAuditLogsPageState extends State<AdminAuditLogsPage> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: const Text('Bitácora de Auditoría', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17)),
-        leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new_rounded), onPressed: widget.onBack),
+        title: const Text(
+          'Bitácora de Auditoría',
+          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded),
+          onPressed: widget.onBack,
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -99,7 +107,10 @@ class _AdminAuditLogsPageState extends State<AdminAuditLogsPage> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: widget.palette.accent, width: 1.5),
+                      borderSide: BorderSide(
+                        color: widget.palette.accent,
+                        width: 1.5,
+                      ),
                     ),
                   ),
                 ),
@@ -126,11 +137,21 @@ class _AdminAuditLogsPageState extends State<AdminAuditLogsPage> {
           const SizedBox(height: 10),
           Expanded(
             child: filteredLogs.isEmpty
-                ? Center(child: Text('No hay logs coincidentes.', style: TextStyle(color: colors.textSecondary)))
+                ? Center(
+                    child: Text(
+                      'No hay logs coincidentes.',
+                      style: TextStyle(color: colors.textSecondary),
+                    ),
+                  )
                 : ListView.builder(
                     controller: _scrollController,
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-                    itemCount: filteredLogs.length + (widget.state.hasMoreAuditLogs ? 1 : 0),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 6,
+                    ),
+                    itemCount:
+                        filteredLogs.length +
+                        (widget.state.hasMoreAuditLogs ? 1 : 0),
                     itemBuilder: (context, index) {
                       if (index == filteredLogs.length) {
                         return const Center(
@@ -141,7 +162,9 @@ class _AdminAuditLogsPageState extends State<AdminAuditLogsPage> {
                               height: 24,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2.5,
-                                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFD2FF3A)),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Color(0xFFD2FF3A),
+                                ),
                               ),
                             ),
                           ),
@@ -153,13 +176,17 @@ class _AdminAuditLogsPageState extends State<AdminAuditLogsPage> {
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 8),
                         child: LogTile(
-                          icon: log.action.contains('Cobró') || log.action.contains('Venta')
+                          icon:
+                              log.action.contains('Cobró') ||
+                                  log.action.contains('Venta')
                               ? Icons.point_of_sale_rounded
-                              : log.action.contains('Creó') || log.action.contains('Registró')
-                                  ? Icons.person_add_alt_1_rounded
-                                  : log.action.contains('Baja') || log.action.contains('Eliminó')
-                                      ? Icons.delete_outline_rounded
-                                      : Icons.list_alt_rounded,
+                              : log.action.contains('Creó') ||
+                                    log.action.contains('Registró')
+                              ? Icons.person_add_alt_1_rounded
+                              : log.action.contains('Baja') ||
+                                    log.action.contains('Eliminó')
+                              ? Icons.delete_outline_rounded
+                              : Icons.list_alt_rounded,
                           title: log.action,
                           detail: '${log.detail} · ${log.actor}',
                           time: log.time,

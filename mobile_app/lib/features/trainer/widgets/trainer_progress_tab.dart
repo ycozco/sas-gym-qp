@@ -5,11 +5,7 @@ import '../../../widgets/app_shell.dart';
 import 'trainer_shared_utils.dart';
 
 class TrainerProgressTab extends StatelessWidget {
-  const TrainerProgressTab({
-    super.key,
-    required this.palette,
-    this.progress,
-  });
+  const TrainerProgressTab({super.key, required this.palette, this.progress});
 
   final RolePalette palette;
   final Map<String, dynamic>? progress;
@@ -21,14 +17,18 @@ class TrainerProgressTab extends StatelessWidget {
         .map((item) => (item as Map<String, dynamic>)['volume'] as num? ?? 0)
         .map((value) => value.toDouble())
         .toList();
-    final chartVolumes =
-        weeklyLoads.isNotEmpty ? weeklyLoads : <double>[50, 56, 52, 60, 62, 70, 72, 78];
+    final chartVolumes = weeklyLoads.isNotEmpty
+        ? weeklyLoads
+        : <double>[50, 56, 52, 60, 62, 70, 72, 78];
     final totals = progress?['totals'] as Map<String, dynamic>? ?? const {};
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 6, 20, 24),
       children: [
-        SectionHeader(title: 'Volumen Técnico Semanal', action: 'Últimas 8 Semanas'),
+        SectionHeader(
+          title: 'Volumen Técnico Semanal',
+          action: 'Últimas 8 Semanas',
+        ),
         Container(
           padding: const EdgeInsets.all(20),
           decoration: trainerCardDecoration(context),
@@ -37,7 +37,11 @@ class TrainerProgressTab extends StatelessWidget {
             children: [
               const Text(
                 'Tolerancia al esfuerzo & Carga del grupo',
-                style: TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF5D5D5D), fontSize: 13),
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF5D5D5D),
+                  fontSize: 13,
+                ),
               ),
               const SizedBox(height: 18),
               SizedBox(
@@ -104,9 +108,7 @@ class _VolumePainter extends CustomPainter {
       ..color = const Color(0xFF0066FF)
       ..style = PaintingStyle.fill;
 
-    final textPaint = TextPainter(
-      textDirection: TextDirection.ltr,
-    );
+    final textPaint = TextPainter(textDirection: TextDirection.ltr);
 
     final double barGap = 12.0;
     final int barCount = volumes.length;
@@ -140,7 +142,10 @@ class _VolumePainter extends CustomPainter {
         ),
       );
       textPaint.layout();
-      textPaint.paint(canvas, Offset(x + (barWidth - textPaint.width) / 2, y - 14));
+      textPaint.paint(
+        canvas,
+        Offset(x + (barWidth - textPaint.width) / 2, y - 14),
+      );
 
       // Week label below bar
       textPaint.text = TextSpan(
@@ -152,7 +157,10 @@ class _VolumePainter extends CustomPainter {
         ),
       );
       textPaint.layout();
-      textPaint.paint(canvas, Offset(x + (barWidth - textPaint.width) / 2, h - 16));
+      textPaint.paint(
+        canvas,
+        Offset(x + (barWidth - textPaint.width) / 2, h - 16),
+      );
     }
   }
 
@@ -182,12 +190,20 @@ class _ProgressMiniStat extends StatelessWidget {
         children: [
           Text(
             title,
-            style: const TextStyle(fontSize: 9.5, color: Color(0xFF6E6E6E), fontWeight: FontWeight.bold),
+            style: const TextStyle(
+              fontSize: 9.5,
+              color: Color(0xFF6E6E6E),
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const SizedBox(height: 6),
           Text(
             value,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, letterSpacing: -0.4),
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w900,
+              letterSpacing: -0.4,
+            ),
           ),
         ],
       ),

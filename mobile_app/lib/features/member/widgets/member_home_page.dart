@@ -298,9 +298,9 @@ class MemberHomePage extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -373,7 +373,7 @@ class HeroCard extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: palette.gradient,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: palette.accent.withOpacity(0.25)),
+        border: Border.all(color: palette.accent.withValues(alpha: 0.25)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -396,7 +396,7 @@ class HeroCard extends StatelessWidget {
               const SizedBox(width: 4),
               CircleAvatar(
                 radius: 20,
-                backgroundColor: Colors.white.withOpacity(0.9),
+                backgroundColor: Colors.white.withValues(alpha: 0.9),
                 child: const Text(
                   'MS',
                   style: TextStyle(

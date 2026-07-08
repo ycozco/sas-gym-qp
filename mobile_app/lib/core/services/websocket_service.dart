@@ -54,7 +54,9 @@ class WebSocketService {
       });
 
       _socket?.on('tenant_suspended', (_) {
-        AppLogger.debug('Recibido evento tenant_suspended via WebSocketService');
+        AppLogger.debug(
+          'Recibido evento tenant_suspended via WebSocketService',
+        );
         onTenantSuspended?.call();
       });
 
@@ -87,7 +89,9 @@ class WebSocketService {
     final delay = (1 << _reconnectAttempts).clamp(2, 30);
     _reconnectAttempts++;
 
-    AppLogger.debug('WebSocket programando reconexion en $delay segundos (intento $_reconnectAttempts)');
+    AppLogger.debug(
+      'WebSocket programando reconexion en $delay segundos (intento $_reconnectAttempts)',
+    );
     _reconnectTimer = Timer(Duration(seconds: delay), () {
       _isConnecting = false;
       connect();
