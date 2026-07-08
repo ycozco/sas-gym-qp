@@ -19,6 +19,7 @@ class CashierScreen extends StatefulWidget {
 
 class _CashierScreenState extends State<CashierScreen> {
   int _currentTab = 0;
+  int _scanSession = 0;
   final List<Map<String, dynamic>> _historyStack = [];
 
   // POS State
@@ -42,7 +43,12 @@ class _CashierScreenState extends State<CashierScreen> {
   void _back() {
     if (_historyStack.isNotEmpty) {
       setState(() {
+        final screen = _historyStack.last['screen'];
         _historyStack.removeLast();
+        if (screen == 'verdict') {
+          _scanSession++;
+          _currentTab = 1;
+        }
       });
     }
   }
@@ -193,11 +199,9 @@ class _CashierScreenState extends State<CashierScreen> {
         return CashierHomePage(key: key, palette: palette, state: state);
       case 1:
         return CashierScanPage(
-          key: key,
+          key: ValueKey<String>('cashier-scan-$_scanSession'),
           palette: palette,
           state: state,
-          scanInput: _scanDniInput,
-          onScanChanged: (val) => setState(() => _scanDniInput = val),
           onTriggerVerdict: (result, member, dni) {
             _go('verdict', {'result': result, 'member': member, 'dni': dni});
           },

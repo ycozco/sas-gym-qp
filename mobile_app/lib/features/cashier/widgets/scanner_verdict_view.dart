@@ -415,7 +415,7 @@ class _ScannerVerdictViewState extends State<ScannerVerdictView> {
                     ],
                     if (widget.result == 'granted') ...[
                       Text(
-                        'Regresando a inicio en $_secondsLeft segundos...',
+                        'Regresando al escáner en $_secondsLeft segundos...',
                         style: const TextStyle(
                           color: Colors.white70,
                           fontSize: 13,
@@ -433,7 +433,7 @@ class _ScannerVerdictViewState extends State<ScannerVerdictView> {
                           ),
                           onPressed: widget.onBack,
                           child: const Text(
-                            'Listo',
+                            'Volver a escanear',
                             style: TextStyle(
                               fontWeight: FontWeight.w900,
                               fontSize: 15,
@@ -462,7 +462,7 @@ class _ScannerVerdictViewState extends State<ScannerVerdictView> {
                           ),
                           onPressed: widget.onBack,
                           child: const Text(
-                            'Listo',
+                            'Volver a escanear',
                             style: TextStyle(
                               fontWeight: FontWeight.w900,
                               fontSize: 15,
