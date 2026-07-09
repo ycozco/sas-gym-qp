@@ -2,14 +2,14 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig({
-  base: '/admin/',
+  base: '/',
   plugins: [react()],
   server: {
     port: 8282,
     host: true,
   },
   build: {
-    outDir: '../backend/public/admin',
+    outDir: 'dist',
     emptyOutDir: true,
     sourcemap: false,
   },

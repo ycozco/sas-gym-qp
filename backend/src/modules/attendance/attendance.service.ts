@@ -4,18 +4,17 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { totp } from 'otplib';
+import { generate, verify } from 'otplib';
 import { AccessMethod, MembershipState } from '@prisma/client';
 import { getOptionalEnv } from '../../core/config/env';
 
 @Injectable()
 export class AttendanceService {
   private usedTokens = new Set<string>();
+  private readonly totpPeriod = 30;
+  private readonly totpToleranceSeconds = 30;
 
-  constructor(private prisma: PrismaService) {
-    // Configurar la ventana de tolerancia a ±1 paso de 30 segundos (total 90 segundos)
-    totp.options = { step: 30, window: 1 };
-  }
+  constructor(private prisma: PrismaService) {}
 
   async simulateAccess(dni: string, tenantId: string) {
     const simulatorEnabled =
@@ -42,7 +41,10 @@ export class AttendanceService {
       return this.verifyQrToken(dni, 'SIMULATION_NO_QR_SECRET', tenantId);
     }
 
-    const token = totp.generate(user.qr_secret);
+    const token = await generate({
+      secret: user.qr_secret,
+      period: this.totpPeriod,
+    });
     const result = await this.verifyQrToken(dni, token, tenantId);
     return {
       ...result,
@@ -134,8 +136,13 @@ export class AttendanceService {
       };
     }
 
-    const isValidToken = totp.check(token, secret);
-    if (!isValidToken) {
+    const verification = await verify({
+      secret,
+      token,
+      period: this.totpPeriod,
+      epochTolerance: this.totpToleranceSeconds,
+    });
+    if (!verification.valid) {
       return {
         verdict: 'RED',
         reason: 'Código QR inválido o expirado.',

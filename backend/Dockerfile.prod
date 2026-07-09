@@ -1,5 +1,5 @@
 # ─── STAGE 1: BUILDER (Compilación de TypeScript) ──────────────────────
-FROM node:24-alpine@sha256:461d310e527d9bf0d3509d3bdfd8e96bf7b5c305b9b1d9bf5bdf8e98679d63c5 AS builder
+FROM node:24.18.0-alpine AS builder
 
 # Dependencias nativas necesarias para Prisma/Node en Alpine
 RUN apk add --no-cache libc6-compat openssl
@@ -19,22 +19,22 @@ RUN npx prisma generate
 RUN npm run build
 
 # ─── STAGE 2: RUNNER (Imagen de Producción Limpia) ──────────────────────
-FROM node:24-alpine@sha256:461d310e527d9bf0d3509d3bdfd8e96bf7b5c305b9b1d9bf5bdf8e98679d63c5 AS runner
+FROM node:24.18.0-alpine AS runner
 
 # Librería SSL necesaria para la conexión Postgres en Alpine
 RUN apk add --no-cache openssl
 
 WORKDIR /app
 
-# Forzar variable a producción (optimiza frameworks y Node.js)
-ENV NODE_ENV=production
-
 # Copiar manifiesto de dependencias y base de datos
 COPY package*.json ./
 COPY prisma ./prisma/
 
-# Instalar ÚNICAMENTE dependencias productivas (ignora devDependencies pesadas)
-RUN npm ci --omit=dev
+# Instalar dependencias necesarias para runtime + inicializacion de esquema/seed
+RUN npm ci
+
+# Forzar variable a producción (optimiza frameworks y Node.js)
+ENV NODE_ENV=production
 
 # Copiar únicamente la compilación limpia del Stage de compilación
 COPY --from=builder /app/dist ./dist
