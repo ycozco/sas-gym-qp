@@ -17,7 +17,7 @@ function Login({ onLogin, loading, error }) {
         <div className="glow" aria-hidden="true"/>
         <div className="brand">
           <span className="dot" aria-hidden="true"/>
-          <span className="wm">Saas<em>Gym</em></span>
+          <span className="wm">Code<em>Fit</em></span>
         </div>
         <h2 className="l-title">Club Ops del gym.</h2>
         <p className="l-sub">Caja, ventas, socios, clases, inventario y reportes sincronizados con la API real.</p>

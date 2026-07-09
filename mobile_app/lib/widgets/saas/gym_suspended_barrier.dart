@@ -44,7 +44,7 @@ class GymSuspendedBarrier extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                'Esta sede del gimnasio ha sido suspendida temporalmente por la administración de SaasGym debido a temas de facturación pendientes.',
+                'Esta sede del gimnasio ha sido suspendida temporalmente por la administración de CodeFit debido a temas de facturación pendientes.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.6),
@@ -67,7 +67,7 @@ class GymSuspendedBarrier extends StatelessWidget {
                 ),
                 icon: const Icon(Icons.headset_mic),
                 label: const Text(
-                  'Contactar Soporte SaasGym',
+                  'Contactar Soporte CodeFit',
                   style: TextStyle(fontWeight: FontWeight.w800),
                 ),
                 onPressed: onContactAdmin,

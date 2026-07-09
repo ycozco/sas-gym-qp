@@ -143,6 +143,15 @@ class _LoginScreenState extends State<LoginScreen> {
     final state = GymStateProvider.of(context);
     final colors = context.sasColors;
 
+    // Auto-login en desarrollo si viene por URL ?autologin=true y no está logueado ni cargando
+    if (Uri.base.queryParameters['autologin'] == 'true' && state.currentUser == null && !state.authLoading) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _emailController.text = 'socio01.surco@test.sasgym.com';
+        _passwordController.text = 'member_secure_pass';
+        _submit(state);
+      });
+    }
+
     return Scaffold(
       backgroundColor: colors.background,
       body: Center(
@@ -170,7 +179,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'SaasGym',
+                      'CodeFit',
                       style: TextStyle(
                         color: colors.textPrimary,
                         fontSize: 32,
