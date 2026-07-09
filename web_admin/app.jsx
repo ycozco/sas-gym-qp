@@ -1118,7 +1118,7 @@ function App() {
           title={titleFor(current, role)}
           sub={
             role === "superadmin"
-              ? "Red SaasGym · operacion multi-sede"
+              ? "Red CodeFit · operacion multi-sede"
               : `${gym.name} · ${ROLES[role].label}`
           }
           role={role}

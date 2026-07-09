@@ -16,10 +16,10 @@
   --border-strong: #D6D2C6;
 
   /* Accent */
-  --accent: #D2FF3A;
-  --accent-2: #E9FF7A;
-  --accent-soft: rgba(210,255,58,.16);
-  --accent-ink: #0B0B0B;
+  --accent: #8B5CF6;
+  --accent-2: #00FF87;
+  --accent-soft: rgba(139, 92, 246, 0.16);
+  --accent-ink: #FFFFFF;
   --tenant-primary: #0B0B0B;
   --tenant-secondary: #0066FF;
   --sidebar-bg: #0B0B0B;

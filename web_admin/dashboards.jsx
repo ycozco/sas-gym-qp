@@ -21,7 +21,7 @@ function Login({ onLogin, loading, error }) {
         </div>
         <h2 className="l-title">Club Ops del gym.</h2>
         <p className="l-sub">Caja, ventas, socios, clases, inventario y reportes sincronizados con la API real.</p>
-        <div className="l-foot">SaasGym Club Ops</div>
+        <div className="l-foot">CodeFit Club Ops</div>
       </aside>
 
       <main className="login-form">

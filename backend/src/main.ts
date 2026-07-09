@@ -122,7 +122,7 @@ async function bootstrap() {
   const env = process.env.NODE_ENV || 'development';
   console.log(`
   ╔════════════════════════════════════════════╗
-  ║   SaaSGYM API — ${env.toUpperCase().padEnd(26)}║
+  ║   CodeFit API — ${env.toUpperCase().padEnd(26)}║
   ║   Entorno: ${env.padEnd(32)}║
   ║   Puerto:  ${String(port).padEnd(32)}║
   ║   Ruta:    /api/v1                         ║
