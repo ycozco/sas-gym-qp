@@ -160,6 +160,11 @@ function App() {
   });
   const themeSyncRef = React.useRef({ ready: false, lastSynced: null });
 
+  const authHeaders = React.useMemo(
+    () => ({ token: authToken, tenantId }),
+    [authToken, tenantId],
+  );
+
   React.useEffect(() => {
     document.documentElement.dataset.theme = themeMode;
     try {
@@ -231,11 +236,6 @@ function App() {
   React.useEffect(() => {
     applyTenantTheme(tenantSettings);
   }, [tenantSettings]);
-
-  const authHeaders = React.useMemo(
-    () => ({ token: authToken, tenantId }),
-    [authToken, tenantId],
-  );
 
   const loadTenantSettings = React.useCallback(
     async (override = authHeaders) => {
